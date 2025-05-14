@@ -1,31 +1,23 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 
 import { BaseService } from '@/base/services';
 
 import { UpdateUserDto } from '../dtos/user.dtos';
-import { User } from '../entities/user.entity';
-import { UsersRepository } from '../repositories/users.repository';
+import { User } from '../schemas/user.schema';
 
 @Injectable()
 export class UsersService extends BaseService<User> {
-  constructor(protected readonly repository: UsersRepository) {
+  constructor(@InjectModel(User.name) protected readonly model: Model<User>) {
     const logger = new Logger(UsersService.name);
-    super(repository, logger);
+    super(model, logger);
   }
 
-  async updateUserProfile({ id, ...payload }: UpdateUserDto) {
-    const isExistedUser = await this.repository.existsBy({
-      id,
-    });
-
-    if (!isExistedUser) {
-      throw new NotFoundException('User not found');
-    }
-
+  async updateUserProfile(user: User, payload: UpdateUserDto) {
     return (
-      await this.update(id, payload, {
-        where: { id },
-        relations: ['account'],
+      await this.update(user._id, payload, {
+        _id: user._id,
       })
     )[0];
   }

@@ -2,30 +2,27 @@ services:
   api:
     container_name: api
     depends_on:
-      - postgres
+      - mongo
       - redis
     restart: always
     build: .
     ports:
       - ${APP_PORT}:${APP_PORT}
     networks:
-      - network
+      - wdp301_se1833_nj_group_5_network
 
-  postgres:
-    container_name: postgres
-    image: postgres:16-alpine
+  mongo:
+    container_name: mongo
+    image: mongo:7.0-jammy
     ports:
-      - '5432:${DB_PORT}'
-    volumes:
-      - postgresql_data:/var/lib/postgresql/data
+      - '27017:${DB_PORT}'
     environment:
-      - POSTGRES_USER=${DB_USERNAME}
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
-      - POSTGRES_DB=${DB_DATABASE_NAME}
-      - TZ=posix/Asia/Ho_Chi_Minh
+      - MONGO_INITDB_DATABASE=${DB_DATABASE_NAME}
+    volumes:
+      - mongo_data:/data/db
     restart: unless-stopped
     networks:
-      - network
+      - wdp301_se1833_nj_group_5_network
 
   redis:
     container_name: redis
@@ -37,12 +34,12 @@ services:
       - redis_data:/data
     restart: unless-stopped
     networks:
-      - network
+      - wdp301_se1833_nj_group_5_network
 
 networks:
-  network:
+  wdp301_se1833_nj_group_5_network:
     driver: bridge
 
 volumes:
-  postgresql_data:
+  mongo_data:
   redis_data:

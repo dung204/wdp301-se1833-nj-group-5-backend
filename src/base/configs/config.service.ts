@@ -1,7 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { config } from 'dotenv';
-import { DataSourceOptions } from 'typeorm';
-import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 
 config({
   path: ['.env.local', '.env'],
@@ -16,20 +14,10 @@ export class ConfigService {
   ACCESS_SECRET_KEY = process.env['ACCESS_SECRET_KEY'];
   REFRESH_SECRET_KEY = process.env['REFRESH_SECRET_KEY'];
 
-  POSTGRES = {
-    type: 'postgres',
-    host: process.env['DB_HOST'] ?? 'localhost',
-    port: parseInt(process.env['DB_PORT'] ?? '5432', 10),
-    username: process.env['DB_USERNAME'],
-    password: process.env['DB_PASSWORD'],
-    database: process.env['DB_DATABASE_NAME'],
-    synchronize: false,
-    entities: ['dist/**/*.entity.js'],
-    migrations: ['dist/**/database/migrations/*.js'],
-    migrationsRun: process.env['NODE_ENV'] === 'production',
-    namingStrategy: new SnakeNamingStrategy(),
-    logging: process.env['NODE_ENV'] === 'development',
-  } satisfies DataSourceOptions;
+  DB_HOST = process.env['DB_HOST'];
+  DB_PORT = process.env['DB_PORT'];
+  DB_DATABASE_NAME = process.env['DB_DATABASE_NAME'];
+  MONGO_URI = `mongodb://${this.DB_HOST}:${this.DB_PORT}/${this.DB_DATABASE_NAME}`;
 
   REDIS = {
     host: process.env['REDIS_HOST'] ?? 'localhost',

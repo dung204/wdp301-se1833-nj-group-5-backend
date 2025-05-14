@@ -1,12 +1,12 @@
-import { ApiHideProperty, ApiProperty } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import { Exclude, Expose, Transform, plainToInstance } from 'class-transformer';
 import { IsEnum, IsOptional, IsString } from 'class-validator';
 
 import { SwaggerExamples } from '@/base/constants';
-import { Role } from '@/modules/auth';
+import { Role } from '@/modules/auth/enums/role.enum';
 
-import { User } from '../entities/user.entity';
 import { Gender } from '../enums/gender.enum';
+import { User } from '../schemas/user.schema';
 
 @Exclude()
 export class UserProfileDto {
@@ -14,6 +14,7 @@ export class UserProfileDto {
     description: 'The UUID of the user',
     example: SwaggerExamples.UUID,
   })
+  @Transform(({ obj: user }) => user._id)
   @Expose()
   id!: string;
 
@@ -22,7 +23,6 @@ export class UserProfileDto {
     example: SwaggerExamples.EMAIL,
   })
   @Expose()
-  @Transform(({ obj: user }) => user.account.email)
   email!: string;
 
   @ApiProperty({
@@ -30,7 +30,6 @@ export class UserProfileDto {
     example: SwaggerExamples.ROLE,
   })
   @Expose()
-  @Transform(({ obj: user }) => user.account.role)
   role!: Role;
 
   @ApiProperty({
@@ -83,10 +82,6 @@ export class DeletedUserProfileDto extends UserProfileDto {
 }
 
 export class UpdateUserDto {
-  @ApiHideProperty()
-  @Exclude()
-  id!: string;
-
   @ApiProperty({
     description: 'The full name of the user',
     example: SwaggerExamples.FULLNAME,

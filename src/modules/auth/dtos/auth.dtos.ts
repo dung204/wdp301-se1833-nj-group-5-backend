@@ -51,7 +51,7 @@ class LoginUserPayload {
     example: SwaggerExamples.FULLNAME,
     nullable: true,
   })
-  fullName!: string | null;
+  fullName?: string;
 }
 
 export class LoginSuccessDto {

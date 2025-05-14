@@ -1,7 +1,6 @@
 import { Logger, ValidationPipe, VersioningType } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import * as fs from 'fs';
-import { StorageDriver, initializeTransactionalContext } from 'typeorm-transactional';
 
 import { configSwagger, configs } from '@/base/configs';
 import { StripUndefinedPipe } from '@/base/pipes';
@@ -9,8 +8,6 @@ import { StripUndefinedPipe } from '@/base/pipes';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  initializeTransactionalContext({ storageDriver: StorageDriver.AUTO });
-
   const logger = new Logger(bootstrap.name);
   const app = await NestFactory.create(AppModule, {
     ...(process.env['USE_HTTPS'] === 'true' && {

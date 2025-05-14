@@ -1,7 +1,6 @@
 import {
   ConflictException,
   Injectable,
-  Logger,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -10,36 +9,29 @@ import { randomUUID } from 'crypto';
 
 import { configs } from '@/base/configs';
 import { RedisService } from '@/base/database';
-import { BaseService } from '@/base/services';
 import { PasswordUtils } from '@/base/utils/password.utils';
-import { User, UsersService } from '@/modules/users';
+import { User } from '@/modules/users/schemas/user.schema';
+import { UsersService } from '@/modules/users/services/users.service';
 
 import { JwtPayloadDto, LoginDto, LoginSuccessDto, RegisterDto } from '../dtos/auth.dtos';
-import { Account } from '../entities/account.entity';
-import { AccountRepository } from '../repository/account.repository';
 
 @Injectable()
-export class AuthService extends BaseService<Account> {
+export class AuthService {
   private readonly ACCESS_EXPIRATION_TIME = 1800; // 30 minutes
   private readonly REFRESH_EXPIRATION_TIME = 604800; // 1 week
   private readonly BLACKLISTED = 'BLACKLISTED';
 
   constructor(
-    protected readonly repository: AccountRepository,
+    private readonly usersService: UsersService,
     private readonly redisService: RedisService,
     private readonly jwtService: JwtService,
-    private readonly usersService: UsersService,
-  ) {
-    const logger = new Logger(AuthService.name);
-    super(repository, logger);
-  }
+  ) {}
 
   async login(payload: LoginDto): Promise<LoginSuccessDto> {
     const { email, password } = payload;
-    const account = await this.findOne({
-      where: {
-        email,
-      },
+    const account = await this.usersService.findOne({
+      email,
+      deleteTimestamp: { $ne: null },
     });
 
     if (!account) {
@@ -53,13 +45,13 @@ export class AuthService extends BaseService<Account> {
     }
 
     const user = await this.usersService.findOne({
-      where: { account },
+      account: account._id,
     });
 
     return {
-      ...(await this.getTokens({ sub: user!.id })),
+      ...(await this.getTokens({ sub: user!._id })),
       user: {
-        id: user!.id,
+        id: user!._id,
         fullName: user!.fullName,
       },
     };
@@ -67,26 +59,25 @@ export class AuthService extends BaseService<Account> {
 
   async register(payload: RegisterDto): Promise<LoginSuccessDto> {
     const { email, password } = payload;
-    const existedAccount = await this.findOne({
-      where: { email },
-      withDeleted: true,
+    const existedUser = await this.usersService.findOne({
+      email,
     });
     const hashedPassword = PasswordUtils.hashPassword(password);
-    let newAccount: Account;
+    let newUser: User;
 
-    if (!existedAccount) {
+    if (!existedUser) {
       const userId = randomUUID();
-      newAccount = await this.createOne(userId, {
-        id: userId,
+      newUser = await this.usersService.createOne(userId, {
+        _id: userId,
         email,
         password: hashedPassword,
       });
-    } else if (!existedAccount.deleteTimestamp) {
+    } else if (!existedUser.deleteTimestamp) {
       throw new ConflictException('Email has already been registered.');
     } else {
-      newAccount = (
-        await this.update(existedAccount.id, {
-          ...existedAccount,
+      newUser = (
+        await this.usersService.update(existedUser._id, {
+          ...existedUser,
           ...payload,
           password: hashedPassword,
           deleteTimestamp: null,
@@ -95,23 +86,11 @@ export class AuthService extends BaseService<Account> {
       )[0];
     }
 
-    let userInfo = await this.usersService.findOne({
-      where: {
-        account: newAccount,
-      },
-    });
-
-    if (!userInfo) {
-      userInfo = await this.usersService.createOne(newAccount.id, {
-        account: newAccount,
-      });
-    }
-
     return {
-      ...(await this.getTokens({ sub: userInfo.id })),
+      ...(await this.getTokens({ sub: newUser._id })),
       user: {
-        id: userInfo.id,
-        fullName: userInfo.fullName,
+        id: newUser._id,
+        fullName: newUser.fullName,
       },
     };
   }
@@ -126,9 +105,7 @@ export class AuthService extends BaseService<Account> {
     });
 
     const user = await this.usersService.findOne({
-      where: {
-        id: userId,
-      },
+      _id: userId,
     });
 
     if (!user) {
@@ -140,7 +117,7 @@ export class AuthService extends BaseService<Account> {
     return {
       ...(await this.getTokens({ sub: userId })),
       user: {
-        id: user.id,
+        id: user._id,
         fullName: user.fullName,
       },
     };
@@ -169,7 +146,7 @@ export class AuthService extends BaseService<Account> {
   }
 
   async logout(user: User, accessToken: string) {
-    const refreshToken = await this.redisService.get(`REFRESH_TOKEN_${user.id}`, true);
+    const refreshToken = await this.redisService.get(`REFRESH_TOKEN_${user._id}`, true);
 
     await this.blacklistToken(accessToken);
     if (refreshToken) await this.blacklistToken(refreshToken);

@@ -3,6 +3,7 @@
     "dbaeumer.vscode-eslint",
     "esbenp.prettier-vscode",
     "EditorConfig.EditorConfig",
-    "Redis.redis-for-vscode"
+    "Redis.redis-for-vscode",
+    "mongodb.mongodb-vscode"
   ]
 }

@@ -42,4 +42,68 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    ignores: ['.husky/install.mjs'],
+    rules: {
+      'no-console': [
+        'error',
+        {
+          allow: ['warn', 'error'],
+        },
+      ],
+    },
+  }, // No console.log()
+  {
+    ignores: ['.husky/install.mjs'],
+    rules: {
+      'no-console': [
+        'error',
+        {
+          allow: ['warn', 'error'],
+        },
+      ],
+    },
+  },
+
+  // No console.log()
+  {
+    ignores: ['.husky/install.mjs'],
+    rules: {
+      'no-console': [
+        'error',
+        {
+          allow: ['warn', 'error'],
+        },
+      ],
+    },
+  },
+
+  // Only use camelCase as naming convention
+  {
+    rules: {
+      camelcase: [
+        'error',
+        {
+          properties: 'never',
+          ignoreDestructuring: true,
+          ignoreImports: true,
+          ignoreGlobals: true,
+        },
+      ],
+    },
+  },
+
+  // No default exports (i.e. export default function Foo() {})
+  {
+    ignores: ['*.config.*'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'ExportDefaultDeclaration',
+          message: 'Use named exports instead (i.e. export const foo = ...)',
+        },
+      ],
+    },
+  },
 );

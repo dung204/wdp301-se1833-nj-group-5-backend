@@ -2,7 +2,7 @@ import { ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
 
-import { User } from '@/modules/users';
+import { User } from '@/modules/users/schemas/user.schema';
 
 import { IS_ADMIN_KEY } from '../decorators/admin.decorator';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
@@ -31,7 +31,7 @@ export class JwtGuard extends AuthGuard(['jwt']) {
 
     if (!!isAuthenticated && isAdmin) {
       const currentUser: User = context.switchToHttp().getRequest().user;
-      if (currentUser.account.role !== Role.ADMIN)
+      if (currentUser.role !== Role.ADMIN)
         throw new ForbiddenException('This operation is only allowed for ADMIN.');
     }
 

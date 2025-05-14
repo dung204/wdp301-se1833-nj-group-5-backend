@@ -1,12 +1,20 @@
 import { Global, Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { MongooseModule } from '@nestjs/mongoose';
 
-import { configs } from '../configs/config.service';
+import { configs } from '@/base/configs';
+
 import { RedisService } from './services/redis.service';
 
 @Global()
 @Module({
-  imports: [TypeOrmModule.forRoot(configs.POSTGRES)],
+  imports: [
+    MongooseModule.forRoot(configs.MONGO_URI, {
+      retryAttempts: 10,
+      retryDelay: 2000,
+      timeoutMS: 10000,
+      serverSelectionTimeoutMS: 10000,
+    }),
+  ],
   providers: [RedisService],
   exports: [RedisService],
 })
