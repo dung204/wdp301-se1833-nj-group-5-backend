@@ -29,24 +29,19 @@ export class AuthService {
 
   async login(payload: LoginDto): Promise<LoginSuccessDto> {
     const { email, password } = payload;
-    const account = await this.usersService.findOne({
+    const user = await this.usersService.findOne({
       email,
-      deleteTimestamp: { $ne: null },
     });
 
-    if (!account) {
+    if (!user) {
       throw new UnauthorizedException('Email or password is incorrect.');
     }
 
-    const isMatchPassword = PasswordUtils.isMatchPassword(password, account.password);
+    const isMatchPassword = PasswordUtils.isMatchPassword(password, user.password);
 
     if (!isMatchPassword) {
       throw new UnauthorizedException('Email or password is incorrect.');
     }
-
-    const user = await this.usersService.findOne({
-      account: account._id,
-    });
 
     return {
       ...(await this.getTokens({ sub: user!._id })),

@@ -32,6 +32,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     const id = payload.sub;
     const user = await this.usersService.findOne({
       _id: id,
+      deleteTimestamp: null,
     });
 
     if (!user) throw new UnauthorizedException();
