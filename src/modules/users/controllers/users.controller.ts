@@ -34,7 +34,7 @@ export class UsersController {
   })
   @Get('/profile')
   getCurrentUserProfile(@CurrentUser() user: User) {
-    return UserProfileDto.fromUser(user);
+    return UserProfileDto.mapToDto(user);
   }
 
   @ApiOperation({
@@ -50,7 +50,7 @@ export class UsersController {
     @Body() updateUserDto: UpdateUserDto,
   ) {
     const user = await this.usersService.updateUserProfile(currentUser, updateUserDto);
-    return UserProfileDto.fromUser(user);
+    return UserProfileDto.mapToDto(user);
   }
 
   @ApiOperation({
@@ -71,7 +71,7 @@ export class UsersController {
     });
 
     return {
-      data: users.map((user) => UserProfileDto.fromUser(user)),
+      data: users.map((user) => UserProfileDto.mapToDto(user)),
       metadata,
     };
   }
@@ -80,7 +80,7 @@ export class UsersController {
     summary: 'Retrieve all deleted users',
   })
   @ApiSuccessResponse({
-    schema: UserProfileDto,
+    schema: DeletedUserProfileDto,
     description: 'All user profiles retrieved successfully',
   })
   @Admin()
@@ -94,7 +94,7 @@ export class UsersController {
     });
 
     return {
-      data: users.map((user) => DeletedUserProfileDto.fromUser(user)),
+      data: users.map((user) => DeletedUserProfileDto.mapToDto(user)),
       metadata,
     };
   }

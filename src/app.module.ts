@@ -6,10 +6,32 @@ import { DatabaseModule } from './base/database/database.module';
 import { ResponseTransformInterceptor } from './base/interceptors/response-transform.interceptor';
 import { AuthModule } from './modules/auth/auth.module';
 import { JwtGuard } from './modules/auth/guards/jwt.guard';
+import { BookingsModule } from './modules/bookings/bookings.module';
+import { DiscountsModule } from './modules/discounts/discounts.module';
+import { HotelsModule } from './modules/hotels/hotels.module';
+import { PaymentMethodsModule } from './modules/payment-methods/payment-methods.module';
+import { ReviewsModule } from './modules/reviews/reviews.module';
+import { RoomsModule } from './modules/rooms/rooms.module';
+import { SupportRequestsModule } from './modules/support-requests/support-requests.module';
+import { TransactionsModule } from './modules/transactions/transactions.module';
 import { UsersModule } from './modules/users/users.module';
 
 @Module({
-  imports: [ConfigModule, DiscoveryModule, AuthModule, DatabaseModule, UsersModule],
+  imports: [
+    ConfigModule,
+    DiscoveryModule,
+    AuthModule,
+    DatabaseModule,
+    UsersModule,
+    HotelsModule,
+    RoomsModule,
+    BookingsModule,
+    TransactionsModule,
+    PaymentMethodsModule,
+    DiscountsModule,
+    ReviewsModule,
+    SupportRequestsModule,
+  ],
   providers: [
     {
       provide: APP_INTERCEPTOR,

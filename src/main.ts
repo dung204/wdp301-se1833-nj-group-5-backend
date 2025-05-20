@@ -39,11 +39,9 @@ async function bootstrap() {
   await app.listen(configs.APP_PORT, () => {
     logger.log(`Current environment: ${configs.NODE_ENV}`);
     logger.log(`Server is running on port ${configs.APP_PORT}`);
-    if (configs.NODE_ENV === 'development') {
-      const protocol = configs.USE_HTTPS ? 'https' : 'http';
-      logger.log(`API: ${protocol}://localhost:${configs.APP_PORT}/api/v1`);
-      logger.log(`Swagger Docs: ${protocol}://localhost:${configs.APP_PORT}/api/v1/docs`);
-    }
+    const protocol = configs.USE_HTTPS ? 'https' : 'http';
+    logger.log(`API: ${protocol}://localhost:${configs.APP_PORT}/api/v1`);
+    logger.log(`Swagger Docs: ${protocol}://localhost:${configs.APP_PORT}/api/v1/docs`);
   });
 }
 void bootstrap();

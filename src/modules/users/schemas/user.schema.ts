@@ -3,6 +3,8 @@ import { HydratedDocument } from 'mongoose';
 
 import { BaseSchema } from '@/base/schemas';
 import { Role } from '@/modules/auth/enums/role.enum';
+import { Discount } from '@/modules/discounts/schemas/discount.schema';
+import { Hotel } from '@/modules/hotels/schemas/hotel.schema';
 
 import { Gender } from '../enums/gender.enum';
 
@@ -38,6 +40,25 @@ export class User extends BaseSchema {
   fullName?: string;
 
   @Prop({
+    type: [String],
+    default: [],
+    required: false,
+  })
+  favouriteHotels: Hotel[] = [];
+
+  @Prop({
+    type: [
+      {
+        _id: { type: String, ref: 'Discount', required: true },
+        quantity: { type: Number, required: true },
+      },
+    ],
+    default: [],
+    required: false,
+  })
+  discounts: (Discount & { quantity: number })[] = [];
+
+  @Prop({
     type: String,
     enum: Object.values(Gender),
     required: false,
@@ -46,5 +67,10 @@ export class User extends BaseSchema {
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
+
+UserSchema.pre(['find', 'findOne', 'findOneAndUpdate'], function (next) {
+  this.populate(['favouriteHotels', 'discounts._id']);
+  next();
+});
 
 export type UserDocument = HydratedDocument<User>;
