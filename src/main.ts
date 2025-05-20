@@ -1,5 +1,7 @@
-import { Logger, ValidationPipe, VersioningType } from '@nestjs/common';
+import { HttpService } from '@nestjs/axios';
+import { HttpException, Logger, ValidationPipe, VersioningType } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { AxiosError } from 'axios';
 import * as fs from 'fs';
 
 import { configSwagger, configs } from '@/base/configs';
@@ -17,6 +19,7 @@ async function bootstrap() {
       },
     }),
   });
+  const httpService = new HttpService();
 
   // URL prefix: /api/v1
   app.setGlobalPrefix('/api');
@@ -34,6 +37,14 @@ async function bootstrap() {
       transform: true,
     }),
     new StripUndefinedPipe(),
+  );
+
+  httpService.axiosRef.interceptors.response.use(
+    (response) => response,
+    (error: AxiosError) => {
+      const response = error.response;
+      throw new HttpException(response!.data as Record<string, unknown>, response!.status);
+    },
   );
 
   await app.listen(configs.APP_PORT, () => {

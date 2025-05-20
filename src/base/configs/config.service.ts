@@ -25,6 +25,16 @@ export class ConfigService {
     username: process.env['REDIS_USERNAME'] ?? '',
     password: process.env['REDIS_PASSWORD'] ?? '',
   };
+
+  MOMO = {
+    partnerCode: process.env['MOMO_PARTNER_CODE'] ?? '',
+    accessKey: process.env['MOMO_ACCESS_KEY'] ?? '',
+    secretKey: process.env['MOMO_SECRET_KEY'] ?? '',
+    ipnUrl: process.env['MOMO_IPN_URL'] ?? '',
+    orderExpireTime: process.env['MOMO_EXPIRE_TIME_MINUTES'] ?? '',
+    requestType: 'captureWallet',
+    lang: 'en',
+  };
 }
 
 export const configs = new ConfigService();
