@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Exclude, Expose, Type } from 'class-transformer';
 import {
   IsArray,
-  IsMongoId,
+  IsBoolean,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -73,6 +73,13 @@ export class RoomResponseDto extends SchemaResponseDto {
   })
   @Expose()
   maxQuantity!: number;
+
+  @ApiProperty({
+    description: 'Whether the room is active',
+    example: true,
+  })
+  @Expose()
+  isActive!: boolean;
 }
 
 @Exclude()
@@ -100,7 +107,6 @@ export class CreateRoomDto {
   })
   @IsNotEmpty()
   @IsString()
-  //   @IsMongoId()
   hotel!: string;
 
   @ApiProperty({
@@ -164,6 +170,14 @@ export class CreateRoomDto {
   @Min(1)
   @Type(() => Number)
   maxQuantity!: number;
+
+  @ApiProperty({
+    description: 'Whether the room is active',
+    example: true,
+  })
+  @IsBoolean()
+  @Type(() => Boolean)
+  isActive!: boolean;
 }
 
 export class UpdateRoomDto {
@@ -241,6 +255,15 @@ export class UpdateRoomDto {
   @Min(1)
   @Type(() => Number)
   maxQuantity?: number;
+
+  @ApiProperty({
+    description: 'Whether the room is active',
+    required: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  @Type(() => Boolean)
+  isActive?: boolean;
 }
 
 export class RoomQueryDto {
@@ -251,7 +274,6 @@ export class RoomQueryDto {
   })
   @IsOptional()
   @IsString()
-  @IsMongoId()
   hotel?: string;
 
   @ApiProperty({

@@ -60,6 +60,12 @@ export class Room extends BaseSchema {
     required: true,
   })
   maxQuantity!: number; // ko biết cần ko
+
+  @Prop({
+    type: Boolean,
+    default: true,
+  })
+  isActive!: boolean; // ko biết cần ko
 }
 
 export const RoomSchema = SchemaFactory.createForClass(Room);

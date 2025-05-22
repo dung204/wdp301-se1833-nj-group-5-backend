@@ -66,7 +66,7 @@ export class BaseService<Schema extends BaseSchema> {
 
   async count(options: FindManyOptions<Schema> = {}, currentUser?: User) {
     const preProcessedOptions = this.preCount(options, currentUser);
-    return this.model.countDocuments(preProcessedOptions);
+    return this.model.countDocuments(preProcessedOptions.filter);
   }
 
   async createOne(userId: string, createDto: Partial<Schema>) {
