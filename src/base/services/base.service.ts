@@ -11,6 +11,33 @@ type FindManyOptions<TModel> = {
   filter?: RootFilterQuery<TModel>;
 } & QueryOptions<TModel>;
 
+/**
+ * BaseService provides a generic, extensible service layer for CRUD operations on Mongoose models.
+ *
+ * This class implements common data access methods such as `find`, `findOne`, `count`, `createOne`, `create`, `update`, `softDelete`, and `restore`.
+ * It also provides hooks for pre- and post-processing (e.g., `preFind`, `postCreateOne`) that can be overridden in derived classes for custom logic.
+ *
+ * @example
+ * ```typescript
+ * class UserService extends BaseService<UserSchema> {
+ *   // Override hooks or add custom methods here
+ * }
+ * ```
+ *
+ * @template Schema - The Mongoose schema type for the service.
+ *
+ * @param model - The Mongoose model instance for the schema.
+ * @param logger - Logger instance for logging operations.
+ *
+ * @method `find` - Retrieves multiple documents with optional filtering, pagination, and sorting.
+ * @method `findOne` - Retrieves a single document matching the filter.
+ * @method `count` - Counts documents matching the filter.
+ * @method `createOne` - Creates a single document.
+ * @method `create` - Creates multiple documents.
+ * @method `update` - Updates documents matching the filter.
+ * @method `softDelete` - Soft deletes documents by setting delete fields.
+ * @method `restore` - Restores soft-deleted documents.
+ */
 export class BaseService<Schema extends BaseSchema> {
   protected logger: Logger;
 
@@ -115,11 +142,9 @@ export class BaseService<Schema extends BaseSchema> {
   ): FindManyOptions<Schema> {
     const { limit, skip } = this.getPaginationProps(options);
     const sort = this.getSortProps(options);
-    const filter = this.getFilterProps(options);
 
     return {
       ...options,
-      filter,
       limit,
       skip,
       sort,
@@ -145,11 +170,7 @@ export class BaseService<Schema extends BaseSchema> {
      */
     _currentUser?: User,
   ): FindManyOptions<Schema> {
-    const filter = this.getFilterProps(options);
-    return {
-      ...options,
-      filter,
-    };
+    return options;
   }
 
   protected preCreateOne(userId: string, createDto: any): Partial<Schema> {
@@ -331,17 +352,6 @@ export class BaseService<Schema extends BaseSchema> {
     }
 
     return order;
-  }
-
-  private getFilterProps(options: FindManyOptions<Schema>) {
-    const { queryDto, filter } = options;
-
-    const { page, pageSize, order, ...additionalFilters } = queryDto ?? {};
-
-    return {
-      ...filter,
-      ...additionalFilters,
-    };
   }
 
   private async getPaginationResponse(options: FindManyOptions<Schema>): Promise<PaginationDto> {
