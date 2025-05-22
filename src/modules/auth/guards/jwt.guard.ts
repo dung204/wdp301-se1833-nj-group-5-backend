@@ -4,7 +4,7 @@ import { AuthGuard } from '@nestjs/passport';
 
 import { User } from '@/modules/users/schemas/user.schema';
 
-import { IS_ADMIN_KEY } from '../decorators/admin.decorator';
+import { ALLOW_ROLES_KEY } from '../decorators/allow-roles.decorator';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 import { Role } from '../enums/role.enum';
 
@@ -18,7 +18,7 @@ export class JwtGuard extends AuthGuard(['jwt']) {
       context.getHandler(),
       context.getClass(),
     ]);
-    const isAdmin = this.reflector.getAllAndOverride<boolean>(IS_ADMIN_KEY, [
+    const allowRoles = this.reflector.getAllAndOverride<Role[]>(ALLOW_ROLES_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);
@@ -29,10 +29,12 @@ export class JwtGuard extends AuthGuard(['jwt']) {
 
     const isAuthenticated = await super.canActivate(context);
 
-    if (!!isAuthenticated && isAdmin) {
+    if (!!isAuthenticated && Array.isArray(allowRoles)) {
       const currentUser: User = context.switchToHttp().getRequest().user;
-      if (currentUser.role !== Role.ADMIN)
-        throw new ForbiddenException('This operation is only allowed for ADMIN.');
+      if (!allowRoles.includes(currentUser.role))
+        throw new ForbiddenException(
+          `This operation is only allowed for these roles: ${allowRoles.map((role) => `'${role}'`).join(', ')}.`,
+        );
     }
 
     return !!isAuthenticated;
