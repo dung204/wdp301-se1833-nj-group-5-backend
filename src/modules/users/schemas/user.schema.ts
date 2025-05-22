@@ -27,10 +27,10 @@ export class User extends BaseSchema {
   @Prop({
     type: String,
     enum: Object.values(Role),
-    default: Role.USER,
+    default: Role.CUSTOMER,
     required: false,
   })
-  role: Role = Role.USER;
+  role: Role = Role.CUSTOMER;
 
   @Prop({
     type: String,

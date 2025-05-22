@@ -100,7 +100,7 @@ export class CreateRoomDto {
   })
   @IsNotEmpty()
   @IsString()
-  @IsMongoId()
+  //   @IsMongoId()
   hotel!: string;
 
   @ApiProperty({
