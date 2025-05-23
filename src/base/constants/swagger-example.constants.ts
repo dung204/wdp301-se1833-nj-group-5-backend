@@ -17,4 +17,5 @@ export const SwaggerExamples = {
   ORDER_VALUE: 'createTimestamp:DESC',
   ORDER_FIELD: 'createTimestamp',
   ORDER_DIRECTION: 'DESC',
+  ACCEPT_HOTEL: ['HOTEL1_ID', 'HOTEL2_ID'],
 };
