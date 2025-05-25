@@ -269,7 +269,7 @@ export class BaseService<Schema extends BaseSchema> {
      */
     _createDto: any,
   ) {
-    return record;
+    return this.findOne({ _id: record._id }) as Promise<Schema>;
   }
 
   protected postCreate(
@@ -301,15 +301,21 @@ export class BaseService<Schema extends BaseSchema> {
      */
     _filter?: RootFilterQuery<Schema>,
   ) {
-    return newRecords;
+    return this.model.find({
+      _id: { $in: newRecords.map((record) => record._id) },
+    });
   }
 
   protected postSoftDelete(deletedRecords: Schema[], _filter?: RootFilterQuery<Schema>) {
-    return deletedRecords;
+    return this.model.find({
+      _id: { $in: deletedRecords.map((record) => record._id) },
+    });
   }
 
   protected postRestore(restoredRecords: Schema[], _options?: FindManyOptions<Schema>) {
-    return restoredRecords;
+    return this.model.find({
+      _id: { $in: restoredRecords.map((record) => record._id) },
+    });
   }
 
   private getPaginationProps(options: FindManyOptions<Schema>) {
