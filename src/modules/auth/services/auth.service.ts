@@ -62,7 +62,7 @@ export class AuthService {
 
     if (!existedUser) {
       const userId = randomUUID();
-      newUser = await this.usersService.createOne(userId, {
+      newUser = await this.usersService.createOne({
         _id: userId,
         email,
         password: hashedPassword,

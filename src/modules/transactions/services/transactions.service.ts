@@ -36,7 +36,7 @@ export class TransactionsService extends BaseService<Transaction> {
 
     await this.redisService.del(transactionId);
     if (resultCode === this.MOMO_RESULT_CODE_SUCCESS) {
-      await this.createOne('', transaction);
+      await this.createOne(transaction);
     }
   }
 

@@ -69,14 +69,14 @@ export class BaseService<Schema extends BaseSchema> {
     return this.model.countDocuments(preProcessedOptions.filter);
   }
 
-  async createOne(userId: string, createDto: Partial<Schema>) {
-    const doc = this.preCreateOne(userId, createDto);
+  async createOne(createDto: Partial<Schema>) {
+    const doc = this.preCreateOne(createDto);
     const record = await this.model.create(doc);
     return this.postCreateOne(record, createDto);
   }
 
-  async create(userId: string, createDtos: Partial<Schema>[]) {
-    const docs = this.preCreate(userId, createDtos);
+  async create(createDtos: Partial<Schema>[]) {
+    const docs = this.preCreate(createDtos);
     const records = await this.model.create(...docs);
     return this.postCreate(records, createDtos);
   }
@@ -167,20 +167,12 @@ export class BaseService<Schema extends BaseSchema> {
     return options;
   }
 
-  protected preCreateOne(userId: string, createDto: any): Partial<Schema> {
-    return {
-      ...createDto,
-      createUserId: userId,
-      updateUserId: userId,
-    };
+  protected preCreateOne(createDto: any): Partial<Schema> {
+    return createDto;
   }
 
-  protected preCreate(userId: string, createDtos: any[]): Partial<Schema>[] {
-    return createDtos.map((dto) => ({
-      ...dto,
-      createUserId: userId,
-      updateUserId: userId,
-    }));
+  protected preCreate(createDtos: any[]): Partial<Schema>[] {
+    return createDtos;
   }
 
   protected preUpdate(
