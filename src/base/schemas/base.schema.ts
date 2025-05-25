@@ -29,24 +29,4 @@ export class BaseSchema {
     required: false,
   })
   deleteTimestamp!: Date | null;
-
-  @Prop({
-    type: String,
-    required: true,
-  })
-  createUserId!: string;
-
-  @Prop({
-    type: String,
-    default: null,
-    required: false,
-  })
-  updateUserId: string | null = null;
-
-  @Prop({
-    type: String,
-    default: null,
-    required: false,
-  })
-  deleteUserId: string | null = null;
 }
