@@ -93,6 +93,15 @@ export class UpdateReviewDto {
 
 export class ReviewQueryDto {
   @ApiProperty({
+    description: 'Filter reviews by review ID',
+    required: false,
+    example: 'bcbb434f-7aea-474e-ba12-d9968400ddb0',
+  })
+  @IsOptional()
+  @IsString()
+  id?: string;
+
+  @ApiProperty({
     description: 'Filter reviews by hotel ID',
     required: false,
     example: 'eb4ddc1f-e320-4fbb-8bfa-eed8b06d64aa',

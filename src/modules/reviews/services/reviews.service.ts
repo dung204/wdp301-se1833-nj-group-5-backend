@@ -64,6 +64,10 @@ export class ReviewsService extends BaseService<Review> {
       filters.hotel = reviewQueryDto.hotel;
     }
 
+    if (reviewQueryDto.id) {
+      filters._id = reviewQueryDto.id;
+    }
+
     if (reviewQueryDto.user) {
       filters.user = reviewQueryDto.user;
     }

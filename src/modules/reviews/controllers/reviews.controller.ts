@@ -33,22 +33,7 @@ export class ReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}
 
   @ApiOperation({
-    summary: 'Retrieve all reviews',
-    description: 'Get a list of all reviews',
-  })
-  @ApiSuccessResponse({
-    schema: ReviewResponseDto,
-    isArray: true,
-    description: 'Reviews retrieved successfully',
-  })
-  @Public()
-  @Get()
-  async getAllReviews() {
-    return this.reviewsService.getAllReviews();
-  }
-
-  @ApiOperation({
-    summary: 'Search and filter reviews',
+    summary: 'Search and filter reviews and get all active reviews',
     description: 'Search reviews with pagination, sorting and filtering options',
   })
   @ApiSuccessResponse({
@@ -57,24 +42,9 @@ export class ReviewsController {
     description: 'Reviews retrieved successfully',
   })
   @Public()
-  @Get('/search')
+  @Get('/')
   async searchReviews(@Query() queryDto: QueryDto, @Query() reviewQueryDto: ReviewQueryDto) {
     return this.reviewsService.findReviews({ queryDto, reviewQueryDto });
-  }
-
-  @ApiOperation({
-    summary: 'Get a review by ID',
-    description: 'Retrieve detailed information about a specific review',
-  })
-  @ApiParam({ name: 'id', description: 'Review ID' })
-  @ApiSuccessResponse({
-    schema: ReviewResponseDto,
-    description: 'Review retrieved successfully',
-  })
-  @Public()
-  @Get(':id')
-  async getReviewById(@Param('id') id: string) {
-    return this.reviewsService.getReviewById(id);
   }
 
   @ApiOperation({
@@ -135,37 +105,5 @@ export class ReviewsController {
     return this.reviewsService.restore(currentUser._id, {
       _id: id,
     });
-  }
-
-  @ApiOperation({
-    summary: 'Get reviews by user',
-    description: 'Retrieve all reviews created by a specific user',
-  })
-  @ApiParam({ name: 'userId', description: 'User ID' })
-  @ApiSuccessResponse({
-    schema: ReviewResponseDto,
-    isArray: true,
-    description: 'Reviews retrieved successfully',
-  })
-  @Public()
-  @Get('user/:userId')
-  async getReviewsByUser(@Param('userId') userId: string) {
-    return this.reviewsService.getReviewsByUser(userId);
-  }
-
-  @ApiOperation({
-    summary: 'Get reviews by hotel',
-    description: 'Retrieve all reviews for a specific hotel',
-  })
-  @ApiParam({ name: 'hotelId', description: 'Hotel ID' })
-  @ApiSuccessResponse({
-    schema: ReviewResponseDto,
-    isArray: true,
-    description: 'Reviews retrieved successfully',
-  })
-  @Public()
-  @Get('hotel/:hotelId')
-  async getReviewsByHotel(@Param('hotelId') hotelId: string) {
-    return this.reviewsService.getReviewsByHotel(hotelId);
   }
 }
