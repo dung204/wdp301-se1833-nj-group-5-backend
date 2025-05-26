@@ -62,7 +62,7 @@ export class AuthService {
 
     if (!existedUser) {
       const userId = randomUUID();
-      newUser = await this.usersService.createOne(userId, {
+      newUser = await this.usersService.createOne({
         _id: userId,
         email,
         password: hashedPassword,
@@ -71,12 +71,11 @@ export class AuthService {
       throw new ConflictException('Email has already been registered.');
     } else {
       newUser = (
-        await this.usersService.update(existedUser._id, {
+        await this.usersService.update({
           ...existedUser,
           ...payload,
           password: hashedPassword,
           deleteTimestamp: null,
-          deleteUserId: null,
         })
       )[0];
     }

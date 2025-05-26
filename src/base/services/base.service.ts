@@ -69,26 +69,26 @@ export class BaseService<Schema extends BaseSchema> {
     return this.model.countDocuments(preProcessedOptions.filter);
   }
 
-  async createOne(userId: string, createDto: Partial<Schema>) {
-    const doc = this.preCreateOne(userId, createDto);
+  async createOne(createDto: Partial<Schema>) {
+    const doc = this.preCreateOne(createDto);
     const record = await this.model.create(doc);
     return this.postCreateOne(record, createDto);
   }
 
-  async create(userId: string, createDtos: Partial<Schema>[]) {
-    const docs = this.preCreate(userId, createDtos);
+  async create(createDtos: Partial<Schema>[]) {
+    const docs = this.preCreate(createDtos);
     const records = await this.model.create(...docs);
     return this.postCreate(records, createDtos);
   }
 
-  async update(userId: string, updateDto: Partial<Schema>, filter?: RootFilterQuery<Schema>) {
+  async update(updateDto: Partial<Schema>, filter?: RootFilterQuery<Schema>) {
     const oldRecords = await this.model.find(filter ?? {}).exec();
 
     if (oldRecords.length === 0) {
       throw new NotFoundException('Record(s) not found.');
     }
 
-    const doc = this.preUpdate(userId, updateDto, oldRecords, filter);
+    const doc = this.preUpdate(updateDto, oldRecords, filter);
     await this.model.updateMany(filter ?? {}, doc).exec();
     const newRecords = (await this.model
       .find(filter ?? {})
@@ -101,29 +101,23 @@ export class BaseService<Schema extends BaseSchema> {
     /**
      * The ID of the user who perform the delete operation
      */
-    userId: string,
     filter?: RootFilterQuery<Schema>,
   ) {
-    this.preSoftDelete(userId, filter);
+    this.preSoftDelete(filter);
     const deletedRecords = await this.update(
-      userId,
       {
-        updateUserId: userId,
         deleteTimestamp: new Date(),
-        deleteUserId: userId,
       } as unknown as Partial<Schema>,
       filter,
     );
     return this.postSoftDelete(deletedRecords, filter);
   }
 
-  async restore(userId: string, options?: FindManyOptions<Schema>) {
-    this.preRestore(userId, options);
+  async restore(options?: FindManyOptions<Schema>) {
+    this.preRestore(options);
     const deletedRecords = await this.update(
-      userId,
       {
         deleteTimestamp: null,
-        deleteUserId: null,
       } as unknown as Partial<Schema>,
       options,
     );
@@ -173,24 +167,15 @@ export class BaseService<Schema extends BaseSchema> {
     return options;
   }
 
-  protected preCreateOne(userId: string, createDto: any): Partial<Schema> {
-    return {
-      ...createDto,
-      createUserId: userId,
-      updateUserId: userId,
-    };
+  protected preCreateOne(createDto: any): Partial<Schema> {
+    return createDto;
   }
 
-  protected preCreate(userId: string, createDtos: any[]): Partial<Schema>[] {
-    return createDtos.map((dto) => ({
-      ...dto,
-      createUserId: userId,
-      updateUserId: userId,
-    }));
+  protected preCreate(createDtos: any[]): Partial<Schema>[] {
+    return createDtos;
   }
 
   protected preUpdate(
-    userId: string,
     updateDto: any,
     /**
      * This arg is not used in the base class,
@@ -205,7 +190,6 @@ export class BaseService<Schema extends BaseSchema> {
   ): Partial<Schema> {
     return {
       ...updateDto,
-      updateUserId: userId,
       updateTimestamp: new Date(),
     };
   }
@@ -215,20 +199,10 @@ export class BaseService<Schema extends BaseSchema> {
      * This arg is not used in the base class,
      * but can be used in derived class
      */
-    _userId: string,
-    /**
-     * This arg is not used in the base class,
-     * but can be used in derived class
-     */
     _filter?: RootFilterQuery<Schema>,
   ) {}
 
   protected preRestore(
-    /**
-     * This arg is not used in the base class,
-     * but can be used in derived class
-     */
-    _userId: string,
     /**
      * This arg is not used in the base class,
      * but can be used in derived class
@@ -287,7 +261,7 @@ export class BaseService<Schema extends BaseSchema> {
      */
     _createDto: any,
   ) {
-    return record;
+    return this.findOne({ _id: record._id }) as Promise<Schema>;
   }
 
   protected postCreate(
@@ -319,15 +293,21 @@ export class BaseService<Schema extends BaseSchema> {
      */
     _filter?: RootFilterQuery<Schema>,
   ) {
-    return newRecords;
+    return this.model.find({
+      _id: { $in: newRecords.map((record) => record._id) },
+    });
   }
 
   protected postSoftDelete(deletedRecords: Schema[], _filter?: RootFilterQuery<Schema>) {
-    return deletedRecords;
+    return this.model.find({
+      _id: { $in: deletedRecords.map((record) => record._id) },
+    });
   }
 
   protected postRestore(restoredRecords: Schema[], _options?: FindManyOptions<Schema>) {
-    return restoredRecords;
+    return this.model.find({
+      _id: { $in: restoredRecords.map((record) => record._id) },
+    });
   }
 
   private getPaginationProps(options: FindManyOptions<Schema>) {

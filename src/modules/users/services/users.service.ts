@@ -16,7 +16,7 @@ export class UsersService extends BaseService<User> {
 
   async updateUserProfile(user: User, payload: UpdateUserDto) {
     return (
-      await this.update(user._id, payload, {
+      await this.update(payload, {
         _id: user._id,
       })
     )[0];

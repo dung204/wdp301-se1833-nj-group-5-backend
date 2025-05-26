@@ -114,7 +114,7 @@ export class UsersController {
       throw new ForbiddenException('You can not delete yourself.');
     }
 
-    await this.usersService.softDelete(currentUser._id, {
+    await this.usersService.softDelete({
       _id: id,
     });
   }
@@ -128,8 +128,8 @@ export class UsersController {
   })
   @AllowRoles([Role.ADMIN])
   @Patch('/restore/:id')
-  async restoreUser(@CurrentUser() currentUser: User, @Param('id') id: string) {
-    return this.usersService.restore(currentUser._id, {
+  async restoreUser(@Param('id') id: string) {
+    return this.usersService.restore({
       _id: id,
     });
   }
