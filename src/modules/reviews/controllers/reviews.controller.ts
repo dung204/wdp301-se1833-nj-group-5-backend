@@ -102,7 +102,7 @@ export class ReviewsController {
   @AllowRoles([Role.ADMIN])
   @Patch('/restore/:id')
   async restoreUser(@CurrentUser() currentUser: User, @Param('id') id: string) {
-    return this.reviewsService.restore(currentUser._id, {
+    return this.reviewsService.restore({
       _id: id,
     });
   }

@@ -30,7 +30,7 @@ export class ReviewsService extends BaseService<Review> {
   }
 
   async createReview(user: User, createReviewDto: CreateReviewDto): Promise<Review> {
-    return this.createOne(user._id.toString(), {
+    return this.createOne({
       ...createReviewDto,
       user: user._id,
     });
@@ -48,7 +48,7 @@ export class ReviewsService extends BaseService<Review> {
       throw new ForbiddenException('You do not have permission to update this review');
     }
 
-    return this.update(user._id.toString(), updateReviewDto, { _id: reviewId });
+    return this.update(updateReviewDto, { _id: reviewId });
   }
 
   async findReviews(options: {
@@ -94,7 +94,7 @@ export class ReviewsService extends BaseService<Review> {
       throw new ForbiddenException('You do not have permission to delete this review');
     }
 
-    await this.softDelete(user._id.toString(), { _id: reviewId });
+    await this.softDelete({ _id: reviewId });
   }
 
   async getReviewsByUser(userId: string): Promise<Review[]> {

@@ -40,7 +40,7 @@ export class RoomsService extends BaseService<Room> {
       throw new ForbiddenException('You do not have permission to create rooms for this hotel');
     }
 
-    return this.createOne(user._id.toString(), createRoomDto);
+    return this.createOne(createRoomDto);
   }
 
   async updateRoom(user: User, roomId: string, updateRoomDto: UpdateRoomDto) {
@@ -55,7 +55,7 @@ export class RoomsService extends BaseService<Room> {
       throw new ForbiddenException('You do not have permission to update this room');
     }
 
-    return this.update(user._id.toString(), updateRoomDto, { _id: roomId });
+    return this.update(updateRoomDto, { _id: roomId });
   }
 
   async findRooms(options: {
@@ -115,7 +115,7 @@ export class RoomsService extends BaseService<Room> {
       throw new ForbiddenException('You do not have permission to delete this room');
     }
 
-    await this.softDelete(user._id.toString(), { _id: roomId });
+    await this.softDelete({ _id: roomId });
   }
 
   async getRoomsByHotel(hotelId: string): Promise<Room[]> {
@@ -137,7 +137,7 @@ export class RoomsService extends BaseService<Room> {
       throw new ForbiddenException('You do not have permission to update this room');
     }
 
-    const roomUpdated = await this.update(user._id.toString(), { isActive } as Partial<Room>, {
+    const roomUpdated = await this.update({ isActive } as Partial<Room>, {
       _id: roomId,
     });
 

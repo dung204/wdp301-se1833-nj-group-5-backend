@@ -30,7 +30,7 @@ export class HotelsService extends BaseService<Hotel> {
   }
 
   async createHotel(user: User, createHotelDto: CreateHotelDto): Promise<Hotel> {
-    return this.createOne(user._id.toString(), {
+    return this.createOne({
       ...createHotelDto,
       owner: user._id,
     });
@@ -48,7 +48,7 @@ export class HotelsService extends BaseService<Hotel> {
       throw new ForbiddenException('You do not have permission to update this hotel');
     }
 
-    return this.update(user._id.toString(), updateHotelDto, { _id: hotelId });
+    return this.update(updateHotelDto, { _id: hotelId });
   }
 
   async findHotels(options: {
@@ -85,17 +85,6 @@ export class HotelsService extends BaseService<Hotel> {
       filters.isActive = true;
     }
 
-    // const data = await this.model.find(filters, null, {
-    //   ...queryDto,
-    // });
-
-    // console.log('data', data)
-
-    // console.log('queryDto', {
-    //   queryDto,
-    //   total: data.length,
-    // });
-
     // return this.postFind(data, { queryDto, filter, projection: {}, ...queryDto });
     return this.find({
       queryDto,
@@ -115,17 +104,8 @@ export class HotelsService extends BaseService<Hotel> {
       throw new ForbiddenException('You do not have permission to delete this hotel');
     }
 
-    await this.softDelete(user._id.toString(), { _id: hotelId });
+    await this.softDelete({ _id: hotelId });
   }
-
-  // async restoreHotel(user: User, hotelId: string): Promise<Hotel> {
-  //   // Kiểm tra quyền phục hồi (thường chỉ admin mới có quyền)
-  //   if (user.role !== Role.ADMIN) {
-  //     throw new ForbiddenException('Only admin can restore hotels');
-  //   }
-
-  //   return this.restore(user._id.toString(), { filter: { _id: hotelId } });
-  // }
 
   async getHotelsByOwner(ownerId: string): Promise<Hotel[]> {
     const response = await this.find({
@@ -146,7 +126,7 @@ export class HotelsService extends BaseService<Hotel> {
       throw new ForbiddenException('You do not have permission to update this hotel');
     }
 
-    const hotelUpdated = await this.update(user._id.toString(), { isActive } as Partial<Hotel>, {
+    const hotelUpdated = await this.update({ isActive } as Partial<Hotel>, {
       _id: hotelId,
     });
 

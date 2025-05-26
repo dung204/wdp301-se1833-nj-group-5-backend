@@ -153,25 +153,4 @@ export class HotelsController {
   async getHotelsByOwner(@Param('ownerId') ownerId: string) {
     return this.hotelsService.getHotelsByOwner(ownerId);
   }
-
-  /* 
-  // Uncomment when ready to implement
-  @ApiOperation({
-    summary: 'Restore a deleted hotel',
-    description: 'Restore a previously deleted hotel (only for admin)',
-  })
-  @ApiParam({ name: 'id', description: 'Hotel ID' })
-  @ApiSuccessResponse({
-    schema: HotelResponseDto,
-    description: 'Hotel restored successfully',
-  })
-  @Admin()
-  @Patch(':id/restore')
-  async restoreHotel(
-    @CurrentUser() user: User,
-    @Param('id') id: string,
-  ) {
-    return this.hotelsService.restoreHotel(user, id);
-  }
-  */
 }
