@@ -1,5 +1,5 @@
 export enum BookingStatus {
-  NOT_PAID_YET = 'NOT_PAID_YET',
-  PAID = 'PAID',
+  UPCOMING = 'UPCOMING',
+  COMPLETED = 'COMPLETED',
   CANCELLED = 'CANCELLED',
 }

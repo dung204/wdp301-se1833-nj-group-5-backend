@@ -3,6 +3,8 @@ import { Gender } from '@/modules/users/enums/gender.enum';
 
 export const SwaggerExamples = {
   FULLNAME: 'John Doe',
+  FIRSTNAME: 'John',
+  LASTNAME: 'Doe',
   EMAIL: 'email@example.com',
   PASSWORD: 'password@123456',
   UUID: '9efdce14-b81e-4d03-ad6e-cf95f64667fa',
@@ -17,4 +19,6 @@ export const SwaggerExamples = {
   ORDER_VALUE: 'createTimestamp:DESC',
   ORDER_FIELD: 'createTimestamp',
   ORDER_DIRECTION: 'DESC',
+  PRICE_FROM: 636526.3925,
+  PRICE_TO: 2296416.338,
 };

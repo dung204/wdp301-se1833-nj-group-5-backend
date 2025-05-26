@@ -21,6 +21,6 @@ export function OrderParams(validFields: string[]) {
     IsOptional(),
     IsString({ each: true }),
     IsOrderParams(validFields),
-    Transform(({ value }) => (typeof value === 'string' ? [value] : value)),
+    Transform(({ value }) => (typeof value === 'string' ? value.split(',') : value)),
   );
 }
