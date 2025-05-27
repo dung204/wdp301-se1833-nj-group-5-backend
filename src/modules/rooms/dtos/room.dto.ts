@@ -1,8 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Exclude, Expose, Type } from 'class-transformer';
+import { Exclude, Expose, Transform, Type } from 'class-transformer';
 import {
   IsArray,
-  IsBoolean,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -148,6 +147,7 @@ export class CreateRoomDto {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
+  @Transform(({ value }) => (typeof value === 'string' ? value.split(',') : value))
   services?: string[];
 
   @ApiProperty({
@@ -159,6 +159,7 @@ export class CreateRoomDto {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
+  @Transform(({ value }) => (typeof value === 'string' ? value.split(',') : value))
   images?: string[];
 
   @ApiProperty({
@@ -170,14 +171,6 @@ export class CreateRoomDto {
   @Min(1)
   @Type(() => Number)
   maxQuantity!: number;
-
-  @ApiProperty({
-    description: 'Whether the room is active',
-    example: true,
-  })
-  @IsBoolean()
-  @Type(() => Boolean)
-  isActive!: boolean;
 }
 
 export class UpdateRoomDto {
@@ -232,6 +225,7 @@ export class UpdateRoomDto {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
+  @Transform(({ value }) => (typeof value === 'string' ? value.split(',') : value))
   services?: string[];
 
   @ApiProperty({
@@ -243,6 +237,7 @@ export class UpdateRoomDto {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
+  @Transform(({ value }) => (typeof value === 'string' ? value.split(',') : value))
   images?: string[];
 
   @ApiProperty({
@@ -255,15 +250,6 @@ export class UpdateRoomDto {
   @Min(1)
   @Type(() => Number)
   maxQuantity?: number;
-
-  @ApiProperty({
-    description: 'Whether the room is active',
-    required: false,
-  })
-  @IsOptional()
-  @IsBoolean()
-  @Type(() => Boolean)
-  isActive?: boolean;
 }
 
 export class RoomQueryDto {

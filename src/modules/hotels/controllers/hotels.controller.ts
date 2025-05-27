@@ -45,11 +45,7 @@ export class HotelsController {
   })
   @Public()
   @Get('/')
-  async searchHotels(
-    @CurrentUser() user: User,
-    @Query() queryDto: QueryDto,
-    @Query() hotelQueryDto: HotelQueryDto,
-  ) {
+  async searchHotels(@Query() queryDto: QueryDto, @Query() hotelQueryDto: HotelQueryDto) {
     // Nếu không phải admin, chỉ cho phép xem hotels đang active
     const filter = { deleteTimestamp: null };
     return this.hotelsService.findHotels({ queryDto, hotelQueryDto, filter });
@@ -66,7 +62,7 @@ export class HotelsController {
     description: 'All hotels retrieved successfully',
   })
   @AllowRoles([Role.ADMIN, Role.HOTEL_OWNER])
-  @Get('/admin/all')
+  @Get('/admin/')
   async getAllHotelsForAdmin(
     @CurrentUser() user: User,
     @Query() queryDto: QueryDto,
@@ -173,21 +169,5 @@ export class HotelsController {
     return this.hotelsService.restore({
       _id: id,
     });
-  }
-
-  @ApiOperation({
-    summary: 'Get hotels by owner',
-    description: 'Retrieve all hotels owned by a specific user',
-  })
-  @ApiParam({ name: 'ownerId', description: 'Owner ID' })
-  @ApiSuccessResponse({
-    schema: HotelResponseDto,
-    isArray: true,
-    description: 'Hotels retrieved successfully',
-  })
-  @Public()
-  @Get('owner/:ownerId')
-  async getHotelsByOwner(@Param('ownerId') ownerId: string) {
-    return this.hotelsService.getHotelsByOwner(ownerId);
   }
 }

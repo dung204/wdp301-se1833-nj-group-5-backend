@@ -1,8 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Exclude, Expose, Type } from 'class-transformer';
+import { Exclude, Expose, Transform, Type } from 'class-transformer';
 import {
   IsArray,
-  IsBoolean,
   IsDate,
   IsNotEmpty,
   IsNumber,
@@ -171,6 +170,7 @@ export class CreateHotelDto {
   @ValidateNested() // thông báo cho hệ thống rằng thuộc tính này là một đối tượng lồng nhau
   // nó sẽ có type tương ứng với CheckinTimeRangeDto
   @Type(() => CheckinTimeRangeDto)
+  @Transform(({ value }) => (typeof value === 'string' ? JSON.parse(value) : value))
   checkinTime!: CheckinTimeRangeDto;
 
   @ApiProperty({
@@ -190,6 +190,7 @@ export class CreateHotelDto {
   @IsOptional()
   @IsArray() // kiểm tra xem thuộc tính này có phải là một mảng hay không
   @IsString({ each: true }) // từng phần tử trong mảng phải là một chuỗi
+  @Transform(({ value }) => (typeof value === 'string' ? value.split(',') : value))
   avatar?: string[];
 
   @ApiProperty({
@@ -201,6 +202,7 @@ export class CreateHotelDto {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
+  @Transform(({ value }) => (typeof value === 'string' ? value.split(',') : value))
   services?: string[];
 
   @ApiProperty({
@@ -262,6 +264,7 @@ export class UpdateHotelDto {
   @IsOptional()
   @ValidateNested()
   @Type(() => CheckinTimeRangeDto)
+  @Transform(({ value }) => (typeof value === 'string' ? JSON.parse(value) : value))
   checkinTime?: CheckinTimeRangeDto;
 
   @ApiProperty({
@@ -283,6 +286,7 @@ export class UpdateHotelDto {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
+  @Transform(({ value }) => (typeof value === 'string' ? value.split(',') : value))
   avatar?: string[];
 
   @ApiProperty({
@@ -294,6 +298,7 @@ export class UpdateHotelDto {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
+  @Transform(({ value }) => (typeof value === 'string' ? value.split(',') : value))
   services?: string[];
 
   @ApiProperty({
@@ -303,16 +308,7 @@ export class UpdateHotelDto {
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
-  rating!: number;
-
-  @ApiProperty({
-    description: 'Whether the hotel is active',
-    example: true,
-    required: false,
-  })
-  @IsOptional()
-  @IsBoolean()
-  isActive?: boolean;
+  rating?: number;
 }
 
 export class HotelQueryDto {

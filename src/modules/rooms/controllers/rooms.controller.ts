@@ -8,7 +8,6 @@ import {
   Param,
   Patch,
   Post,
-  Put,
   Query,
 } from '@nestjs/common';
 import { ApiNoContentResponse, ApiOperation, ApiParam } from '@nestjs/swagger';
@@ -109,7 +108,7 @@ export class RoomsController {
     schema: RoomResponseDto,
     description: 'Room updated successfully',
   })
-  @Put(':id')
+  @Patch(':id')
   async updateRoom(
     @CurrentUser() user: User,
     @Param('id') id: string,
@@ -140,7 +139,7 @@ export class RoomsController {
   @ApiNoContentResponse({
     description: 'Room restore successfully',
   })
-  @Patch(':id')
+  @Patch('restore/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async restoreRoom(@Param('id') id: string) {
     return this.roomsService.restore({

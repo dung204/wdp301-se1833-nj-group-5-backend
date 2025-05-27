@@ -32,7 +32,7 @@ export class HotelsService extends BaseService<Hotel> {
   async createHotel(user: User, createHotelDto: CreateHotelDto): Promise<Hotel> {
     return this.createOne({
       ...createHotelDto,
-      owner: user._id,
+      owner: user,
     });
   }
 

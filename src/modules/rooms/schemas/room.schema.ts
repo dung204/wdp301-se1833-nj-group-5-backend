@@ -2,6 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
 
 import { BaseSchema } from '@/base/schemas';
+import { Hotel } from '@/modules/hotels/schemas/hotel.schema';
 
 @Schema()
 export class Room extends BaseSchema {
@@ -17,7 +18,7 @@ export class Room extends BaseSchema {
     ref: 'Hotel',
     required: true,
   })
-  hotel!: string;
+  hotel!: Hotel;
 
   @Prop({
     type: Number,

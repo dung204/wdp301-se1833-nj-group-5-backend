@@ -2,6 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
 
 import { BaseSchema } from '@/base/schemas';
+import { User } from '@/modules/users/schemas/user.schema';
 
 // Định nghĩa interface cho checkinTime
 class CheckinTimeRange {
@@ -36,7 +37,7 @@ export class Hotel extends BaseSchema {
     type: String,
     ref: 'User',
   })
-  owner!: string;
+  owner!: User;
 
   @Prop({
     type: String,
