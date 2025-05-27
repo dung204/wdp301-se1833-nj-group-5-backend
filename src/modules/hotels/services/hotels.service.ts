@@ -64,6 +64,10 @@ export class HotelsService extends BaseService<Hotel> {
       filters.name = { $regex: hotelQueryDto.name, $options: 'i' };
     }
 
+    if (hotelQueryDto.id) {
+      filters._id = hotelQueryDto.id;
+    }
+
     if (hotelQueryDto.address) {
       filters.address = { $regex: hotelQueryDto.address, $options: 'i' };
     }
@@ -78,11 +82,6 @@ export class HotelsService extends BaseService<Hotel> {
       const serviceRegexes = hotelQueryDto.services.map((service) => new RegExp(service, 'i'));
 
       filters.services = { $in: serviceRegexes }; // $in: phù hợp với bất kỳ giá trị nào trong mảng
-    }
-
-    // Mặc định chỉ lấy các khách sạn đang hoạt động
-    if (filters.isActive === undefined) {
-      filters.isActive = true;
     }
 
     // return this.postFind(data, { queryDto, filter, projection: {}, ...queryDto });
@@ -109,7 +108,7 @@ export class HotelsService extends BaseService<Hotel> {
 
   async getHotelsByOwner(ownerId: string): Promise<Hotel[]> {
     const response = await this.find({
-      filter: { owner: ownerId, isActive: true },
+      filter: { owner: ownerId },
     });
     return response.data;
   }

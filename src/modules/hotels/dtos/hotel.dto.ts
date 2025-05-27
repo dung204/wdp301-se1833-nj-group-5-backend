@@ -317,6 +317,15 @@ export class UpdateHotelDto {
 
 export class HotelQueryDto {
   @ApiProperty({
+    description: 'Filter hotels by id',
+    required: false,
+    example: 'eb4ddc1f-e320-4fbb-8bfa-eed8b06d64aa',
+  })
+  @IsOptional()
+  @IsString()
+  id?: string;
+
+  @ApiProperty({
     description: 'Filter hotels by name',
     required: false,
   })
@@ -350,4 +359,25 @@ export class HotelQueryDto {
   @IsArray()
   @IsString({ each: true })
   services?: string[];
+}
+
+export class HotelQueryDtoForAdmin extends HotelQueryDto {
+  @ApiProperty({
+    description: 'Filter hotels by owner ID',
+    required: false,
+    example: 'eb4ddc1f-e320-4fbb-8bfa-eed8b06d64aa',
+  })
+  @IsOptional()
+  @IsString()
+  ownerId?: string;
+
+  @ApiProperty({
+    description: 'Filter hotels by active status ("all" | "true" | "false")',
+    required: false,
+    example: 'true',
+    enum: ['all', 'true', 'false'],
+  })
+  @IsOptional()
+  @IsString()
+  isActive?: string;
 }

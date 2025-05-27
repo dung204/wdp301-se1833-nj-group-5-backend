@@ -8,7 +8,6 @@ import {
   Param,
   Patch,
   Post,
-  Put,
   Query,
 } from '@nestjs/common';
 import { ApiNoContentResponse, ApiOperation, ApiParam } from '@nestjs/swagger';
@@ -16,11 +15,19 @@ import { ApiNoContentResponse, ApiOperation, ApiParam } from '@nestjs/swagger';
 import { ApiSuccessResponse } from '@/base/decorators';
 import { QueryDto } from '@/base/dtos';
 import { Admin } from '@/modules/auth/decorators/admin.decorator';
+import { AllowRoles } from '@/modules/auth/decorators/allow-roles.decorator';
 import { CurrentUser } from '@/modules/auth/decorators/current-user.decorator';
 import { Public } from '@/modules/auth/decorators/public.decorator';
+import { Role } from '@/modules/auth/enums/role.enum';
 import { User } from '@/modules/users/schemas/user.schema';
 
-import { CreateHotelDto, HotelQueryDto, HotelResponseDto, UpdateHotelDto } from '../dtos/hotel.dto';
+import {
+  CreateHotelDto,
+  HotelQueryDto,
+  HotelQueryDtoForAdmin,
+  HotelResponseDto,
+  UpdateHotelDto,
+} from '../dtos/hotel.dto';
 import { HotelsService } from '../services/hotels.service';
 
 @Controller('hotels')
@@ -28,22 +35,7 @@ export class HotelsController {
   constructor(private readonly hotelsService: HotelsService) {}
 
   @ApiOperation({
-    summary: 'Retrieve all active hotels',
-    description: 'Get a list of all active hotels',
-  })
-  @ApiSuccessResponse({
-    schema: HotelResponseDto,
-    isArray: true,
-    description: 'Hotels retrieved successfully',
-  })
-  @Public()
-  @Get()
-  async getAllHotels() {
-    return this.hotelsService.getAllHotels();
-  }
-
-  @ApiOperation({
-    summary: 'Search and filter hotels',
+    summary: 'Search filter hotels, get all hotels, get hotel by ID',
     description: 'Search hotels with pagination, sorting and filtering options',
   })
   @ApiSuccessResponse({
@@ -52,24 +44,70 @@ export class HotelsController {
     description: 'Hotels retrieved successfully',
   })
   @Public()
-  @Get('/search')
-  async searchHotels(@Query() queryDto: QueryDto, @Query() hotelQueryDto: HotelQueryDto) {
-    return this.hotelsService.findHotels({ queryDto, hotelQueryDto });
+  @Get('/')
+  async searchHotels(
+    @CurrentUser() user: User,
+    @Query() queryDto: QueryDto,
+    @Query() hotelQueryDto: HotelQueryDto,
+  ) {
+    // Nếu không phải admin, chỉ cho phép xem hotels đang active
+    const filter = { deleteTimestamp: null };
+    return this.hotelsService.findHotels({ queryDto, hotelQueryDto, filter });
   }
 
   @ApiOperation({
-    summary: 'Get a hotel by ID',
-    description: 'Retrieve detailed information about a specific hotel',
+    summary: 'Get all hotels including deleted ones (Admin only)',
+    description:
+      'Retrieve all hotels with pagination, sorting and filtering options, including soft-deleted hotels',
   })
-  @ApiParam({ name: 'id', description: 'Hotel ID' })
   @ApiSuccessResponse({
     schema: HotelResponseDto,
-    description: 'Hotel retrieved successfully',
+    isArray: true,
+    description: 'All hotels retrieved successfully',
   })
-  @Public()
-  @Get(':id')
-  async getHotelById(@Param('id') id: string) {
-    return this.hotelsService.getHotelById(id);
+  @AllowRoles([Role.ADMIN, Role.HOTEL_OWNER])
+  @Get('/admin/all')
+  async getAllHotelsForAdmin(
+    @CurrentUser() user: User,
+    @Query() queryDto: QueryDto,
+    @Query() hotelQueryDto: HotelQueryDtoForAdmin,
+  ) {
+    const filter = this.buildAdminFilter(user, hotelQueryDto);
+
+    return this.hotelsService.findHotels({
+      queryDto,
+      hotelQueryDto,
+      filter,
+    });
+  }
+
+  private buildAdminFilter(user: User, hotelQueryDto: HotelQueryDtoForAdmin) {
+    const filter: Record<string, any> = {};
+
+    // Add owner filter for non-admin users
+    if (user.role !== Role.ADMIN) {
+      filter.owner = user._id;
+    }
+
+    if (hotelQueryDto.ownerId && user.role === Role.ADMIN) {
+      // If admin is querying by ownerId, apply that filter
+      filter.owner = hotelQueryDto.ownerId;
+    }
+
+    // Add active/deleted filter based on isActive query param
+    if (hotelQueryDto.isActive) {
+      switch (hotelQueryDto.isActive) {
+        case 'true':
+          filter.deleteTimestamp = null;
+          break;
+        case 'false':
+          filter.deleteTimestamp = { $ne: null };
+          break;
+        // case 'all' - no filter needed
+      }
+    }
+
+    return filter;
   }
 
   @ApiOperation({
@@ -96,7 +134,7 @@ export class HotelsController {
     description: 'Hotel updated successfully',
   })
   @Admin()
-  @Put(':id')
+  @Patch(':id')
   async updateHotel(
     @CurrentUser() user: User,
     @Param('id') id: string,
@@ -121,21 +159,20 @@ export class HotelsController {
   }
 
   @ApiOperation({
-    summary: 'Activate/Deactivate a hotel',
-    description: 'Toggle the active status of a hotel (only for owner or admin)',
+    summary: 'Restore a hotel',
+    description: 'Restore a hotel (only for owner or admin)',
   })
   @ApiParam({ name: 'id', description: 'Hotel ID' })
-  @ApiSuccessResponse({
-    schema: HotelResponseDto,
-    description: 'Hotel status updated successfully',
+  @ApiNoContentResponse({
+    description: 'Hotel restore successfully',
   })
-  @Patch(':id/toggle-active')
-  async toggleHotelActive(
-    @CurrentUser() user: User,
-    @Param('id') id: string,
-    @Body('isActive') isActive: boolean,
-  ) {
-    return this.hotelsService.toggleHotelActive(user, id, isActive);
+  @Admin()
+  @Patch('restore/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async restoreHotel(@Param('id') id: string) {
+    return this.hotelsService.restore({
+      _id: id,
+    });
   }
 
   @ApiOperation({

@@ -36,7 +36,7 @@ export class DiscountsService extends BaseService<Discount> {
       throw new ForbiddenException('Only admin can create discounts');
     }
 
-    return this.createOne(user._id.toString(), {
+    return this.createOne({
       ...createDiscountDto,
       usageCount: 0, // Initialize usage count
     });
@@ -53,7 +53,7 @@ export class DiscountsService extends BaseService<Discount> {
       throw new NotFoundException(`Discount with ID ${discountId} not found`);
     }
 
-    return this.update(user._id.toString(), updateDiscountDto, { _id: discountId });
+    return this.update(updateDiscountDto, { _id: discountId });
   }
 
   async findDiscounts(options: {
@@ -97,7 +97,7 @@ export class DiscountsService extends BaseService<Discount> {
       throw new NotFoundException(`Discount with ID ${discountId} not found`);
     }
 
-    await this.softDelete(user._id.toString(), { _id: discountId });
+    await this.softDelete({ _id: discountId });
   }
 
   async toggleDiscountState(
@@ -115,7 +115,7 @@ export class DiscountsService extends BaseService<Discount> {
       throw new NotFoundException(`Discount with ID ${discountId} not found`);
     }
 
-    const discountUpdated = await this.update(user._id.toString(), { state } as Partial<Discount>, {
+    const discountUpdated = await this.update({ state } as Partial<Discount>, {
       _id: discountId,
     });
 
@@ -133,23 +133,4 @@ export class DiscountsService extends BaseService<Discount> {
 
     await this.model.updateOne({ _id: discountId }, { $inc: { usageCount: 1 } });
   }
-
-  // async validateDiscount(discountId: string, userId: string): Promise<Discount> {
-  //   const discount = await this.findOne({
-  //     _id: discountId,
-  //     isActive: true,
-  //     state: DiscountState.ACTIVE,
-  //     expiredTimestamp: { $gt: new Date() }
-  //   });
-
-  //   if (!discount) {
-  //     throw new NotFoundException('Invalid or expired discount');
-  //   }
-
-  //   // Add additional validation logic here if needed
-  //   // For example, check if user has already used this discount
-  //   // Or check if usage count has exceeded maxQualityPerUser
-
-  //   return discount;
-  // }
 }
