@@ -3,6 +3,7 @@ import { HydratedDocument } from 'mongoose';
 
 import { BaseSchema } from '@/base/schemas';
 import { DiscountState } from '@/modules/discounts/enums/discount.enum';
+import { Hotel } from '@/modules/hotels/schemas/hotel.schema';
 
 @Schema()
 export class Discount extends BaseSchema {
@@ -22,8 +23,9 @@ export class Discount extends BaseSchema {
   @Prop({
     type: [String],
     default: [],
+    ref: 'Hotel',
   })
-  applicableHotels!: string[];
+  applicableHotels!: Hotel[];
 
   @Prop({
     type: Number,
@@ -46,5 +48,10 @@ export class Discount extends BaseSchema {
 }
 
 export const DiscountSchema = SchemaFactory.createForClass(Discount);
+
+DiscountSchema.pre(['find', 'findOne', 'findOneAndUpdate'], function (next) {
+  this.populate(['applicableHotels']);
+  next();
+});
 
 export type DiscountDocument = HydratedDocument<Discount>;

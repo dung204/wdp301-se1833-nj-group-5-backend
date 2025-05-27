@@ -52,7 +52,7 @@ export class HotelsController {
   }
 
   @ApiOperation({
-    summary: 'Get all hotels including deleted ones (Admin only)',
+    summary: 'Get all hotels including deleted ones (Admin and hotel owner only)',
     description:
       'Retrieve all hotels with pagination, sorting and filtering options, including soft-deleted hotels',
   })

@@ -5,6 +5,8 @@ import { Model } from 'mongoose';
 import { QueryDto } from '@/base/dtos';
 import { BaseService } from '@/base/services';
 import { Role } from '@/modules/auth/enums/role.enum';
+import { Hotel } from '@/modules/hotels/schemas/hotel.schema';
+import { HotelsService } from '@/modules/hotels/services/hotels.service';
 import { User } from '@/modules/users/schemas/user.schema';
 
 import { CreateDiscountDto, DiscountQueryDto, UpdateDiscountDto } from '../dtos/discount.dto';
@@ -13,7 +15,10 @@ import { Discount } from '../schemas/discount.schema';
 
 @Injectable()
 export class DiscountsService extends BaseService<Discount> {
-  constructor(@InjectModel(Discount.name) protected readonly model: Model<Discount>) {
+  constructor(
+    @InjectModel(Discount.name) protected readonly model: Model<Discount>,
+    private readonly hotelService: HotelsService,
+  ) {
     const logger = new Logger(DiscountsService.name);
     super(model, logger);
   }
@@ -36,9 +41,25 @@ export class DiscountsService extends BaseService<Discount> {
       throw new ForbiddenException('Only admin can create discounts');
     }
 
+    const hotels = [];
+
+    if (createDiscountDto.applicableHotels && createDiscountDto.applicableHotels.length > 0) {
+      for (let i = 0; i < createDiscountDto.applicableHotels.length; i++) {
+        const hotel = await this.hotelService.getHotelById(createDiscountDto.applicableHotels[i]);
+        if (!hotel) {
+          throw new NotFoundException(
+            `Hotel with ID ${createDiscountDto.applicableHotels[i]} not found`,
+          );
+        }
+
+        hotels.push(hotel);
+      }
+    }
+
     return this.createOne({
       ...createDiscountDto,
       usageCount: 0, // Initialize usage count
+      applicableHotels: hotels,
     });
   }
 
@@ -53,7 +74,28 @@ export class DiscountsService extends BaseService<Discount> {
       throw new NotFoundException(`Discount with ID ${discountId} not found`);
     }
 
-    return this.update(updateDiscountDto, { _id: discountId });
+    const hotels = [] as Hotel[];
+    if (updateDiscountDto.applicableHotels && updateDiscountDto.applicableHotels.length > 0) {
+      for (let i = 0; i < updateDiscountDto.applicableHotels.length; i++) {
+        const hotel = await this.hotelService.getHotelById(updateDiscountDto.applicableHotels[i]);
+
+        if (!hotel) {
+          throw new NotFoundException(
+            `Hotel with ID ${updateDiscountDto.applicableHotels[i]} not found`,
+          );
+        }
+
+        hotels.push();
+      }
+    }
+
+    return this.update(
+      {
+        ...updateDiscountDto,
+        applicableHotels: [...hotels],
+      },
+      { _id: discountId },
+    );
   }
 
   async findDiscounts(options: {
@@ -67,6 +109,10 @@ export class DiscountsService extends BaseService<Discount> {
     // Process filters from DiscountQueryDto
     if (discountQueryDto.minAmount) {
       filters.amount = { $gte: discountQueryDto.minAmount };
+    }
+
+    if (discountQueryDto.id) {
+      filters._id = discountQueryDto.id;
     }
 
     if (discountQueryDto.state) {

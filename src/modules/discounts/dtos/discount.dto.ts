@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Exclude, Expose, Type } from 'class-transformer';
+import { Exclude, Expose, Transform, Type } from 'class-transformer';
 import {
   IsArray,
   IsDate,
@@ -14,6 +14,7 @@ import {
 import { SwaggerExamples } from '@/base/constants';
 import { SchemaResponseDto } from '@/base/dtos';
 import { DiscountState } from '@/modules/discounts/enums/discount.enum';
+import { HotelResponseDto } from '@/modules/hotels/dtos/hotel.dto';
 
 @Exclude()
 export class DiscountResponseDto extends SchemaResponseDto {
@@ -40,10 +41,11 @@ export class DiscountResponseDto extends SchemaResponseDto {
 
   @ApiProperty({
     description: 'List of applicable hotels',
-    example: ['hotelId1', 'hotelId2'],
+    type: HotelResponseDto,
+    isArray: true,
   })
   @Expose()
-  applicableHotels!: string[];
+  applicableHotels!: HotelResponseDto[];
 
   @ApiProperty({
     description: 'Number of times this discount has been used',
@@ -98,7 +100,9 @@ export class CreateDiscountDto {
   })
   @IsNotEmpty()
   @IsArray()
-  @IsString({ each: true })
+  @Transform(({ value }) => {
+    return typeof value === 'string' ? value.split(',') : value;
+  })
   applicableHotels!: string[];
 
   @ApiProperty({
@@ -178,6 +182,15 @@ export class UpdateDiscountDto {
 }
 
 export class DiscountQueryDto {
+  @ApiProperty({
+    description: 'Filter by discount ID',
+    required: false,
+    example: '29845802-9abb-474b-96b4-e2c44b6bf089',
+  })
+  @IsOptional()
+  @IsString()
+  id?: string;
+
   @ApiProperty({
     description: 'Filter by minimum amount',
     required: false,

@@ -8,7 +8,6 @@ import {
   Param,
   Patch,
   Post,
-  Put,
   Query,
 } from '@nestjs/common';
 import { ApiNoContentResponse, ApiOperation, ApiParam } from '@nestjs/swagger';
@@ -16,8 +15,10 @@ import { ApiNoContentResponse, ApiOperation, ApiParam } from '@nestjs/swagger';
 import { ApiSuccessResponse } from '@/base/decorators';
 import { QueryDto } from '@/base/dtos';
 import { Admin } from '@/modules/auth/decorators/admin.decorator';
+import { AllowRoles } from '@/modules/auth/decorators/allow-roles.decorator';
 import { CurrentUser } from '@/modules/auth/decorators/current-user.decorator';
 import { Public } from '@/modules/auth/decorators/public.decorator';
+import { Role } from '@/modules/auth/enums/role.enum';
 import { User } from '@/modules/users/schemas/user.schema';
 
 import {
@@ -26,27 +27,11 @@ import {
   DiscountResponseDto,
   UpdateDiscountDto,
 } from '../dtos/discount.dto';
-import { DiscountState } from '../enums/discount.enum';
 import { DiscountsService } from '../services/discounts.service';
 
 @Controller('discounts')
 export class DiscountsController {
   constructor(private readonly discountsService: DiscountsService) {}
-
-  @ApiOperation({
-    summary: 'Retrieve all active discounts',
-    description: 'Get a list of all active discounts',
-  })
-  @ApiSuccessResponse({
-    schema: DiscountResponseDto,
-    isArray: true,
-    description: 'Discounts retrieved successfully',
-  })
-  @Public()
-  @Get()
-  async getAllDiscounts() {
-    return this.discountsService.getAllDiscounts();
-  }
 
   @ApiOperation({
     summary: 'Search and filter discounts',
@@ -58,24 +43,9 @@ export class DiscountsController {
     description: 'Discounts retrieved successfully',
   })
   @Public()
-  @Get('/search')
+  @Get('/')
   async searchDiscounts(@Query() queryDto: QueryDto, @Query() discountQueryDto: DiscountQueryDto) {
     return this.discountsService.findDiscounts({ queryDto, discountQueryDto });
-  }
-
-  @ApiOperation({
-    summary: 'Get a discount by ID',
-    description: 'Retrieve detailed information about a specific discount',
-  })
-  @ApiParam({ name: 'id', description: 'Discount ID' })
-  @ApiSuccessResponse({
-    schema: DiscountResponseDto,
-    description: 'Discount retrieved successfully',
-  })
-  @Public()
-  @Get(':id')
-  async getDiscountById(@Param('id') id: string) {
-    return this.discountsService.getDiscountById(id);
   }
 
   @ApiOperation({
@@ -86,7 +56,7 @@ export class DiscountsController {
     schema: DiscountResponseDto,
     description: 'Discount created successfully',
   })
-  @Admin()
+  @AllowRoles([Role.ADMIN, Role.HOTEL_OWNER])
   @Post()
   async createDiscount(@CurrentUser() user: User, @Body() createDiscountDto: CreateDiscountDto) {
     return this.discountsService.createDiscount(user, createDiscountDto);
@@ -102,7 +72,7 @@ export class DiscountsController {
     description: 'Discount updated successfully',
   })
   @Admin()
-  @Put(':id')
+  @Patch(':id')
   async updateDiscount(
     @CurrentUser() user: User,
     @Param('id') id: string,
@@ -127,22 +97,20 @@ export class DiscountsController {
   }
 
   @ApiOperation({
-    summary: 'Change discount state',
-    description: 'Change the state of a discount (admin only)',
+    summary: 'Restore a discount',
+    description: 'Soft restore a discount (admin only)',
   })
   @ApiParam({ name: 'id', description: 'Discount ID' })
-  @ApiSuccessResponse({
-    schema: DiscountResponseDto,
-    description: 'Discount state updated successfully',
+  @ApiNoContentResponse({
+    description: 'Discount restored successfully',
   })
   @Admin()
-  @Patch(':id/state')
-  async toggleDiscountState(
-    @CurrentUser() user: User,
-    @Param('id') id: string,
-    @Body('state') state: DiscountState,
-  ) {
-    return this.discountsService.toggleDiscountState(user, id, state);
+  @Delete('restore/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async restoreDiscount(@CurrentUser() user: User, @Param('id') id: string) {
+    return this.discountsService.restore({
+      _id: id,
+    });
   }
 
   // @ApiOperation({
