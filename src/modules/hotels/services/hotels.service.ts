@@ -22,7 +22,7 @@ export class HotelsService extends BaseService<Hotel> {
   }
 
   async getHotelById(id: string): Promise<Hotel> {
-    const hotel = await this.findOne({ _id: id, isActive: true });
+    const hotel = await this.findOne({ _id: id });
     if (!hotel) {
       throw new NotFoundException(`Hotel with ID ${id} not found`);
     }

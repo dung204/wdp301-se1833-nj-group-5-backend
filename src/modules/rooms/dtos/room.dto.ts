@@ -268,6 +268,15 @@ export class UpdateRoomDto {
 
 export class RoomQueryDto {
   @ApiProperty({
+    description: 'Filter rooms by room ID',
+    example: '0516a80a-2c32-4606-b606-7e5af878079f',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  id?: string;
+
+  @ApiProperty({
     description: 'Filter rooms by hotel ID',
     example: '60d21b4667d0d8992e610c85',
     required: false,
@@ -320,4 +329,16 @@ export class RoomQueryDto {
   @IsArray()
   @IsString({ each: true })
   services?: string[];
+}
+
+export class RoomQueryAdminDto extends RoomQueryDto {
+  @ApiProperty({
+    description: 'Filter rooms by active status',
+    required: false,
+    example: 'true',
+    enum: ['all', 'true', 'false'],
+  })
+  @IsOptional()
+  @IsString()
+  isActive?: string;
 }

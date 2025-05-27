@@ -15,34 +15,26 @@ import { ApiNoContentResponse, ApiOperation, ApiParam } from '@nestjs/swagger';
 
 import { ApiSuccessResponse } from '@/base/decorators';
 import { QueryDto } from '@/base/dtos';
+import { AllowRoles } from '@/modules/auth/decorators/allow-roles.decorator';
 import { CurrentUser } from '@/modules/auth/decorators/current-user.decorator';
 import { Public } from '@/modules/auth/decorators/public.decorator';
+import { Role } from '@/modules/auth/enums/role.enum';
+import {
+  CreateRoomDto,
+  RoomQueryAdminDto,
+  RoomQueryDto,
+  RoomResponseDto,
+  UpdateRoomDto,
+} from '@/modules/rooms/dtos/room.dto';
+import { RoomsService } from '@/modules/rooms/services/rooms.service';
 import { User } from '@/modules/users/schemas/user.schema';
-
-import { CreateRoomDto, RoomQueryDto, RoomResponseDto, UpdateRoomDto } from '../dtos/room.dto';
-import { RoomsService } from '../services/rooms.service';
 
 @Controller('rooms')
 export class RoomsController {
   constructor(private readonly roomsService: RoomsService) {}
 
   @ApiOperation({
-    summary: 'Retrieve all active rooms',
-    description: 'Get a list of all active rooms',
-  })
-  @ApiSuccessResponse({
-    schema: RoomResponseDto,
-    isArray: true,
-    description: 'Rooms retrieved successfully',
-  })
-  @Public()
-  @Get()
-  async getAllRooms() {
-    return this.roomsService.getAllRooms();
-  }
-
-  @ApiOperation({
-    summary: 'Search and filter rooms',
+    summary: 'Search filter rooms, get all rooms',
     description: 'Search rooms with pagination, sorting and filtering options',
   })
   @ApiSuccessResponse({
@@ -51,40 +43,48 @@ export class RoomsController {
     description: 'Rooms retrieved successfully',
   })
   @Public()
-  @Get('/search')
+  @Get('/')
   async searchRooms(@Query() queryDto: QueryDto, @Query() roomQueryDto: RoomQueryDto) {
-    return this.roomsService.findRooms({ queryDto, roomQueryDto });
+    return this.roomsService.findRooms({
+      queryDto,
+      roomQueryDto,
+      filter: { deleteTimestamp: null }, // Only active rooms
+    });
   }
 
   @ApiOperation({
-    summary: 'Get rooms by hotel',
-    description: 'Retrieve all rooms for a specific hotel',
+    summary: 'Search filter rooms, get all rooms',
+    description: 'Search rooms with pagination, sorting and filtering options',
   })
-  @ApiParam({ name: 'hotelId', description: 'Hotel ID' })
   @ApiSuccessResponse({
     schema: RoomResponseDto,
     isArray: true,
-    description: 'Hotel rooms retrieved successfully',
+    description: 'Rooms retrieved successfully',
   })
-  @Public()
-  @Get('/hotel/:hotelId')
-  async getRoomsByHotel(@Param('hotelId') hotelId: string) {
-    return this.roomsService.getRoomsByHotel(hotelId);
-  }
+  @AllowRoles([Role.ADMIN, Role.HOTEL_OWNER])
+  @Get('/admin')
+  async searchRoomAdmin(
+    @CurrentUser() user: User,
+    @Query() queryDto: QueryDto,
+    @Query() roomQueryDto: RoomQueryAdminDto,
+  ) {
+    //
+    const filter: Record<string, any> = {};
 
-  @ApiOperation({
-    summary: 'Get a room by ID',
-    description: 'Retrieve detailed information about a specific room',
-  })
-  @ApiParam({ name: 'id', description: 'Room ID' })
-  @ApiSuccessResponse({
-    schema: RoomResponseDto,
-    description: 'Room retrieved successfully',
-  })
-  @Public()
-  @Get(':id')
-  async getRoomById(@Param('id') id: string) {
-    return this.roomsService.getRoomById(id);
+    // Add active/deleted filter based on isActive query param
+    if (roomQueryDto.isActive) {
+      switch (roomQueryDto.isActive) {
+        case 'true':
+          filter.deleteTimestamp = null;
+          break;
+        case 'false':
+          filter.deleteTimestamp = { $ne: null };
+          break;
+        // case 'all' - no filter needed
+      }
+    }
+
+    return this.roomsService.findRooms({ queryDto, roomQueryDto, filter });
   }
 
   @ApiOperation({
@@ -133,20 +133,18 @@ export class RoomsController {
   }
 
   @ApiOperation({
-    summary: 'Activate/Deactivate a room',
-    description: 'Toggle the active status of a room (only for hotel owner or admin)',
+    summary: 'Restore a room',
+    description: 'Restore a room (only for hotel owner or admin)',
   })
   @ApiParam({ name: 'id', description: 'Room ID' })
-  @ApiSuccessResponse({
-    schema: RoomResponseDto,
-    description: 'Room status updated successfully',
+  @ApiNoContentResponse({
+    description: 'Room restore successfully',
   })
-  @Patch(':id/toggle-active')
-  async toggleRoomActive(
-    @CurrentUser() user: User,
-    @Param('id') id: string,
-    @Body('isActive') isActive: boolean,
-  ) {
-    return this.roomsService.toggleRoomActive(user, id, isActive);
+  @Patch(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async restoreRoom(@Param('id') id: string) {
+    return this.roomsService.restore({
+      _id: id,
+    });
   }
 }
