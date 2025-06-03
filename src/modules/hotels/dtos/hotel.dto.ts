@@ -11,7 +11,7 @@ import {
 } from 'class-validator';
 
 import { SwaggerExamples } from '@/base/constants';
-import { SchemaResponseDto } from '@/base/dtos';
+import { QueryDto, SchemaResponseDto } from '@/base/dtos';
 import { UserProfileDto } from '@/modules/users/dtos/user.dtos';
 
 class CheckinTimeRangeDto {
@@ -311,7 +311,7 @@ export class UpdateHotelDto {
   rating?: number;
 }
 
-export class HotelQueryDto {
+export class HotelQueryDto extends QueryDto {
   @ApiProperty({
     description: 'Filter hotels by id',
     required: false,

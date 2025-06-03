@@ -13,7 +13,6 @@ import {
 import { ApiNoContentResponse, ApiOperation, ApiParam } from '@nestjs/swagger';
 
 import { ApiSuccessResponse } from '@/base/decorators';
-import { QueryDto } from '@/base/dtos';
 import { Admin } from '@/modules/auth/decorators/admin.decorator';
 import { AllowRoles } from '@/modules/auth/decorators/allow-roles.decorator';
 import { CurrentUser } from '@/modules/auth/decorators/current-user.decorator';
@@ -45,10 +44,14 @@ export class HotelsController {
   })
   @Public()
   @Get('/')
-  async searchHotels(@Query() queryDto: QueryDto, @Query() hotelQueryDto: HotelQueryDto) {
+  async searchHotels(@Query() hotelQueryDto: HotelQueryDto) {
     // Nếu không phải admin, chỉ cho phép xem hotels đang active
-    const filter = { deleteTimestamp: null };
-    return this.hotelsService.findHotels({ queryDto, hotelQueryDto, filter });
+    // const filter = { deleteTimestamp: null };
+    // return this.hotelsService.findHotels({ queryDto, hotelQueryDto, filter });
+    return this.hotelsService.find({
+      queryDto: hotelQueryDto,
+      filter: { deleteTimestamp: null },
+    });
   }
 
   @ApiOperation({
@@ -65,16 +68,22 @@ export class HotelsController {
   @Get('/admin/')
   async getAllHotelsForAdmin(
     @CurrentUser() user: User,
-    @Query() queryDto: QueryDto,
     @Query() hotelQueryDto: HotelQueryDtoForAdmin,
   ) {
-    const filter = this.buildAdminFilter(user, hotelQueryDto);
+    // const filter = this.buildAdminFilter(user, hotelQueryDto);
 
-    return this.hotelsService.findHotels({
-      queryDto,
-      hotelQueryDto,
-      filter,
-    });
+    // return this.hotelsService.findHotels({
+    //   queryDto,
+    //   hotelQueryDto,
+    //   filter,
+    // });
+
+    return this.hotelsService.find(
+      {
+        queryDto: hotelQueryDto,
+      },
+      user,
+    );
   }
 
   private buildAdminFilter(user: User, hotelQueryDto: HotelQueryDtoForAdmin) {

@@ -2,12 +2,11 @@ import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nest
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 
-import { QueryDto } from '@/base/dtos';
-import { BaseService } from '@/base/services';
+import { BaseService, FindManyOptions } from '@/base/services';
 import { Role } from '@/modules/auth/enums/role.enum';
 import { User } from '@/modules/users/schemas/user.schema';
 
-import { CreateHotelDto, HotelQueryDto, UpdateHotelDto } from '../dtos/hotel.dto';
+import { CreateHotelDto, HotelQueryDtoForAdmin, UpdateHotelDto } from '../dtos/hotel.dto';
 import { Hotel } from '../schemas/hotel.schema';
 
 @Injectable()
@@ -15,10 +14,6 @@ export class HotelsService extends BaseService<Hotel> {
   constructor(@InjectModel(Hotel.name) protected readonly model: Model<Hotel>) {
     const logger = new Logger(HotelsService.name);
     super(model, logger);
-  }
-
-  async getAllHotels() {
-    return this.find({ filter: { isActive: true } });
   }
 
   async getHotelById(id: string): Promise<Hotel> {
@@ -51,44 +46,55 @@ export class HotelsService extends BaseService<Hotel> {
     return this.update(updateHotelDto, { _id: hotelId });
   }
 
-  async findHotels(options: {
-    queryDto: QueryDto;
-    hotelQueryDto?: HotelQueryDto;
-    filter?: Record<string, unknown>;
-  }) {
-    const { queryDto, hotelQueryDto = {}, filter = {} } = options;
-    const filters: Record<string, any> = { ...filter };
+  protected preFind(options: FindManyOptions<Hotel>, currentUser?: User): FindManyOptions<Hotel> {
+    const findOptions = super.preFind(options, currentUser);
+    const hotelQueryDto = findOptions.queryDto as HotelQueryDtoForAdmin;
 
-    // Xử lý các filter từ HotelQueryDto
-    if (hotelQueryDto.name) {
-      filters.name = { $regex: hotelQueryDto.name, $options: 'i' };
+    findOptions.filter = {
+      ...findOptions.filter,
+      ...(hotelQueryDto.name && { name: { $regex: hotelQueryDto.name, $options: 'i' } }),
+      ...(hotelQueryDto.id && { _id: hotelQueryDto.id }),
+      ...(hotelQueryDto.address && { address: { $regex: hotelQueryDto.address, $options: 'i' } }),
+      ...(hotelQueryDto.minRating && { rating: { $gte: hotelQueryDto.minRating } }),
+      ...(hotelQueryDto.services &&
+        hotelQueryDto.services.length > 0 && {
+          services: { $in: hotelQueryDto.services.map((service) => new RegExp(service, 'i')) },
+        }),
+    };
+
+    if (currentUser?.role === Role.HOTEL_OWNER) {
+      findOptions.filter = {
+        ...findOptions.filter,
+        owner: currentUser._id,
+      };
     }
 
-    if (hotelQueryDto.id) {
-      filters._id = hotelQueryDto.id;
+    if (hotelQueryDto.ownerId && currentUser?.role === Role.ADMIN) {
+      // If admin is querying by ownerId, apply that filter
+      findOptions.filter = {
+        ...findOptions.filter,
+        owner: hotelQueryDto.ownerId,
+      };
     }
 
-    if (hotelQueryDto.address) {
-      filters.address = { $regex: hotelQueryDto.address, $options: 'i' };
+    if (hotelQueryDto.isActive) {
+      switch (hotelQueryDto.isActive) {
+        case 'true':
+          findOptions.filter = {
+            ...findOptions.filter,
+            deleteTimestamp: null,
+          };
+          break;
+        case 'false':
+          findOptions.filter = {
+            ...findOptions.filter,
+            deleteTimestamp: { $ne: null },
+          };
+          break;
+      }
     }
 
-    if (hotelQueryDto.minRating) {
-      filters.rating = { $gte: hotelQueryDto.minRating };
-    }
-
-    // Cũng có thể áp dụng tìm kiếm theo services tương tự
-    if (hotelQueryDto.services && hotelQueryDto.services.length > 0) {
-      // Tìm kiếm các khách sạn có ít nhất một dịch vụ khớp với từ khóa tìm kiếm
-      const serviceRegexes = hotelQueryDto.services.map((service) => new RegExp(service, 'i'));
-
-      filters.services = { $in: serviceRegexes }; // $in: phù hợp với bất kỳ giá trị nào trong mảng
-    }
-
-    // return this.postFind(data, { queryDto, filter, projection: {}, ...queryDto });
-    return this.find({
-      queryDto,
-      filter: filters,
-    });
+    return findOptions;
   }
 
   async deleteHotel(user: User, hotelId: string): Promise<void> {
@@ -104,34 +110,5 @@ export class HotelsService extends BaseService<Hotel> {
     }
 
     await this.softDelete({ _id: hotelId });
-  }
-
-  async getHotelsByOwner(ownerId: string): Promise<Hotel[]> {
-    const response = await this.find({
-      filter: { owner: ownerId },
-    });
-    return response.data;
-  }
-
-  async toggleHotelActive(user: User, hotelId: string, isActive: boolean): Promise<Hotel> {
-    const hotel = await this.findOne({ _id: hotelId });
-
-    if (!hotel) {
-      throw new NotFoundException(`Hotel with ID ${hotelId} not found`);
-    }
-
-    // Kiểm tra quyền cập nhật
-    if (hotel.owner.toString() !== user._id.toString() && user.role !== Role.ADMIN) {
-      throw new ForbiddenException('You do not have permission to update this hotel');
-    }
-
-    const hotelUpdated = await this.update({ isActive } as Partial<Hotel>, {
-      _id: hotelId,
-    });
-
-    if (!hotelUpdated || hotelUpdated.length === 0) {
-      throw new NotFoundException(`Hotel with ID ${hotelId} not found`);
-    }
-    return hotelUpdated[0];
   }
 }

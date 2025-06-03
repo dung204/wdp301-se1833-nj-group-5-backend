@@ -6,7 +6,7 @@ import { User } from '@/modules/users/schemas/user.schema';
 import { PaginationDto, QueryDto } from '../dtos';
 import { BaseSchema } from '../schemas';
 
-type FindManyOptions<TModel> = {
+export type FindManyOptions<TModel> = {
   queryDto?: QueryDto & Record<string, any>;
   filter?: RootFilterQuery<TModel>;
 } & QueryOptions<TModel>;
