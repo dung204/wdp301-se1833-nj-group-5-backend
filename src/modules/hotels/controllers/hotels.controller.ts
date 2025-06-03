@@ -11,13 +11,14 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiNoContentResponse, ApiOperation, ApiParam } from '@nestjs/swagger';
+import { plainToInstance } from 'class-transformer';
 
 import { ApiSuccessResponse } from '@/base/decorators';
-import { Admin } from '@/modules/auth/decorators/admin.decorator';
 import { AllowRoles } from '@/modules/auth/decorators/allow-roles.decorator';
 import { CurrentUser } from '@/modules/auth/decorators/current-user.decorator';
 import { Public } from '@/modules/auth/decorators/public.decorator';
 import { Role } from '@/modules/auth/enums/role.enum';
+import { Hotel } from '@/modules/hotels/schemas/hotel.schema';
 import { User } from '@/modules/users/schemas/user.schema';
 
 import {
@@ -33,6 +34,10 @@ import { HotelsService } from '../services/hotels.service';
 export class HotelsController {
   constructor(private readonly hotelsService: HotelsService) {}
 
+  private transformToDto(data: Hotel | Hotel[]): HotelResponseDto | HotelResponseDto[] {
+    return plainToInstance(HotelResponseDto, data);
+  }
+
   @ApiOperation({
     summary: 'Search filter hotels, get all hotels, get hotel by ID',
     description: 'Search hotels with pagination, sorting and filtering options',
@@ -45,13 +50,15 @@ export class HotelsController {
   @Public()
   @Get('/')
   async searchHotels(@Query() hotelQueryDto: HotelQueryDto) {
-    // Nếu không phải admin, chỉ cho phép xem hotels đang active
-    // const filter = { deleteTimestamp: null };
-    // return this.hotelsService.findHotels({ queryDto, hotelQueryDto, filter });
-    return this.hotelsService.find({
+    const result = await this.hotelsService.find({
       queryDto: hotelQueryDto,
       filter: { deleteTimestamp: null },
     });
+
+    return {
+      data: this.transformToDto(result.data),
+      metadata: result.metadata,
+    };
   }
 
   @ApiOperation({
@@ -70,49 +77,17 @@ export class HotelsController {
     @CurrentUser() user: User,
     @Query() hotelQueryDto: HotelQueryDtoForAdmin,
   ) {
-    // const filter = this.buildAdminFilter(user, hotelQueryDto);
-
-    // return this.hotelsService.findHotels({
-    //   queryDto,
-    //   hotelQueryDto,
-    //   filter,
-    // });
-
-    return this.hotelsService.find(
+    const result = await this.hotelsService.find(
       {
         queryDto: hotelQueryDto,
       },
       user,
     );
-  }
 
-  private buildAdminFilter(user: User, hotelQueryDto: HotelQueryDtoForAdmin) {
-    const filter: Record<string, any> = {};
-
-    // Add owner filter for non-admin users
-    if (user.role !== Role.ADMIN) {
-      filter.owner = user._id;
-    }
-
-    if (hotelQueryDto.ownerId && user.role === Role.ADMIN) {
-      // If admin is querying by ownerId, apply that filter
-      filter.owner = hotelQueryDto.ownerId;
-    }
-
-    // Add active/deleted filter based on isActive query param
-    if (hotelQueryDto.isActive) {
-      switch (hotelQueryDto.isActive) {
-        case 'true':
-          filter.deleteTimestamp = null;
-          break;
-        case 'false':
-          filter.deleteTimestamp = { $ne: null };
-          break;
-        // case 'all' - no filter needed
-      }
-    }
-
-    return filter;
+    return {
+      data: this.transformToDto(result.data),
+      metadata: result.metadata,
+    };
   }
 
   @ApiOperation({
@@ -123,10 +98,14 @@ export class HotelsController {
     schema: HotelResponseDto,
     description: 'Hotel created successfully',
   })
-  @Admin()
+  @AllowRoles([Role.ADMIN, Role.HOTEL_OWNER])
   @Post()
   async createHotel(@CurrentUser() user: User, @Body() createHotelDto: CreateHotelDto) {
-    return this.hotelsService.createHotel(user, createHotelDto);
+    const hotel = await this.hotelsService.createOne({
+      ...createHotelDto,
+      owner: user,
+    });
+    return this.transformToDto(hotel);
   }
 
   @ApiOperation({
@@ -138,14 +117,14 @@ export class HotelsController {
     schema: HotelResponseDto,
     description: 'Hotel updated successfully',
   })
-  @Admin()
+  @AllowRoles([Role.ADMIN, Role.HOTEL_OWNER])
   @Patch(':id')
   async updateHotel(
     @CurrentUser() user: User,
     @Param('id') id: string,
     @Body() updateHotelDto: UpdateHotelDto,
   ) {
-    return this.hotelsService.updateHotel(user, id, updateHotelDto);
+    return this.hotelsService.update(updateHotelDto, { _id: id }, user);
   }
 
   @ApiOperation({
@@ -156,10 +135,11 @@ export class HotelsController {
   @ApiNoContentResponse({
     description: 'Hotel deleted successfully',
   })
-  @Admin()
+  @AllowRoles([Role.ADMIN, Role.HOTEL_OWNER])
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteHotel(@CurrentUser() user: User, @Param('id') id: string) {
+    // return this.hotelsService.softDelete({_id: id}, user);
     return this.hotelsService.deleteHotel(user, id);
   }
 
@@ -168,15 +148,18 @@ export class HotelsController {
     description: 'Restore a hotel (only for owner or admin)',
   })
   @ApiParam({ name: 'id', description: 'Hotel ID' })
-  @ApiNoContentResponse({
+  @ApiSuccessResponse({
+    schema: HotelResponseDto,
     description: 'Hotel restore successfully',
   })
-  @Admin()
+  @AllowRoles([Role.ADMIN, Role.HOTEL_OWNER])
   @Patch('restore/:id')
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @HttpCode(HttpStatus.OK)
   async restoreHotel(@Param('id') id: string) {
-    return this.hotelsService.restore({
+    const result = await this.hotelsService.restore({
       _id: id,
     });
+
+    return this.transformToDto(result);
   }
 }

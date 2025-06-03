@@ -81,14 +81,14 @@ export class BaseService<Schema extends BaseSchema> {
     return this.postCreate(records, createDtos);
   }
 
-  async update(updateDto: Partial<Schema>, filter?: RootFilterQuery<Schema>) {
+  async update(updateDto: Partial<Schema>, filter?: RootFilterQuery<Schema>, currentUser?: User) {
     const oldRecords = await this.model.find(filter ?? {}).exec();
 
     if (oldRecords.length === 0) {
       throw new NotFoundException('Record(s) not found.');
     }
 
-    const doc = this.preUpdate(updateDto, oldRecords, filter);
+    const doc = this.preUpdate(updateDto, oldRecords, filter, currentUser);
     await this.model.updateMany(filter ?? {}, doc).exec();
     const newRecords = (await this.model
       .find(filter ?? {})
@@ -102,8 +102,9 @@ export class BaseService<Schema extends BaseSchema> {
      * The ID of the user who perform the delete operation
      */
     filter?: RootFilterQuery<Schema>,
+    _currentUser?: User,
   ) {
-    this.preSoftDelete(filter);
+    this.preSoftDelete(filter, _currentUser);
     const deletedRecords = await this.update(
       {
         deleteTimestamp: new Date(),
@@ -187,6 +188,7 @@ export class BaseService<Schema extends BaseSchema> {
      * but can be used in derived class
      */
     _filter?: RootFilterQuery<Schema>,
+    _currentUser?: User,
   ): Partial<Schema> {
     return {
       ...updateDto,
@@ -200,6 +202,7 @@ export class BaseService<Schema extends BaseSchema> {
      * but can be used in derived class
      */
     _filter?: RootFilterQuery<Schema>,
+    _currentUser?: User,
   ) {}
 
   protected preRestore(

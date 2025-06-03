@@ -62,6 +62,7 @@ export class HotelResponseDto extends SchemaResponseDto {
     type: UserProfileDto,
   })
   @Expose()
+  @Type(() => UserProfileDto)
   owner!: UserProfileDto;
 
   @ApiProperty({

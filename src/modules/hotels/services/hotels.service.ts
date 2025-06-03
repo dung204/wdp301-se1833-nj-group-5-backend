@@ -1,6 +1,6 @@
 import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, RootFilterQuery } from 'mongoose';
 
 import { BaseService, FindManyOptions } from '@/base/services';
 import { Role } from '@/modules/auth/enums/role.enum';
@@ -31,19 +31,59 @@ export class HotelsService extends BaseService<Hotel> {
     });
   }
 
-  async updateHotel(user: User, hotelId: string, updateHotelDto: UpdateHotelDto) {
+  // protected async preSoftDelete(_filter?: RootFilterQuery<Hotel> | undefined, _currentUser?: User): Promise<void> {
+  //   if (!_filter || Object.keys(_filter).length === 0) {
+  //     throw new NotFoundException('No hotel found to delete');
+  //   }
+
+  //   const { _id } = _filter as { _id: string };
+  //   const hotel = await this.getHotelById(_id);
+  //   if (!hotel) {
+  //     throw new NotFoundException(`Hotel with ID ${_id} not found`);
+  //   }
+
+  //   if(hotel.owner.toString() !== _currentUser?._id.toString() && _currentUser?.role !== Role.ADMIN) {
+  //     throw new ForbiddenException('You do not have permission to delete this hotel');
+  //   }
+  // }
+
+  async deleteHotel(user: User, hotelId: string): Promise<void> {
     const hotel = await this.findOne({ _id: hotelId });
 
     if (!hotel) {
       throw new NotFoundException(`Hotel with ID ${hotelId} not found`);
     }
 
-    // Kiểm tra xem người dùng có phải chủ sở hữu hoặc admin không
+    // Kiểm tra quyền xóa
     if (hotel.owner.toString() !== user._id.toString() && user.role !== Role.ADMIN) {
+      throw new ForbiddenException('You do not have permission to delete this hotel');
+    }
+
+    await this.softDelete({ _id: hotelId });
+  }
+
+  protected preUpdate(
+    updateDto: UpdateHotelDto,
+    _oldRecords: Hotel[],
+    _filter?: RootFilterQuery<Hotel> | undefined,
+    _currentUser?: User,
+  ): Partial<Hotel> {
+    if (_oldRecords.length === 0) {
+      throw new NotFoundException('Hotel not found for update');
+    }
+
+    const oldHotel = _oldRecords[0];
+    if (
+      oldHotel.owner.toString() !== _currentUser?._id.toString() &&
+      _currentUser?.role !== Role.ADMIN
+    ) {
       throw new ForbiddenException('You do not have permission to update this hotel');
     }
 
-    return this.update(updateHotelDto, { _id: hotelId });
+    return {
+      ...updateDto,
+      updateTimestamp: new Date(),
+    };
   }
 
   protected preFind(options: FindManyOptions<Hotel>, currentUser?: User): FindManyOptions<Hotel> {
@@ -95,20 +135,5 @@ export class HotelsService extends BaseService<Hotel> {
     }
 
     return findOptions;
-  }
-
-  async deleteHotel(user: User, hotelId: string): Promise<void> {
-    const hotel = await this.findOne({ _id: hotelId });
-
-    if (!hotel) {
-      throw new NotFoundException(`Hotel with ID ${hotelId} not found`);
-    }
-
-    // Kiểm tra quyền xóa
-    if (hotel.owner.toString() !== user._id.toString() && user.role !== Role.ADMIN) {
-      throw new ForbiddenException('You do not have permission to delete this hotel');
-    }
-
-    await this.softDelete({ _id: hotelId });
   }
 }

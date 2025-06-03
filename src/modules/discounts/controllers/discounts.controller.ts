@@ -14,7 +14,6 @@ import { ApiNoContentResponse, ApiOperation, ApiParam } from '@nestjs/swagger';
 
 import { ApiSuccessResponse } from '@/base/decorators';
 import { QueryDto } from '@/base/dtos';
-import { Admin } from '@/modules/auth/decorators/admin.decorator';
 import { AllowRoles } from '@/modules/auth/decorators/allow-roles.decorator';
 import { CurrentUser } from '@/modules/auth/decorators/current-user.decorator';
 import { Public } from '@/modules/auth/decorators/public.decorator';
@@ -71,7 +70,7 @@ export class DiscountsController {
     schema: DiscountResponseDto,
     description: 'Discount updated successfully',
   })
-  @Admin()
+  @AllowRoles([Role.ADMIN])
   @Patch(':id')
   async updateDiscount(
     @CurrentUser() user: User,
@@ -89,7 +88,7 @@ export class DiscountsController {
   @ApiNoContentResponse({
     description: 'Discount deleted successfully',
   })
-  @Admin()
+  @AllowRoles([Role.ADMIN])
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteDiscount(@CurrentUser() user: User, @Param('id') id: string) {
@@ -104,7 +103,7 @@ export class DiscountsController {
   @ApiNoContentResponse({
     description: 'Discount restored successfully',
   })
-  @Admin()
+  @AllowRoles([Role.ADMIN])
   @Delete('restore/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async restoreDiscount(@CurrentUser() user: User, @Param('id') id: string) {
@@ -112,18 +111,4 @@ export class DiscountsController {
       _id: id,
     });
   }
-
-  // @ApiOperation({
-  //   summary: 'Validate a discount',
-  //   description: 'Validate if a discount can be used by a user',
-  // })
-  // @ApiParam({ name: 'id', description: 'Discount ID' })
-  // @ApiSuccessResponse({
-  //   schema: DiscountResponseDto,
-  //   description: 'Discount validated successfully',
-  // })
-  // @Get(':id/validate')
-  // async validateDiscount(@CurrentUser() user: User, @Param('id') id: string) {
-  //   return this.discountsService.validateDiscount(id, user._id.toString());
-  // }
 }
