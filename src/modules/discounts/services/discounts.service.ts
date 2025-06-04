@@ -2,15 +2,13 @@ import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nest
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 
-import { QueryDto } from '@/base/dtos';
-import { BaseService } from '@/base/services';
+import { BaseService, FindManyOptions } from '@/base/services';
 import { Role } from '@/modules/auth/enums/role.enum';
 import { Hotel } from '@/modules/hotels/schemas/hotel.schema';
 import { HotelsService } from '@/modules/hotels/services/hotels.service';
 import { User } from '@/modules/users/schemas/user.schema';
 
 import { CreateDiscountDto, DiscountQueryDto, UpdateDiscountDto } from '../dtos/discount.dto';
-import { DiscountState } from '../enums/discount.enum';
 import { Discount } from '../schemas/discount.schema';
 
 @Injectable()
@@ -21,10 +19,6 @@ export class DiscountsService extends BaseService<Discount> {
   ) {
     const logger = new Logger(DiscountsService.name);
     super(model, logger);
-  }
-
-  async getAllDiscounts() {
-    return this.find();
   }
 
   async getDiscountById(id: string): Promise<Discount> {
@@ -98,39 +92,39 @@ export class DiscountsService extends BaseService<Discount> {
     );
   }
 
-  async findDiscounts(options: {
-    queryDto: QueryDto;
-    discountQueryDto?: DiscountQueryDto;
-    filter?: Record<string, unknown>;
-  }) {
-    const { queryDto, discountQueryDto = {}, filter = {} } = options;
-    const filters: Record<string, any> = { ...filter };
+  // async findDiscounts(options: {
+  //   queryDto: QueryDto;
+  //   discountQueryDto?: DiscountQueryDto;
+  //   filter?: Record<string, unknown>;
+  // }) {
+  //   const { queryDto, discountQueryDto = {}, filter = {} } = options;
+  //   const filters: Record<string, any> = { ...filter };
 
-    // Process filters from DiscountQueryDto
-    if (discountQueryDto.minAmount) {
-      filters.amount = { $gte: discountQueryDto.minAmount };
-    }
+  //   // Process filters from DiscountQueryDto
+  //   if (discountQueryDto.minAmount) {
+  //     filters.amount = { $gte: discountQueryDto.minAmount };
+  //   }
 
-    if (discountQueryDto.id) {
-      filters._id = discountQueryDto.id;
-    }
+  //   if (discountQueryDto.id) {
+  //     filters._id = discountQueryDto.id;
+  //   }
 
-    if (discountQueryDto.state) {
-      filters.state = discountQueryDto.state;
-    }
+  //   if (discountQueryDto.state) {
+  //     filters.state = discountQueryDto.state;
+  //   }
 
-    if (discountQueryDto.hotelId) {
-      filters.applicableHotels = discountQueryDto.hotelId;
-    }
+  //   if (discountQueryDto.hotelId) {
+  //     filters.applicableHotels = discountQueryDto.hotelId;
+  //   }
 
-    // // Add filter for non-expired discounts
-    // filters.expiredTimestamp = { $gt: new Date() };
+  //   // // Add filter for non-expired discounts
+  //   // filters.expiredTimestamp = { $gt: new Date() };
 
-    return this.find({
-      queryDto,
-      filter: filters,
-    });
-  }
+  //   return this.find({
+  //     queryDto,
+  //     filter: filters,
+  //   });
+  // }
 
   async deleteDiscount(user: User, discountId: string): Promise<void> {
     // Only admin can delete discounts
@@ -146,31 +140,6 @@ export class DiscountsService extends BaseService<Discount> {
     await this.softDelete({ _id: discountId });
   }
 
-  async toggleDiscountState(
-    user: User,
-    discountId: string,
-    state: DiscountState,
-  ): Promise<Discount> {
-    // Only admin can toggle discount state
-    if (user.role !== Role.ADMIN) {
-      throw new ForbiddenException('Only admin can change discount state');
-    }
-
-    const discount = await this.findOne({ _id: discountId });
-    if (!discount) {
-      throw new NotFoundException(`Discount with ID ${discountId} not found`);
-    }
-
-    const discountUpdated = await this.update({ state } as Partial<Discount>, {
-      _id: discountId,
-    });
-
-    if (!discountUpdated || discountUpdated.length === 0) {
-      throw new NotFoundException(`Discount with ID ${discountId} not found`);
-    }
-    return discountUpdated[0];
-  }
-
   async incrementUsageCount(discountId: string): Promise<void> {
     const discount = await this.findOne({ _id: discountId });
     if (!discount) {
@@ -178,5 +147,26 @@ export class DiscountsService extends BaseService<Discount> {
     }
 
     await this.model.updateOne({ _id: discountId }, { $inc: { usageCount: 1 } });
+  }
+
+  protected preFind(
+    options: FindManyOptions<Discount>,
+    _currentUser?: User,
+  ): FindManyOptions<Discount> {
+    const findOptions = super.preFind(options, _currentUser);
+    const discountQueryDto = findOptions.queryDto as DiscountQueryDto;
+
+    findOptions.filter = {
+      ...findOptions.filter,
+      ...(discountQueryDto.minAmount && { amount: { $gte: discountQueryDto.minAmount } }),
+      ...(discountQueryDto.id && { _id: discountQueryDto.id }),
+      ...(discountQueryDto.state && { state: discountQueryDto.state }),
+      ...(discountQueryDto.hotelId &&
+        discountQueryDto.hotelId.length > 0 && {
+          applicableHotels: { $in: discountQueryDto.hotelId },
+        }),
+    };
+
+    return findOptions;
   }
 }

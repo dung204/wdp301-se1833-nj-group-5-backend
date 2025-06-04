@@ -11,9 +11,9 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiNoContentResponse, ApiOperation, ApiParam } from '@nestjs/swagger';
+import { plainToInstance } from 'class-transformer';
 
 import { ApiSuccessResponse } from '@/base/decorators';
-import { QueryDto } from '@/base/dtos';
 import { AllowRoles } from '@/modules/auth/decorators/allow-roles.decorator';
 import { CurrentUser } from '@/modules/auth/decorators/current-user.decorator';
 import { Public } from '@/modules/auth/decorators/public.decorator';
@@ -26,11 +26,16 @@ import {
   DiscountResponseDto,
   UpdateDiscountDto,
 } from '../dtos/discount.dto';
+import { Discount } from '../schemas/discount.schema';
 import { DiscountsService } from '../services/discounts.service';
 
 @Controller('discounts')
 export class DiscountsController {
   constructor(private readonly discountsService: DiscountsService) {}
+
+  private transformToDto(data: Discount | Discount[]): DiscountResponseDto | DiscountResponseDto[] {
+    return plainToInstance(DiscountResponseDto, data);
+  }
 
   @ApiOperation({
     summary: 'Search and filter discounts',
@@ -43,8 +48,12 @@ export class DiscountsController {
   })
   @Public()
   @Get('/')
-  async searchDiscounts(@Query() queryDto: QueryDto, @Query() discountQueryDto: DiscountQueryDto) {
-    return this.discountsService.findDiscounts({ queryDto, discountQueryDto });
+  async searchDiscounts(@Query() discountQueryDto: DiscountQueryDto) {
+    const result = await this.discountsService.find({ queryDto: discountQueryDto });
+    return {
+      data: this.transformToDto(result.data),
+      metadata: result.metadata,
+    };
   }
 
   @ApiOperation({
@@ -58,7 +67,7 @@ export class DiscountsController {
   @AllowRoles([Role.ADMIN, Role.HOTEL_OWNER])
   @Post()
   async createDiscount(@CurrentUser() user: User, @Body() createDiscountDto: CreateDiscountDto) {
-    return this.discountsService.createDiscount(user, createDiscountDto);
+    return this.transformToDto(await this.discountsService.createDiscount(user, createDiscountDto));
   }
 
   @ApiOperation({
@@ -77,7 +86,9 @@ export class DiscountsController {
     @Param('id') id: string,
     @Body() updateDiscountDto: UpdateDiscountDto,
   ) {
-    return this.discountsService.updateDiscount(user, id, updateDiscountDto);
+    return this.transformToDto(
+      await this.discountsService.updateDiscount(user, id, updateDiscountDto),
+    );
   }
 
   @ApiOperation({
@@ -100,15 +111,18 @@ export class DiscountsController {
     description: 'Soft restore a discount (admin only)',
   })
   @ApiParam({ name: 'id', description: 'Discount ID' })
-  @ApiNoContentResponse({
+  @ApiSuccessResponse({
+    schema: DiscountResponseDto,
     description: 'Discount restored successfully',
   })
   @AllowRoles([Role.ADMIN])
-  @Delete('restore/:id')
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @Patch('restore/:id')
+  @HttpCode(HttpStatus.OK)
   async restoreDiscount(@CurrentUser() user: User, @Param('id') id: string) {
-    return this.discountsService.restore({
-      _id: id,
-    });
+    return this.transformToDto(
+      await this.discountsService.restore({
+        _id: id,
+      }),
+    );
   }
 }

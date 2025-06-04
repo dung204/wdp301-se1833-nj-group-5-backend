@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Exclude, Expose, Type } from 'class-transformer';
 import { IsNotEmpty, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
 
-import { SchemaResponseDto } from '@/base/dtos';
+import { QueryDto, SchemaResponseDto } from '@/base/dtos';
 import { HotelResponseDto } from '@/modules/hotels/dtos/hotel.dto';
 import { UserProfileDto } from '@/modules/users/dtos/user.dtos';
 
@@ -13,6 +13,7 @@ export class ReviewResponseDto extends SchemaResponseDto {
     type: UserProfileDto,
   })
   @Expose()
+  @Type(() => UserProfileDto)
   user!: UserProfileDto;
 
   @ApiProperty({
@@ -20,6 +21,7 @@ export class ReviewResponseDto extends SchemaResponseDto {
     type: HotelResponseDto,
   })
   @Expose()
+  @Type(() => HotelResponseDto)
   hotel!: HotelResponseDto;
 
   @ApiProperty({
@@ -91,7 +93,7 @@ export class UpdateReviewDto {
   rating?: number;
 }
 
-export class ReviewQueryDto {
+export class ReviewQueryDto extends QueryDto {
   @ApiProperty({
     description: 'Filter reviews by review ID',
     required: false,

@@ -2,8 +2,7 @@ import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nest
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 
-import { QueryDto } from '@/base/dtos';
-import { BaseService } from '@/base/services';
+import { BaseService, FindManyOptions } from '@/base/services';
 import { Role } from '@/modules/auth/enums/role.enum';
 import { User } from '@/modules/users/schemas/user.schema';
 
@@ -51,37 +50,6 @@ export class ReviewsService extends BaseService<Review> {
     return this.update(updateReviewDto, { _id: reviewId });
   }
 
-  async findReviews(options: {
-    queryDto: QueryDto;
-    reviewQueryDto?: ReviewQueryDto;
-    filter?: Record<string, unknown>;
-  }) {
-    const { queryDto, reviewQueryDto = {}, filter = {} } = options;
-    const filters: Record<string, any> = { ...filter };
-
-    // Handle filters from ReviewQueryDto
-    if (reviewQueryDto.hotel) {
-      filters.hotel = reviewQueryDto.hotel;
-    }
-
-    if (reviewQueryDto.id) {
-      filters._id = reviewQueryDto.id;
-    }
-
-    if (reviewQueryDto.user) {
-      filters.user = reviewQueryDto.user;
-    }
-
-    if (reviewQueryDto.minRating) {
-      filters.rating = { $gte: reviewQueryDto.minRating };
-    }
-
-    return this.find({
-      queryDto,
-      filter: filters,
-    });
-  }
-
   async deleteReview(user: User, reviewId: string): Promise<void> {
     const review = await this.findOne({ _id: reviewId });
 
@@ -109,5 +77,20 @@ export class ReviewsService extends BaseService<Review> {
       filter: { hotel: hotelId },
     });
     return response.data;
+  }
+
+  preFind(options: FindManyOptions<Review>, currentUser?: User) {
+    const preProcessedOptions = super.preFind(options, currentUser);
+    const reviewQueryDto = preProcessedOptions.queryDto as ReviewQueryDto;
+
+    preProcessedOptions.filter = {
+      ...preProcessedOptions.filter,
+      ...(reviewQueryDto.hotel && { hotel: reviewQueryDto.hotel }),
+      ...(reviewQueryDto.id && { _id: reviewQueryDto.id }),
+      ...(reviewQueryDto.user && { user: reviewQueryDto.user }),
+      ...(reviewQueryDto.minRating && { rating: { $gte: reviewQueryDto.minRating } }),
+    };
+
+    return preProcessedOptions;
   }
 }

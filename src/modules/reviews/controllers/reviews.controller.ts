@@ -11,9 +11,9 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiNoContentResponse, ApiOperation, ApiParam } from '@nestjs/swagger';
+import { plainToInstance } from 'class-transformer';
 
 import { ApiSuccessResponse } from '@/base/decorators';
-import { QueryDto } from '@/base/dtos';
 import { AllowRoles } from '@/modules/auth/decorators/allow-roles.decorator';
 import { CurrentUser } from '@/modules/auth/decorators/current-user.decorator';
 import { Public } from '@/modules/auth/decorators/public.decorator';
@@ -26,11 +26,16 @@ import {
   ReviewResponseDto,
   UpdateReviewDto,
 } from '../dtos/review.dto';
+import { Review } from '../schemas/review.schema';
 import { ReviewsService } from '../services/reviews.service';
 
 @Controller('reviews')
 export class ReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}
+
+  private transformToDto(data: Review | Review[]): ReviewResponseDto | ReviewResponseDto[] {
+    return plainToInstance(ReviewResponseDto, data); // Assuming data is already in the correct DTO format
+  }
 
   @ApiOperation({
     summary: 'Search and filter reviews and get all active reviews',
@@ -43,8 +48,10 @@ export class ReviewsController {
   })
   @Public()
   @Get('/')
-  async searchReviews(@Query() queryDto: QueryDto, @Query() reviewQueryDto: ReviewQueryDto) {
-    return this.reviewsService.findReviews({ queryDto, reviewQueryDto });
+  async searchReviews(@Query() reviewQueryDto: ReviewQueryDto) {
+    const result = await this.reviewsService.find({ queryDto: reviewQueryDto });
+
+    return this.transformToDto(result.data);
   }
 
   @ApiOperation({
@@ -57,7 +64,8 @@ export class ReviewsController {
   })
   @Post()
   async createReview(@CurrentUser() user: User, @Body() createReviewDto: CreateReviewDto) {
-    return this.reviewsService.createReview(user, createReviewDto);
+    const review = await this.reviewsService.createReview(user, createReviewDto);
+    return this.transformToDto(review);
   }
 
   @ApiOperation({
@@ -75,7 +83,7 @@ export class ReviewsController {
     @Param('id') id: string,
     @Body() updateReviewDto: UpdateReviewDto,
   ) {
-    return this.reviewsService.updateReview(user, id, updateReviewDto);
+    return this.transformToDto(await this.reviewsService.updateReview(user, id, updateReviewDto));
   }
 
   @ApiOperation({
@@ -100,6 +108,10 @@ export class ReviewsController {
     description: 'Review restored successfully',
   })
   @AllowRoles([Role.ADMIN])
+  @ApiSuccessResponse({
+    schema: ReviewResponseDto,
+    description: 'Review restored successfully',
+  })
   @Patch('/restore/:id')
   async restoreUser(@CurrentUser() currentUser: User, @Param('id') id: string) {
     return this.reviewsService.restore({

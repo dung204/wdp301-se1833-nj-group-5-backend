@@ -12,12 +12,12 @@ import {
 } from 'class-validator';
 
 import { SwaggerExamples } from '@/base/constants';
-import { SchemaResponseDto } from '@/base/dtos';
+import { QueryDto } from '@/base/dtos';
 import { DiscountState } from '@/modules/discounts/enums/discount.enum';
 import { HotelResponseDto } from '@/modules/hotels/dtos/hotel.dto';
 
 @Exclude()
-export class DiscountResponseDto extends SchemaResponseDto {
+export class DiscountResponseDto {
   @ApiProperty({
     description: 'The discount amount ( default: percentage )',
     example: 10, // 10% discount,
@@ -45,6 +45,10 @@ export class DiscountResponseDto extends SchemaResponseDto {
     isArray: true,
   })
   @Expose()
+  @Transform(({ value }) => {
+    return Array.isArray(value) ? value : [];
+  })
+  @Type(() => HotelResponseDto)
   applicableHotels!: HotelResponseDto[];
 
   @ApiProperty({
@@ -156,6 +160,9 @@ export class UpdateDiscountDto {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
+  @Transform(({ value }) => {
+    return typeof value === 'string' ? value.split(',') : value;
+  })
   applicableHotels?: string[];
 
   @ApiProperty({
@@ -181,7 +188,7 @@ export class UpdateDiscountDto {
   state?: string;
 }
 
-export class DiscountQueryDto {
+export class DiscountQueryDto extends QueryDto {
   @ApiProperty({
     description: 'Filter by discount ID',
     required: false,
@@ -214,9 +221,13 @@ export class DiscountQueryDto {
   @ApiProperty({
     description: 'Filter by hotel ID',
     required: false,
-    example: 'eb4ddc1f-e320-4fbb-8bfa-eed8b06d64aa',
+    isArray: true,
+    example: ['eb4ddc1f-e320-4fbb-8bfa-eed8b06d64aa'],
   })
   @IsOptional()
-  @IsString()
+  @IsString({ each: true })
+  @Transform(({ value }) => {
+    return typeof value === 'string' ? value.split(',') : value;
+  })
   hotelId?: string;
 }
