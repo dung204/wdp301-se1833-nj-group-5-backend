@@ -2,13 +2,12 @@ import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nest
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 
-import { QueryDto } from '@/base/dtos';
-import { BaseService } from '@/base/services';
+import { BaseService, FindManyOptions } from '@/base/services';
 import { Role } from '@/modules/auth/enums/role.enum';
 import { HotelsService } from '@/modules/hotels/services/hotels.service';
 import { User } from '@/modules/users/schemas/user.schema';
 
-import { CreateRoomDto, RoomQueryDto, UpdateRoomDto } from '../dtos/room.dto';
+import { CreateRoomDto, RoomQueryAdminDto, UpdateRoomDto } from '../dtos/room.dto';
 import { Room } from '../schemas/room.schema';
 
 @Injectable()
@@ -19,10 +18,6 @@ export class RoomsService extends BaseService<Room> {
   ) {
     const logger = new Logger(RoomsService.name);
     super(model, logger);
-  }
-
-  async getAllRooms() {
-    return this.find({ filter: { isActive: true } });
   }
 
   async getRoomById(id: string): Promise<Room> {
@@ -53,61 +48,12 @@ export class RoomsService extends BaseService<Room> {
     }
 
     // Get hotel to check permissions
-    const hotel = await this.hotelsService.getHotelById(room.hotel.toString());
+    const hotel = await this.hotelsService.getHotelById(room.hotel?._id.toString());
     if (hotel.owner.toString() !== user._id.toString() && user.role !== Role.ADMIN) {
       throw new ForbiddenException('You do not have permission to update this room');
     }
 
     return this.update(updateRoomDto, { _id: roomId });
-  }
-
-  async findRooms(options: {
-    queryDto: QueryDto;
-    roomQueryDto?: RoomQueryDto;
-    filter?: Record<string, unknown>;
-  }) {
-    const { queryDto, roomQueryDto = {}, filter = {} } = options;
-    const filters: Record<string, any> = { ...filter };
-
-    // Process filters from RoomQueryDto
-    if (roomQueryDto.name) {
-      filters.name = { $regex: roomQueryDto.name, $options: 'i' };
-    }
-
-    if (roomQueryDto.id) {
-      filters._id = roomQueryDto.id;
-    }
-
-    if (roomQueryDto.hotel) {
-      filters.hotel = roomQueryDto.hotel;
-    }
-
-    if (roomQueryDto.minRate) {
-      filters.rate = { $gte: roomQueryDto.minRate };
-    }
-
-    if (roomQueryDto.maxRate) {
-      filters.rate = { ...filters.rate, $lte: roomQueryDto.maxRate };
-    }
-
-    if (roomQueryDto.minOccupancy) {
-      filters.occupancy = { $gte: roomQueryDto.minOccupancy };
-    }
-
-    if (roomQueryDto.services && roomQueryDto.services.length > 0) {
-      const serviceRegexes = roomQueryDto.services.map((service) => new RegExp(service, 'i'));
-      filters.services = { $in: serviceRegexes };
-    }
-
-    // Default to only active rooms
-    if (filters.isActive === undefined) {
-      filters.isActive = true;
-    }
-
-    return this.find({
-      queryDto,
-      filter: filters,
-    });
   }
 
   async deleteRoom(user: User, roomId: string): Promise<void> {
@@ -133,25 +79,49 @@ export class RoomsService extends BaseService<Room> {
     return response.data;
   }
 
-  async toggleRoomActive(user: User, roomId: string, isActive: boolean): Promise<Room> {
-    const room = await this.findOne({ _id: roomId });
-    if (!room) {
-      throw new NotFoundException(`Room with ID ${roomId} not found`);
+  preFind(options: FindManyOptions<Room>, currentUser?: User): FindManyOptions<Room> {
+    const findOptions = super.preFind(options, currentUser);
+    const roomQueryDto = findOptions.queryDto as RoomQueryAdminDto;
+
+    findOptions.filter = {
+      ...findOptions.filter,
+      ...(roomQueryDto.name && { name: { $regex: roomQueryDto.name, $options: 'i' } }),
+      ...(roomQueryDto.id && { _id: roomQueryDto.id }),
+      ...(roomQueryDto.hotel && { hotel: roomQueryDto.hotel }),
+      ...(roomQueryDto.minRate && { rate: { $gte: roomQueryDto.minRate } }),
+      ...(roomQueryDto.maxRate && { rate: { $lte: roomQueryDto.maxRate } }),
+      ...(roomQueryDto.minOccupancy && { occupancy: { $gte: roomQueryDto.minOccupancy } }),
+      ...(roomQueryDto.services &&
+        roomQueryDto.services.length > 0 && {
+          services: { $in: roomQueryDto.services.map((service) => new RegExp(service, 'i')) },
+        }),
+    };
+
+    // if role is hotel owner -> only show rooms in their hotel and base on hotel -> WIP
+
+    // Default to only active rooms
+    // if role is admin or hotel owner, we can show all rooms
+    if (
+      roomQueryDto.isActive &&
+      (currentUser?.role === Role.ADMIN || currentUser?.role === Role.HOTEL_OWNER)
+    ) {
+      switch (roomQueryDto.isActive) {
+        case 'true':
+          findOptions.filter = {
+            ...findOptions.filter,
+            deleteTimestamp: null,
+          };
+          break;
+        case 'false':
+          findOptions.filter = {
+            ...findOptions.filter,
+            deleteTimestamp: { $ne: null },
+          };
+          break;
+        // case 'all' - no filter needed
+      }
     }
 
-    // Get hotel to check permissions
-    const hotel = await this.hotelsService.getHotelById(room.hotel.toString());
-    if (hotel.owner.toString() !== user._id.toString() && user.role !== Role.ADMIN) {
-      throw new ForbiddenException('You do not have permission to update this room');
-    }
-
-    const roomUpdated = await this.update({ isActive } as Partial<Room>, {
-      _id: roomId,
-    });
-
-    if (!roomUpdated || roomUpdated.length === 0) {
-      throw new NotFoundException(`Room with ID ${roomId} not found`);
-    }
-    return roomUpdated[0];
+    return findOptions;
   }
 }

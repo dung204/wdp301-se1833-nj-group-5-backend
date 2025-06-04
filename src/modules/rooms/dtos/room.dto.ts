@@ -10,7 +10,7 @@ import {
   Min,
 } from 'class-validator';
 
-import { SchemaResponseDto } from '@/base/dtos';
+import { QueryDto, SchemaResponseDto } from '@/base/dtos';
 import { HotelResponseDto } from '@/modules/hotels/dtos/hotel.dto';
 
 @Exclude()
@@ -27,6 +27,7 @@ export class RoomResponseDto extends SchemaResponseDto {
     type: HotelResponseDto,
   })
   @Expose()
+  @Type(() => HotelResponseDto)
   hotel!: HotelResponseDto;
 
   @ApiProperty({
@@ -252,7 +253,7 @@ export class UpdateRoomDto {
   maxQuantity?: number;
 }
 
-export class RoomQueryDto {
+export class RoomQueryDto extends QueryDto {
   @ApiProperty({
     description: 'Filter rooms by room ID',
     example: '0516a80a-2c32-4606-b606-7e5af878079f',

@@ -11,9 +11,9 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiNoContentResponse, ApiOperation, ApiParam } from '@nestjs/swagger';
+import { plainToInstance } from 'class-transformer';
 
 import { ApiSuccessResponse } from '@/base/decorators';
-import { QueryDto } from '@/base/dtos';
 import { AllowRoles } from '@/modules/auth/decorators/allow-roles.decorator';
 import { CurrentUser } from '@/modules/auth/decorators/current-user.decorator';
 import { Public } from '@/modules/auth/decorators/public.decorator';
@@ -28,9 +28,15 @@ import {
 import { RoomsService } from '@/modules/rooms/services/rooms.service';
 import { User } from '@/modules/users/schemas/user.schema';
 
+import { Room } from '../schemas/room.schema';
+
 @Controller('rooms')
 export class RoomsController {
   constructor(private readonly roomsService: RoomsService) {}
+
+  private transformToDto(data: Room | Room[]): RoomResponseDto | RoomResponseDto[] {
+    return plainToInstance(RoomResponseDto, data);
+  }
 
   @ApiOperation({
     summary: 'Search filter rooms, get all rooms',
@@ -43,12 +49,15 @@ export class RoomsController {
   })
   @Public()
   @Get('/')
-  async searchRooms(@Query() queryDto: QueryDto, @Query() roomQueryDto: RoomQueryDto) {
-    return this.roomsService.findRooms({
-      queryDto,
-      roomQueryDto,
+  async searchRooms(@Query() roomQueryDto: RoomQueryDto) {
+    const result = await this.roomsService.find({
+      queryDto: roomQueryDto,
       filter: { deleteTimestamp: null }, // Only active rooms
     });
+    return {
+      data: this.transformToDto(result.data),
+      metadata: result.metadata,
+    };
   }
 
   @ApiOperation({
@@ -62,28 +71,8 @@ export class RoomsController {
   })
   @AllowRoles([Role.ADMIN, Role.HOTEL_OWNER])
   @Get('/admin')
-  async searchRoomAdmin(
-    @CurrentUser() user: User,
-    @Query() queryDto: QueryDto,
-    @Query() roomQueryDto: RoomQueryAdminDto,
-  ) {
-    //
-    const filter: Record<string, any> = {};
-
-    // Add active/deleted filter based on isActive query param
-    if (roomQueryDto.isActive) {
-      switch (roomQueryDto.isActive) {
-        case 'true':
-          filter.deleteTimestamp = null;
-          break;
-        case 'false':
-          filter.deleteTimestamp = { $ne: null };
-          break;
-        // case 'all' - no filter needed
-      }
-    }
-
-    return this.roomsService.findRooms({ queryDto, roomQueryDto, filter });
+  async searchRoomAdmin(@CurrentUser() user: User, @Query() roomQueryDto: RoomQueryAdminDto) {
+    return this.roomsService.find({ queryDto: roomQueryDto }, user);
   }
 
   @ApiOperation({
@@ -96,7 +85,8 @@ export class RoomsController {
   })
   @Post()
   async createRoom(@CurrentUser() user: User, @Body() createRoomDto: CreateRoomDto) {
-    return this.roomsService.createRoom(user, createRoomDto);
+    const result = await this.roomsService.createRoom(user, createRoomDto);
+    return this.transformToDto(result);
   }
 
   @ApiOperation({
@@ -114,7 +104,8 @@ export class RoomsController {
     @Param('id') id: string,
     @Body() updateRoomDto: UpdateRoomDto,
   ) {
-    return this.roomsService.updateRoom(user, id, updateRoomDto);
+    const result = await this.roomsService.updateRoom(user, id, updateRoomDto);
+    return this.transformToDto(result);
   }
 
   @ApiOperation({
@@ -136,14 +127,16 @@ export class RoomsController {
     description: 'Restore a room (only for hotel owner or admin)',
   })
   @ApiParam({ name: 'id', description: 'Room ID' })
-  @ApiNoContentResponse({
+  @ApiSuccessResponse({
+    schema: RoomResponseDto,
     description: 'Room restore successfully',
   })
   @Patch('restore/:id')
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @HttpCode(HttpStatus.OK)
   async restoreRoom(@Param('id') id: string) {
-    return this.roomsService.restore({
+    const result = await this.roomsService.restore({
       _id: id,
     });
+    return this.transformToDto(result);
   }
 }
