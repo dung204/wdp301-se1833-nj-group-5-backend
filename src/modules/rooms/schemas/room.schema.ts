@@ -25,21 +25,21 @@ export class Room extends BaseSchema {
     min: 0,
     required: true,
   })
-  rate!: number;
+  rate!: number; // giá tiền
 
   @Prop({
     type: Number,
     min: 0,
     required: true,
   })
-  size!: number;
+  size!: number; // Diện tích của phòng
 
   @Prop({
     type: Number,
     min: 0,
     requried: true,
   })
-  occupancy!: number;
+  occupancy!: number; // Số lượng người tối đa có thể ở trong phòng
 
   @Prop({
     type: [String],
@@ -60,7 +60,13 @@ export class Room extends BaseSchema {
     min: 0,
     required: true,
   })
-  maxQuantity!: number;
+  maxQuantity!: number; // ko biết cần ko
+
+  @Prop({
+    type: Boolean,
+    default: true,
+  })
+  isActive!: boolean; // ko biết cần ko
 }
 
 export const RoomSchema = SchemaFactory.createForClass(Room);

@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Expose, Transform, plainToInstance } from 'class-transformer';
+import { Exclude, Expose, Transform, plainToInstance } from 'class-transformer';
 
 import { SwaggerExamples } from '../constants';
 
