@@ -90,6 +90,7 @@ export class HotelsService extends BaseService<Hotel> {
     const findOptions = super.preFind(options, currentUser);
     const hotelQueryDto = findOptions.queryDto as HotelQueryDtoForAdmin;
 
+    // logic and filter for fields base on HotelQueryDtoForAdmin
     findOptions.filter = {
       ...findOptions.filter,
       ...(hotelQueryDto.name && { name: { $regex: hotelQueryDto.name, $options: 'i' } }),
@@ -100,8 +101,28 @@ export class HotelsService extends BaseService<Hotel> {
         hotelQueryDto.services.length > 0 && {
           services: { $in: hotelQueryDto.services.map((service) => new RegExp(service, 'i')) },
         }),
+      ...(hotelQueryDto.cancelPolicy && { cancelPolicy: hotelQueryDto.cancelPolicy }),
     };
 
+    // filter by priceHotel
+    if (hotelQueryDto.minPrice || hotelQueryDto.maxPrice) {
+      const priceFilter: any = {};
+
+      if (hotelQueryDto.minPrice) {
+        priceFilter.$gte = hotelQueryDto.minPrice;
+      }
+
+      if (hotelQueryDto.maxPrice) {
+        priceFilter.$lte = hotelQueryDto.maxPrice;
+      }
+
+      findOptions.filter = {
+        ...findOptions.filter,
+        priceHotel: priceFilter,
+      };
+    }
+
+    // if role is hotel owner,filter hotel by owner
     if (currentUser?.role === Role.HOTEL_OWNER) {
       findOptions.filter = {
         ...findOptions.filter,
@@ -109,6 +130,8 @@ export class HotelsService extends BaseService<Hotel> {
       };
     }
 
+    // If the query is made by an admin and includes ownerId, filter by ownerId
+    // only admin can query by ownerId
     if (hotelQueryDto.ownerId && currentUser?.role === Role.ADMIN) {
       // If admin is querying by ownerId, apply that filter
       findOptions.filter = {
@@ -117,6 +140,7 @@ export class HotelsService extends BaseService<Hotel> {
       };
     }
 
+    // If the query is made by an admin and includes isActive, filter by deleteTimestamp
     if (hotelQueryDto.isActive) {
       switch (hotelQueryDto.isActive) {
         case 'true':

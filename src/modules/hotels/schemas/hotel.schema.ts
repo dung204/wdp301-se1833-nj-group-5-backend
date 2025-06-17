@@ -4,6 +4,8 @@ import { HydratedDocument } from 'mongoose';
 import { BaseSchema } from '@/base/schemas';
 import { User } from '@/modules/users/schemas/user.schema';
 
+import { CancelEnum } from '../enums';
+
 // Định nghĩa interface cho checkinTime
 class CheckinTimeRange {
   @Prop({ type: Date, required: true })
@@ -80,6 +82,19 @@ export class Hotel extends BaseSchema {
     default: true,
   })
   isActive!: boolean;
+
+  @Prop({
+    type: Number,
+    required: true,
+  })
+  priceHotel!: number; // average price per night
+
+  @Prop({
+    type: String,
+    enum: Object.values(CancelEnum),
+    required: true,
+  })
+  cancelPolicy!: CancelEnum; // policy for cancellation
 }
 
 export const HotelSchema = SchemaFactory.createForClass(Hotel);

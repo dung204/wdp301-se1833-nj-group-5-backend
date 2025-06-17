@@ -3,6 +3,7 @@ import { HydratedDocument } from 'mongoose';
 
 import { BaseSchema } from '@/base/schemas';
 import { Discount } from '@/modules/discounts/schemas/discount.schema';
+import { CancelEnum } from '@/modules/hotels/enums';
 import { Hotel } from '@/modules/hotels/schemas/hotel.schema';
 import { Room } from '@/modules/rooms/schemas/room.schema';
 import { User } from '@/modules/users/schemas/user.schema';
@@ -40,7 +41,7 @@ export class Booking extends BaseSchema {
 
   @Prop({
     type: Date,
-    required: true,
+    required: false, // check-out date is optional for bookings
   })
   checkOut!: Date;
 
@@ -50,20 +51,46 @@ export class Booking extends BaseSchema {
     default: BookingStatus.NOT_PAID_YET,
     required: false,
   })
-  status: BookingStatus = BookingStatus.NOT_PAID_YET;
+  status: BookingStatus = BookingStatus.NOT_PAID_YET; // default status is NOT_PAID_YET
 
   @Prop({
     type: Number,
     required: true,
   })
-  totalPrice!: number;
+  totalPrice!: number; // price when customer books
 
   @Prop({
     type: [String],
     ref: 'Discount',
     required: true,
   })
-  discounts: Discount[] = [];
+  discounts: Discount[] = []; // list of discounts applied to the booking
+
+  // Add cancellation-related fields
+  @Prop({
+    type: String,
+    enum: Object.values(CancelEnum),
+    required: false,
+  })
+  cancelPolicy!: CancelEnum; // cancellation policy for the booking
+
+  @Prop({
+    type: Date,
+    required: false,
+  })
+  cancelledAt?: Date;
+
+  @Prop({
+    type: Number,
+    required: false,
+  })
+  refundAmount?: number;
+
+  @Prop({
+    type: String,
+    required: false,
+  })
+  cancellationReason?: string;
 }
 
 export const BookingSchema = SchemaFactory.createForClass(Booking);
