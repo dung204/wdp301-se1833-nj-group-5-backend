@@ -44,6 +44,13 @@ export class BookingsService extends BaseService<Booking> {
     return booking;
   }
 
+  /**
+   * Logic to create a new booking
+   * 1. Validate check-in and check-out dates
+   * 2. check hotel and room availability
+   * 3. check room availability of this day
+   * -> filter by condition: checkIn, checkOut, roomId, number of booking ( compare with maximum rooms )
+   */
   async createBooking(user: User, createBookingDto: CreateBookingDto): Promise<Booking> {
     // Validate check-in and check-out dates
     if (new Date(createBookingDto.checkIn) >= new Date(createBookingDto.checkOut)) {
@@ -64,6 +71,17 @@ export class BookingsService extends BaseService<Booking> {
     const room = await this.roomsService.getRoomById(createBookingDto.room);
     if (!room) {
       throw new NotFoundException(`Room with ID ${createBookingDto.room} not found`);
+    }
+
+    // check room availability in this day
+    const bookedCount = await this.findBusyRoom(
+      room._id,
+      createBookingDto.checkIn,
+      createBookingDto.checkOut,
+    );
+
+    if (bookedCount.length >= room.maxQuantity) {
+      throw new BadRequestException('Room is fully booked for the selected dates');
     }
 
     let discounts = [] as Discount[];
@@ -133,70 +151,98 @@ export class BookingsService extends BaseService<Booking> {
     currentUser?: User,
   ): FindManyOptions<Booking> {
     const findOptions = super.preFind(options, currentUser);
-    const bookingQueryDto = findOptions.queryDto as BookingQueryDtoForAdmin;
 
-    // Apply filters based on query parameters
-    findOptions.filter = {
-      ...findOptions.filter,
-      ...(bookingQueryDto.id && { _id: bookingQueryDto.id }),
-      ...(bookingQueryDto.userId && { user: bookingQueryDto.userId }),
-      ...(bookingQueryDto.hotelId && { hotel: bookingQueryDto.hotelId }),
-      ...(bookingQueryDto.roomId && { room: bookingQueryDto.roomId }),
-      ...(bookingQueryDto.status && { status: bookingQueryDto.status }),
-      ...(bookingQueryDto.cancelPolicy && { cancelPolicy: bookingQueryDto.cancelPolicy }),
-    };
+    if (findOptions.queryDto) {
+      const bookingQueryDto = findOptions.queryDto as BookingQueryDtoForAdmin;
 
-    // Filter by check-in date range
-    if (bookingQueryDto.checkInFrom || bookingQueryDto.checkInTo) {
-      const dateFilter: any = {};
-      if (bookingQueryDto.checkInFrom) {
-        dateFilter.$gte = bookingQueryDto.checkInFrom;
-      }
-      if (bookingQueryDto.checkInTo) {
-        dateFilter.$lte = bookingQueryDto.checkInTo;
-      }
+      // Apply filters based on query parameters
       findOptions.filter = {
         ...findOptions.filter,
-        checkIn: dateFilter,
+        ...(bookingQueryDto.id && { _id: bookingQueryDto.id }),
+        ...(bookingQueryDto.userId && { user: bookingQueryDto.userId }),
+        ...(bookingQueryDto.hotelId && { hotel: bookingQueryDto.hotelId }),
+        ...(bookingQueryDto.roomId && { room: bookingQueryDto.roomId }),
+        ...(bookingQueryDto.status && { status: bookingQueryDto.status }),
+        ...(bookingQueryDto.cancelPolicy && { cancelPolicy: bookingQueryDto.cancelPolicy }),
       };
-    }
 
-    // Filter by price range
-    if (bookingQueryDto.minPrice || bookingQueryDto.maxPrice) {
-      const priceFilter: any = {};
-      if (bookingQueryDto.minPrice) {
-        priceFilter.$gte = bookingQueryDto.minPrice;
+      // Filter by check-in date range
+      if (bookingQueryDto.checkInFrom || bookingQueryDto.checkInTo) {
+        const dateFilter: any = {};
+        if (bookingQueryDto.checkInFrom) {
+          dateFilter.$gte = bookingQueryDto.checkInFrom;
+        }
+        if (bookingQueryDto.checkInTo) {
+          dateFilter.$lte = bookingQueryDto.checkInTo;
+        }
+        findOptions.filter = {
+          ...findOptions.filter,
+          checkIn: dateFilter,
+        };
       }
-      if (bookingQueryDto.maxPrice) {
-        priceFilter.$lte = bookingQueryDto.maxPrice;
+
+      // Filter by price range
+      if (bookingQueryDto.minPrice || bookingQueryDto.maxPrice) {
+        const priceFilter: any = {};
+        if (bookingQueryDto.minPrice) {
+          priceFilter.$gte = bookingQueryDto.minPrice;
+        }
+        if (bookingQueryDto.maxPrice) {
+          priceFilter.$lte = bookingQueryDto.maxPrice;
+        }
+        findOptions.filter = {
+          ...findOptions.filter,
+          totalPrice: priceFilter,
+        };
       }
-      findOptions.filter = {
-        ...findOptions.filter,
-        totalPrice: priceFilter,
-      };
-    }
 
-    // Role-based filtering
-    if (currentUser?.role === Role.CUSTOMER) {
-      // Customers can only see their own bookings
-      findOptions.filter = {
-        ...findOptions.filter,
-        user: currentUser._id,
-      };
-    } else if (currentUser?.role === Role.HOTEL_OWNER) {
-      // Hotel owners can only see bookings for their hotels
-      // This requires a more complex query with populate
-      // For now, let's add a note that this needs hotel lookup
-      // TODO: Implement hotel owner filtering with aggregation pipeline
-    }
+      // Role-based filtering
+      if (currentUser?.role === Role.CUSTOMER) {
+        // Customers can only see their own bookings
+        findOptions.filter = {
+          ...findOptions.filter,
+          user: currentUser._id,
+        };
+      } else if (currentUser?.role === Role.HOTEL_OWNER) {
+        // Hotel owners can only see bookings for their hotels
+        // This requires a more complex query with populate
+        // For now, let's add a note that this needs hotel lookup
+        // TODO: Implement hotel owner filtering with aggregation pipeline
+      }
 
-    // Admin can filter by hotel owner ID
-    if (bookingQueryDto.hotelOwnerId && currentUser?.role === Role.ADMIN) {
-      // This would require aggregation to join with hotels collection
-      // TODO: Implement aggregation pipeline for hotel owner filtering
+      // Admin can filter by hotel owner ID
+      if (bookingQueryDto.hotelOwnerId && currentUser?.role === Role.ADMIN) {
+        // This would require aggregation to join with hotels collection
+        // TODO: Implement aggregation pipeline for hotel owner filtering
+      }
     }
 
     return findOptions;
+  }
+
+  /**
+   *  @description
+   * This function checks if a room is busy during the specified check-in and check-out dates.
+   * It returns a list of bookings that overlap with the requested dates.
+   * For example, if a booking exists from 2025-10-01 to 2025-10-05 and the requested dates are
+   * from 2025-10-03 to 2025-10-04, this booking will be returned as busy.
+   * If no bookings overlap, an empty array is returned.
+   * @note
+   * we have a formula to check if a booking is busy:
+   * @note
+   *  startDate < checkOut_Old && endDate > checkIn_Old -> busy: && is very important
+   */
+  async findBusyRoom(roomId: string, checkIn: Date, checkOut: Date): Promise<Booking[]> {
+    // Find bookings for the room that overlap with the requested dates
+    // không nên comment dòng này, vì nó sẽ làm mất tính năng tìm kiếm phòng trống
+    const bookings = await this.model.find({
+      room: roomId,
+      status: { $ne: BookingStatus.CANCELLED },
+      checkIn: { $lt: checkOut },
+      checkOut: { $gt: checkIn },
+    });
+
+    return bookings;
   }
 
   async deleteBooking(user: User, bookingId: string): Promise<void> {
