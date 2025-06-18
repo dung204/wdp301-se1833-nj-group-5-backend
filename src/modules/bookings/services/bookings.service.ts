@@ -52,16 +52,7 @@ export class BookingsService extends BaseService<Booking> {
    * -> filter by condition: checkIn, checkOut, roomId, number of booking ( compare with maximum rooms )
    */
   async createBooking(user: User, createBookingDto: CreateBookingDto): Promise<Booking> {
-    // Validate check-in and check-out dates
-    if (new Date(createBookingDto.checkIn) >= new Date(createBookingDto.checkOut)) {
-      throw new BadRequestException('Check-in date must be before check-out date');
-    }
-
-    if (new Date(createBookingDto.checkIn) <= new Date()) {
-      throw new BadRequestException('Check-in date must be in the future');
-    }
-
-    // check hotel and room availability
+    // 1. check hotel and room availability
     const hotel = await this.hotelsService.getHotelById(createBookingDto.hotel);
 
     if (!hotel) {
@@ -73,8 +64,12 @@ export class BookingsService extends BaseService<Booking> {
       throw new NotFoundException(`Room with ID ${createBookingDto.room} not found`);
     }
 
+    // check user booking limit || customer also book all of rooms in hotel in one day
+    // with occupancy of room, if number of customer booking is greater than maximum occupancy of room
+    // -> throw error || recommend to book another room
+
     // check room availability in this day
-    const bookedCount = await this.findBusyRoom(
+    const bookedCount = await this.findBookingByBusyRoom(
       room._id,
       createBookingDto.checkIn,
       createBookingDto.checkOut,
@@ -167,13 +162,13 @@ export class BookingsService extends BaseService<Booking> {
       };
 
       // Filter by check-in date range
-      if (bookingQueryDto.checkInFrom || bookingQueryDto.checkInTo) {
+      if (bookingQueryDto.checkIn || bookingQueryDto.checkOut) {
         const dateFilter: any = {};
-        if (bookingQueryDto.checkInFrom) {
-          dateFilter.$gte = bookingQueryDto.checkInFrom;
+        if (bookingQueryDto.checkIn) {
+          dateFilter.$gte = bookingQueryDto.checkIn;
         }
-        if (bookingQueryDto.checkInTo) {
-          dateFilter.$lte = bookingQueryDto.checkInTo;
+        if (bookingQueryDto.checkOut) {
+          dateFilter.$lte = bookingQueryDto.checkOut;
         }
         findOptions.filter = {
           ...findOptions.filter,
@@ -232,15 +227,23 @@ export class BookingsService extends BaseService<Booking> {
    * @note
    *  startDate < checkOut_Old && endDate > checkIn_Old -> busy: && is very important
    */
-  async findBusyRoom(roomId: string, checkIn: Date, checkOut: Date): Promise<Booking[]> {
+  async findBookingByBusyRoom(
+    roomId?: string,
+    checkIn?: Date,
+    checkOut?: Date,
+    userId?: string,
+  ): Promise<Booking[]> {
     // Find bookings for the room that overlap with the requested dates
     // không nên comment dòng này, vì nó sẽ làm mất tính năng tìm kiếm phòng trống
-    const bookings = await this.model.find({
+    const query = {
       room: roomId,
       status: { $ne: BookingStatus.CANCELLED },
       checkIn: { $lt: checkOut },
       checkOut: { $gt: checkIn },
-    });
+      ...(userId && { userId: userId }),
+    };
+
+    const bookings = await this.model.find(query);
 
     return bookings;
   }

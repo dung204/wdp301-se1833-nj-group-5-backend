@@ -128,6 +128,16 @@ export class CreateBookingDto {
   @IsNotEmpty()
   @Type(() => Date)
   @IsDate()
+  @Transform(({ value }) => {
+    const date = new Date(value);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (date < today) {
+      throw new Error('Check-in date must be today or in the future');
+    }
+    return date;
+  })
   checkIn!: Date;
 
   @ApiProperty({
@@ -137,6 +147,16 @@ export class CreateBookingDto {
   @IsNotEmpty()
   @Type(() => Date)
   @IsDate()
+  @Transform(({ value }) => {
+    const date = new Date(value);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (date < today) {
+      throw new Error('Check-in date must be today or in the future');
+    }
+    return date;
+  })
   checkOut!: Date;
 
   @ApiProperty({
@@ -207,7 +227,6 @@ export class BookingQueryDto extends QueryDto {
   @ApiProperty({
     description: 'Filter by booking ID',
     required: false,
-    example: 'booking123',
   })
   @IsOptional()
   @IsString()
@@ -216,7 +235,6 @@ export class BookingQueryDto extends QueryDto {
   @ApiProperty({
     description: 'Filter by user ID',
     required: false,
-    example: 'user123',
   })
   @IsOptional()
   @IsString()
@@ -225,7 +243,6 @@ export class BookingQueryDto extends QueryDto {
   @ApiProperty({
     description: 'Filter by hotel ID',
     required: false,
-    example: 'hotel123',
   })
   @IsOptional()
   @IsString()
@@ -234,7 +251,6 @@ export class BookingQueryDto extends QueryDto {
   @ApiProperty({
     description: 'Filter by room ID',
     required: false,
-    example: 'room123',
   })
   @IsOptional()
   @IsString()
@@ -242,7 +258,6 @@ export class BookingQueryDto extends QueryDto {
 
   @ApiProperty({
     description: 'Filter by booking status',
-    example: BookingStatus.NOT_PAID_YET,
     enum: BookingStatus,
     required: false,
   })
@@ -252,7 +267,6 @@ export class BookingQueryDto extends QueryDto {
 
   @ApiProperty({
     description: 'Filter by cancellation policy',
-    example: CancelEnum.REFUND_BEFORE_1_DAY,
     enum: CancelEnum,
     required: false,
   })
@@ -261,28 +275,25 @@ export class BookingQueryDto extends QueryDto {
   cancelPolicy?: CancelEnum;
 
   @ApiProperty({
-    description: 'Filter by check-in date (from)',
-    example: '2024-01-01',
+    description: 'Filter by check-in date',
     required: false,
   })
   @IsOptional()
   @Type(() => Date)
   @IsDate()
-  checkInFrom?: Date;
+  checkIn?: Date;
 
   @ApiProperty({
     description: 'Filter by check-in date (to)',
-    example: '2024-12-31',
     required: false,
   })
   @IsOptional()
   @Type(() => Date)
   @IsDate()
-  checkInTo?: Date;
+  checkOut?: Date;
 
   @ApiProperty({
     description: 'Filter by minimum total price',
-    example: 100000,
     required: false,
   })
   @IsOptional()
@@ -292,7 +303,6 @@ export class BookingQueryDto extends QueryDto {
 
   @ApiProperty({
     description: 'Filter by maximum total price',
-    example: 1000000,
     required: false,
   })
   @IsOptional()
@@ -305,7 +315,6 @@ export class BookingQueryDtoForAdmin extends BookingQueryDto {
   @ApiProperty({
     description: 'Filter by hotel owner ID (admin only)',
     required: false,
-    example: 'owner123',
   })
   @IsOptional()
   @IsString()
