@@ -66,7 +66,7 @@ export class Room extends BaseSchema {
     type: Boolean,
     default: true,
   })
-  isActive!: boolean; // ko biết cần ko
+  isActive!: boolean; // true -> còn phòng, false -> hết phòng ( và cũng có thể là phòng hỏng )
 }
 
 export const RoomSchema = SchemaFactory.createForClass(Room);

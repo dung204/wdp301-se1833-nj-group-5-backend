@@ -1,9 +1,11 @@
 import {
   BadRequestException,
   ForbiddenException,
+  Inject,
   Injectable,
   Logger,
   NotFoundException,
+  forwardRef,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -29,6 +31,7 @@ export class BookingsService extends BaseService<Booking> {
   constructor(
     readonly discountService: DiscountsService,
     readonly hotelsService: HotelsService,
+    @Inject(forwardRef(() => RoomsService))
     readonly roomsService: RoomsService,
     @InjectModel(Booking.name) protected readonly model: Model<Booking>,
   ) {
@@ -141,6 +144,93 @@ export class BookingsService extends BaseService<Booking> {
   //   );
   // }
 
+  /**
+   *  @description
+   * This function checks if a room is busy during the specified check-in and check-out dates.
+   * It returns a list of bookings that overlap with the requested dates.
+   * For example, if a booking exists from 2025-10-01 to 2025-10-05 and the requested dates are
+   * from 2025-10-03 to 2025-10-04, this booking will be returned as busy.
+   * If no bookings overlap, an empty array is returned.
+   * @note
+   * we have a formula to check if a booking is busy:
+   * @note
+   *  startDate < checkOut_Old && endDate > checkIn_Old -> busy: && is very important
+   */
+  async findBookingByBusyRoom(
+    roomId?: string,
+    checkIn?: Date,
+    checkOut?: Date,
+    userId?: string,
+  ): Promise<Booking[]> {
+    // Find bookings for the room that overlap with the requested dates
+    // không nên comment dòng này, vì nó sẽ làm mất tính năng tìm kiếm phòng trống
+    const query = {
+      room: roomId,
+      status: { $ne: BookingStatus.CANCELLED },
+      checkIn: { $lt: checkOut },
+      checkOut: { $gt: checkIn },
+      ...(userId && { userId: userId }),
+    };
+
+    const bookings = await this.model.find(query);
+
+    return bookings;
+  }
+
+  async bookedCountByHotel(hotelId: string, startDate: Date, endDate: Date) {
+    const bookedCounts = await this.model.aggregate([
+      // Giai đoạn 1: Lọc ra các booking có liên quan
+      {
+        $match: {
+          hotel: hotelId, // Lọc đúng khách sạn
+          status: { $ne: 'CANCELLED' }, // Bỏ qua các booking đã hủy
+          // Áp dụng logic xung đột lịch (overlap)
+          checkIn: { $lt: endDate },
+          checkOut: { $gt: startDate },
+        },
+      },
+      // Giai đoạn 2: Nhóm theo loại phòng và đếm
+      {
+        $group: {
+          _id: '$room', // Nhóm tất cả các booking lại theo trường 'room' (room ID)
+          bookedCount: { $sum: 1 }, // Với mỗi booking trong nhóm, đếm +1
+        },
+      },
+      // Giai đoạn 3 (Tùy chọn): Đổi tên trường _id cho dễ hiểu
+      {
+        $project: {
+          _id: 0, // Bỏ trường _id cũ
+          roomId: '$_id', // Đổi tên _id thành roomId
+          bookedCount: 1, // Giữ lại trường bookedCount
+        },
+      },
+    ]);
+
+    return bookedCounts;
+  }
+
+  async deleteBooking(user: User, bookingId: string): Promise<void> {
+    const booking = await this.findOne({ _id: bookingId });
+
+    if (!booking) {
+      throw new NotFoundException(`Booking with ID ${bookingId} not found`);
+    }
+
+    // Check permissions
+    if (booking.user.toString() !== user._id.toString() && user.role !== Role.ADMIN) {
+      throw new ForbiddenException('You do not have permission to delete this booking');
+    }
+
+    // Don't allow deletion of confirmed or checked-in bookings
+    if ([BookingStatus.CANCELLED].includes(booking.status)) {
+      throw new BadRequestException(
+        'Cannot delete confirmed or completed bookings. Use cancellation instead.',
+      );
+    }
+
+    await this.softDelete({ _id: bookingId });
+  }
+
   protected preFind(
     options: FindManyOptions<Booking>,
     currentUser?: User,
@@ -213,60 +303,5 @@ export class BookingsService extends BaseService<Booking> {
     }
 
     return findOptions;
-  }
-
-  /**
-   *  @description
-   * This function checks if a room is busy during the specified check-in and check-out dates.
-   * It returns a list of bookings that overlap with the requested dates.
-   * For example, if a booking exists from 2025-10-01 to 2025-10-05 and the requested dates are
-   * from 2025-10-03 to 2025-10-04, this booking will be returned as busy.
-   * If no bookings overlap, an empty array is returned.
-   * @note
-   * we have a formula to check if a booking is busy:
-   * @note
-   *  startDate < checkOut_Old && endDate > checkIn_Old -> busy: && is very important
-   */
-  async findBookingByBusyRoom(
-    roomId?: string,
-    checkIn?: Date,
-    checkOut?: Date,
-    userId?: string,
-  ): Promise<Booking[]> {
-    // Find bookings for the room that overlap with the requested dates
-    // không nên comment dòng này, vì nó sẽ làm mất tính năng tìm kiếm phòng trống
-    const query = {
-      room: roomId,
-      status: { $ne: BookingStatus.CANCELLED },
-      checkIn: { $lt: checkOut },
-      checkOut: { $gt: checkIn },
-      ...(userId && { userId: userId }),
-    };
-
-    const bookings = await this.model.find(query);
-
-    return bookings;
-  }
-
-  async deleteBooking(user: User, bookingId: string): Promise<void> {
-    const booking = await this.findOne({ _id: bookingId });
-
-    if (!booking) {
-      throw new NotFoundException(`Booking with ID ${bookingId} not found`);
-    }
-
-    // Check permissions
-    if (booking.user.toString() !== user._id.toString() && user.role !== Role.ADMIN) {
-      throw new ForbiddenException('You do not have permission to delete this booking');
-    }
-
-    // Don't allow deletion of confirmed or checked-in bookings
-    if ([BookingStatus.CANCELLED].includes(booking.status)) {
-      throw new BadRequestException(
-        'Cannot delete confirmed or completed bookings. Use cancellation instead.',
-      );
-    }
-
-    await this.softDelete({ _id: bookingId });
   }
 }

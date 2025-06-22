@@ -50,10 +50,7 @@ export class RoomsController {
   @Public()
   @Get('/')
   async searchRooms(@Query() roomQueryDto: RoomQueryDto) {
-    const result = await this.roomsService.find({
-      queryDto: roomQueryDto,
-      filter: { deleteTimestamp: null }, // Only active rooms
-    });
+    const result = await this.roomsService.getRoomsByFilterAndSearch(roomQueryDto);
     return {
       data: this.transformToDto(result.data),
       metadata: result.metadata,
