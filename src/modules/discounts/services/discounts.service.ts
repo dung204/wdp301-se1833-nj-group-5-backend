@@ -185,11 +185,11 @@ export class DiscountsService extends BaseService<Discount> {
     await this.model.updateOne({ _id: discountId }, { $inc: { usageCount: 1 } });
   }
 
-  protected preFind(
+  protected async preFind(
     options: FindManyOptions<Discount>,
     _currentUser?: User,
-  ): FindManyOptions<Discount> {
-    const findOptions = super.preFind(options, _currentUser);
+  ): Promise<FindManyOptions<Discount>> {
+    const findOptions = await super.preFind(options, _currentUser);
     if (findOptions.queryDto) {
       const discountQueryDto = findOptions.queryDto as DiscountQueryDto;
 

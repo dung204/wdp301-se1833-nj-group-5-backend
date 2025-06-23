@@ -90,8 +90,8 @@ export class ReviewsService extends BaseService<Review> {
     return response.data;
   }
 
-  preFind(options: FindManyOptions<Review>, currentUser?: User) {
-    const preProcessedOptions = super.preFind(options, currentUser);
+  protected async preFind(options: FindManyOptions<Review>, currentUser?: User) {
+    const preProcessedOptions = await super.preFind(options, currentUser);
     const reviewQueryDto = preProcessedOptions.queryDto as ReviewQueryDto;
 
     preProcessedOptions.filter = {

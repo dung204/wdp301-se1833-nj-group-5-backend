@@ -133,8 +133,11 @@ export class RoomsService extends BaseService<Room> {
     return response.data;
   }
 
-  preFind(options: FindManyOptions<Room>, currentUser?: User): FindManyOptions<Room> {
-    const findOptions = super.preFind(options, currentUser);
+  protected async preFind(
+    options: FindManyOptions<Room>,
+    currentUser?: User,
+  ): Promise<FindManyOptions<Room>> {
+    const findOptions = await super.preFind(options, currentUser);
     const roomQueryDto = findOptions.queryDto as RoomQueryAdminDto;
 
     findOptions.filter = {

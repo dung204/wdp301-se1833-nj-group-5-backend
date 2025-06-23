@@ -49,7 +49,7 @@ export class BaseService<Schema extends BaseSchema> {
   }
 
   async find(options: FindManyOptions<Schema> = {}, currentUser?: User) {
-    const preProcessedOptions = this.preFind(options, currentUser);
+    const preProcessedOptions = await this.preFind(options, currentUser);
     const { queryDto, filter, projection, ...otherOptions } = preProcessedOptions;
     const data = (await this.model
       .find(filter ?? {}, null, otherOptions)
@@ -127,14 +127,14 @@ export class BaseService<Schema extends BaseSchema> {
 
   /* ---------- Pre-processing functions ---------- */
 
-  protected preFind(
+  protected async preFind(
     options: FindManyOptions<Schema>,
     /**
      * This arg is not used in the base class,
      * but can be used in derived class
      */
     _currentUser?: User,
-  ): FindManyOptions<Schema> {
+  ): Promise<FindManyOptions<Schema>> {
     const { limit, skip } = this.getPaginationProps(options);
     const sort = this.getSortProps(options);
 

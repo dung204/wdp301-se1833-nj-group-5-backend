@@ -231,11 +231,11 @@ export class BookingsService extends BaseService<Booking> {
     await this.softDelete({ _id: bookingId });
   }
 
-  protected preFind(
+  protected async preFind(
     options: FindManyOptions<Booking>,
     currentUser?: User,
-  ): FindManyOptions<Booking> {
-    const findOptions = super.preFind(options, currentUser);
+  ): Promise<FindManyOptions<Booking>> {
+    const findOptions = await super.preFind(options, currentUser);
 
     if (findOptions.queryDto) {
       const bookingQueryDto = findOptions.queryDto as BookingQueryDtoForAdmin;

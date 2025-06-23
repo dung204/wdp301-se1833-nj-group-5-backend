@@ -177,3 +177,84 @@ export class RevenueQueryDto {
   @IsString()
   hotelOwnerId?: string;
 }
+
+export class YearlyRevenueQueryDto {
+  @ApiProperty({
+    description: 'Filter by hotel ID',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  hotelId?: string;
+}
+
+export class MonthlyRevenueQueryDto {
+  @ApiProperty({
+    description: 'Year to get monthly revenue for',
+    example: 2025,
+  })
+  @IsNotEmpty()
+  @Type(() => Number)
+  @IsNumber()
+  year!: number;
+
+  @ApiProperty({
+    description: 'Filter by hotel ID',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  hotelId?: string;
+}
+
+export class YearlyRevenueResponseDto {
+  @ApiProperty({
+    description: 'Hotel ID',
+    example: '84d67269-7470-4ef1-bfbb-c66e7cf8c955',
+  })
+  hotelId!: string;
+
+  @ApiProperty({
+    description: 'Year',
+    example: 2024,
+  })
+  year!: number;
+
+  @ApiProperty({
+    description: 'Total revenue for the year',
+    example: 50000000,
+  })
+  totalRevenue!: number;
+
+  @ApiProperty({
+    description: 'Total bookings for the year',
+    example: 150,
+  })
+  totalBookings!: number;
+}
+
+export class MonthlyRevenueResponseDto {
+  @ApiProperty({
+    description: 'Hotel ID',
+    example: '84d67269-7470-4ef1-bfbb-c66e7cf8c955',
+  })
+  hotelId!: string;
+
+  @ApiProperty({
+    description: 'Month (1-12)',
+    example: 6,
+  })
+  month!: number;
+
+  @ApiProperty({
+    description: 'Total revenue for the month',
+    example: 5000000,
+  })
+  totalRevenue!: number;
+
+  @ApiProperty({
+    description: 'Total bookings for the month',
+    example: 15,
+  })
+  totalBookings!: number;
+}
