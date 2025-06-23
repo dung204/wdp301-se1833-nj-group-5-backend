@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD, APP_INTERCEPTOR, DiscoveryModule } from '@nestjs/core';
+import { ScheduleModule } from '@nestjs/schedule';
 
 import { ConfigModule } from './base/configs/config.module';
 import { DatabaseModule } from './base/database/database.module';
@@ -10,6 +11,7 @@ import { BookingsModule } from './modules/bookings/bookings.module';
 import { DiscountsModule } from './modules/discounts/discounts.module';
 import { HotelsModule } from './modules/hotels/hotels.module';
 import { PaymentMethodsModule } from './modules/payment-methods/payment-methods.module';
+import { RevenueModule } from './modules/revenue-report/revenue.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { RoomsModule } from './modules/rooms/rooms.module';
 import { SupportRequestsModule } from './modules/support-requests/support-requests.module';
@@ -18,6 +20,7 @@ import { UsersModule } from './modules/users/users.module';
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     ConfigModule,
     DiscoveryModule,
     AuthModule,
@@ -31,6 +34,7 @@ import { UsersModule } from './modules/users/users.module';
     DiscountsModule,
     ReviewsModule,
     SupportRequestsModule,
+    RevenueModule,
   ],
   providers: [
     {
