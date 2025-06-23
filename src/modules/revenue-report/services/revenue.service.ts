@@ -8,7 +8,7 @@ import { BookingStatus } from '@/modules/bookings/enums/booking-status.enum';
 import { Booking } from '@/modules/bookings/schemas/booking.schema';
 import { User } from '@/modules/users/schemas/user.schema';
 
-import { RevenueQueryDto, RevenueQueryDtoForAdmin } from '../dtos/revenue.dto';
+import { RevenueQueryDto } from '../dtos/revenue.dto';
 import { DailyRevenueReport } from '../schemas/revenue.schema';
 
 @Injectable()
@@ -25,11 +25,11 @@ export class RevenueService extends BaseService<DailyRevenueReport> {
     const findOptions: FindManyOptions<DailyRevenueReport> = {
       queryDto: revenueQueryDto,
       filter: { deleteTimestamp: null },
-    };
+    } as FindManyOptions<DailyRevenueReport>;
     // list rooms with pagination, sorting and filtering options
     const response = await this.find(findOptions);
 
-    return response;
+    return response.data;
   }
 
   /**
@@ -53,7 +53,9 @@ export class RevenueService extends BaseService<DailyRevenueReport> {
       {
         $match: {
           checkIn: { $gte: startOfYesterday, $lte: endOfYesterday },
-          status: BookingStatus.PAID,
+          status: {
+            $in: [BookingStatus.PAID, BookingStatus.NOT_PAID_YET],
+          },
         },
       },
       // group by hotel and date, calculate total revenue and total bookings
@@ -101,10 +103,10 @@ export class RevenueService extends BaseService<DailyRevenueReport> {
     options: FindManyOptions<DailyRevenueReport>,
     _currentUser?: User,
   ): FindManyOptions<DailyRevenueReport> {
-    const findOptions = super.preFind(options, _currentUser);
+    const findOptions = options;
 
     if (findOptions.queryDto) {
-      const revenueQueryDto = findOptions.queryDto as RevenueQueryDtoForAdmin;
+      const revenueQueryDto = findOptions.queryDto as RevenueQueryDto;
 
       findOptions.filter = {
         ...findOptions.filter,

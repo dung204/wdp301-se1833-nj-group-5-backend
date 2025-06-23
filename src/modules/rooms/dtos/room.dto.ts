@@ -127,7 +127,7 @@ export class RoomResponseDto extends SchemaResponseDto {
   @Expose()
   @Transform(({ obj }) => {
     const total = obj.maxQuantity || 0;
-    const booked = obj.availability.booked || 0;
+    const booked = obj?.availability?.booked || 0;
     return booked >= total;
   })
   isSoldOut!: boolean;

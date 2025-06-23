@@ -8,7 +8,7 @@ import { CurrentUser } from '@/modules/auth/decorators/current-user.decorator';
 import { Role } from '@/modules/auth/enums/role.enum';
 import { User } from '@/modules/users/schemas/user.schema';
 
-import { DailyRevenueReportResponseDto, RevenueQueryDtoForAdmin } from '../dtos/revenue.dto';
+import { DailyRevenueReportResponseDto, RevenueQueryDto } from '../dtos/revenue.dto';
 import { DailyRevenueReport } from '../schemas/revenue.schema';
 import { RevenueService } from '../services/revenue.service';
 
@@ -33,7 +33,7 @@ export class RevenueController {
   })
   @AllowRoles([Role.ADMIN, Role.HOTEL_OWNER])
   @Get('/')
-  async GetAll(@CurrentUser() user: User, @Query() revenueQueryDto: RevenueQueryDtoForAdmin) {
+  async GetAll(@CurrentUser() user: User, @Query() revenueQueryDto: RevenueQueryDto) {
     return await this.revenueService.getRevenueDaily(revenueQueryDto);
   }
 }

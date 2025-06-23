@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Exclude, Expose, Type } from 'class-transformer';
 import { IsDate, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 
-import { QueryDto, SchemaResponseDto } from '@/base/dtos';
+import { SchemaResponseDto } from '@/base/dtos';
 import { HotelResponseDto } from '@/modules/hotels/dtos/hotel.dto';
 
 @Exclude()
@@ -106,7 +106,7 @@ export class UpdateDailyRevenueReportDto {
   totalBookings?: number;
 }
 
-export class RevenueQueryDto extends QueryDto {
+export class RevenueQueryDto {
   @ApiProperty({
     description: 'Filter by hotel ID',
     required: false,
@@ -168,9 +168,7 @@ export class RevenueQueryDto extends QueryDto {
   @Type(() => Number)
   @IsNumber()
   maxBookings?: number;
-}
 
-export class RevenueQueryDtoForAdmin extends RevenueQueryDto {
   @ApiProperty({
     description: 'Filter by hotel owner ID (admin only)',
     required: false,
