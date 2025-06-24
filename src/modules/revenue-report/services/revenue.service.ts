@@ -4,9 +4,9 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { Model, PipelineStage } from 'mongoose';
 
 import { BaseService, FindManyOptions } from '@/base/services';
+import { Role } from '@/modules/auth/enums/role.enum';
 import { BookingStatus } from '@/modules/bookings/enums/booking-status.enum';
 import { Booking } from '@/modules/bookings/schemas/booking.schema';
-import { Hotel } from '@/modules/hotels/schemas/hotel.schema';
 import { HotelsService } from '@/modules/hotels/services/hotels.service';
 import { User } from '@/modules/users/schemas/user.schema';
 
@@ -47,27 +47,8 @@ export class RevenueService extends BaseService<DailyRevenueReport> {
     _currentUser: User,
     hotelId?: string,
   ): Promise<{ hotelId: string; month: number; totalRevenue: number; totalBookings: number }[]> {
-    let hotels = [] as Hotel[];
-    if (hotelId && _currentUser?.role === 'HOTEL_OWNER') {
-      hotels = await this.hotelService.getHotelsByOwnerId(_currentUser._id);
-    }
+    const matchStage = await this.buildAuthMatchStage(_currentUser, hotelId);
 
-    // matchStage để lọc các revenue report theo năm
-    const matchStage = {
-      date: {
-        $gte: new Date(`${year}-01-01T00:00:00.000Z`),
-        $lt: new Date(`${year + 1}-01-01T00:00:00.000Z`),
-      },
-      deleteTimestamp: null, // Chỉ lấy records chưa bị xóa
-      // hotelOwner -> filter revenue by hotel and by year
-      ...(hotelId && _currentUser?.role === 'HOTEL_OWNER'
-        ? { hotel: { $in: hotels.map((hotel) => hotel._id) } }
-        : {}),
-      // admin -> filter revenue by hotel ( optional ) and by year
-      ...(hotelId && _currentUser?.role === 'ADMIN' ? { hotel: hotelId } : {}),
-    };
-
-    // Sử dụng DailyRevenueReport model thay vì Booking model
     const monthlyRevenue = await this.model.aggregate([
       {
         $match: matchStage,
@@ -107,20 +88,7 @@ export class RevenueService extends BaseService<DailyRevenueReport> {
     _currentUser: User,
     hotelId?: string,
   ): Promise<{ hotelId: string; year: number; totalRevenue: number; totalBookings: number }[]> {
-    let hotels = [] as Hotel[];
-    if (hotelId && _currentUser?.role === 'HOTEL_OWNER') {
-      hotels = await this.hotelService.getHotelsByOwnerId(_currentUser._id);
-    }
-
-    const matchStage = {
-      deleteTimestamp: null, // Chỉ lấy records chưa bị xóa
-      // hotelOwner -> filter revenue by hotel
-      ...(hotelId && _currentUser?.role === 'HOTEL_OWNER'
-        ? { hotel: { $in: hotels.map((hotel) => hotel._id) } }
-        : {}),
-      // admin -> filter revenue by hotel (optional)
-      ...(hotelId && _currentUser?.role === 'ADMIN' ? { hotel: hotelId } : {}),
-    };
+    const matchStage = await this.buildAuthMatchStage(_currentUser, hotelId);
 
     const yearlyRevenue = await this.model.aggregate([
       {
@@ -154,6 +122,36 @@ export class RevenueService extends BaseService<DailyRevenueReport> {
     ]);
 
     return yearlyRevenue;
+  }
+
+  private async buildAuthMatchStage(currentUser: User, hotelId?: string) {
+    const matchStage: any = {};
+
+    if (currentUser?.role === Role.ADMIN) {
+      if (hotelId) {
+        matchStage.hotel = hotelId;
+      }
+    } else if (currentUser?.role === Role.HOTEL_OWNER) {
+      const ownedHotels = await this.hotelService.getHotelsByOwnerId(currentUser._id);
+      const ownedHotelIds = ownedHotels.map((h) => h._id);
+
+      if (hotelId) {
+        // Chủ khách sạn yêu cầu xem 1 hotelId cụ thể
+        // Kiểm tra xem hotelId đó có thuộc sở hữu của họ không
+        if (ownedHotelIds.some((id) => id.toString() === hotelId)) {
+          matchStage.hotel = hotelId;
+        } else {
+          // Ném lỗi hoặc trả về mảng rỗng nếu họ cố gắng xem khách sạn không phải của mình
+          // Ở đây ta sẽ làm cho query không trả về kết quả nào
+          matchStage.hotel = { $in: [] };
+        }
+      } else {
+        // Chủ khách sạn muốn xem tất cả các khách sạn của họ
+        matchStage.hotel = { $in: ownedHotelIds };
+      }
+    }
+
+    return matchStage;
   }
 
   /**
@@ -241,20 +239,32 @@ export class RevenueService extends BaseService<DailyRevenueReport> {
               $lte: revenueQueryDto.dateTo,
             },
           }),
-        ...(revenueQueryDto.minRevenue &&
-          revenueQueryDto.maxRevenue && {
-            revenue: {
-              $gte: revenueQueryDto.minRevenue,
-              $lte: revenueQueryDto.maxRevenue,
-            },
-          }),
-        ...(revenueQueryDto.minBookings &&
-          revenueQueryDto.maxBookings && {
+        // revenue >= minRevenue
+        ...(revenueQueryDto.minRevenue && {
+          revenue: {
+            $gte: revenueQueryDto.minRevenue,
+          },
+        }),
+        // revenue <= maxRevenue
+        ...(revenueQueryDto.maxRevenue && {
+          revenue: {
+            $lte: revenueQueryDto.maxRevenue,
+          },
+        }),
+        // number of bookings <= maxBookings
+        ...(revenueQueryDto.maxBookings && {
+          totalBookings: {
+            $lte: revenueQueryDto.maxBookings,
+          },
+        }),
+        // number of bookings >= minBookings
+        ...(revenueQueryDto.minBookings && {
+          totalBookings: {
             revenue: {
               $gte: revenueQueryDto.minBookings,
-              $lte: revenueQueryDto.maxBookings,
             },
-          }),
+          },
+        }),
       };
 
       // compare user.role
