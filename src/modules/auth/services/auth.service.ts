@@ -47,7 +47,9 @@ export class AuthService {
       ...(await this.getTokens({ sub: user!._id })),
       user: {
         id: user!._id,
+        role: user!.role,
         fullName: user!.fullName,
+        gender: user!.gender,
       },
     };
   }
@@ -84,7 +86,9 @@ export class AuthService {
       ...(await this.getTokens({ sub: newUser._id })),
       user: {
         id: newUser._id,
+        role: newUser.role,
         fullName: newUser.fullName,
+        gender: newUser.gender,
       },
     };
   }
@@ -112,7 +116,9 @@ export class AuthService {
       ...(await this.getTokens({ sub: userId })),
       user: {
         id: user._id,
+        role: user.role,
         fullName: user.fullName,
+        gender: user.gender,
       },
     };
   }
