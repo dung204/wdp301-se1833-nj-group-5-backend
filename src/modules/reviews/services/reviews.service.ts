@@ -4,6 +4,7 @@ import { Model } from 'mongoose';
 
 import { BaseService, FindManyOptions } from '@/base/services';
 import { Role } from '@/modules/auth/enums/role.enum';
+import { HotelsService } from '@/modules/hotels/services/hotels.service';
 import { User } from '@/modules/users/schemas/user.schema';
 
 import { CreateReviewDto, ReviewQueryDto, UpdateReviewDto } from '../dtos/review.dto';
@@ -11,7 +12,10 @@ import { Review } from '../schemas/review.schema';
 
 @Injectable()
 export class ReviewsService extends BaseService<Review> {
-  constructor(@InjectModel(Review.name) protected readonly model: Model<Review>) {
+  constructor(
+    @InjectModel(Review.name) protected readonly model: Model<Review>,
+    private readonly hotelService: HotelsService,
+  ) {
     const logger = new Logger(ReviewsService.name);
     super(model, logger);
   }
@@ -29,9 +33,16 @@ export class ReviewsService extends BaseService<Review> {
   }
 
   async createReview(user: User, createReviewDto: CreateReviewDto): Promise<Review> {
+    const hotel = await this.hotelService.getHotelById(createReviewDto.hotel);
+
+    if (!hotel) {
+      throw new NotFoundException(`Hotel with ID ${createReviewDto.hotel} not found`);
+    }
+
     return this.createOne({
       ...createReviewDto,
-      user: user._id,
+      user: user,
+      hotel: hotel,
     });
   }
 
@@ -79,8 +90,8 @@ export class ReviewsService extends BaseService<Review> {
     return response.data;
   }
 
-  preFind(options: FindManyOptions<Review>, currentUser?: User) {
-    const preProcessedOptions = super.preFind(options, currentUser);
+  protected async preFind(options: FindManyOptions<Review>, currentUser?: User) {
+    const preProcessedOptions = await super.preFind(options, currentUser);
     const reviewQueryDto = preProcessedOptions.queryDto as ReviewQueryDto;
 
     preProcessedOptions.filter = {

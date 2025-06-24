@@ -2,6 +2,8 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
 
 import { BaseSchema } from '@/base/schemas';
+import { Hotel } from '@/modules/hotels/schemas/hotel.schema';
+import { User } from '@/modules/users/schemas/user.schema';
 
 @Schema()
 export class Review extends BaseSchema {
@@ -10,14 +12,14 @@ export class Review extends BaseSchema {
     ref: 'User',
     required: true,
   })
-  user!: string;
+  user!: User;
 
   @Prop({
     type: String,
     ref: 'Hotel',
     required: true,
   })
-  hotel!: string;
+  hotel!: Hotel;
 
   @Prop({
     type: String,

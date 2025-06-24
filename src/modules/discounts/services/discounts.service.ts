@@ -29,6 +29,19 @@ export class DiscountsService extends BaseService<Discount> {
     return discount;
   }
 
+  // get discounts by array of ids
+  async getDiscountsByIds(ids: string[]): Promise<Discount[]> {
+    if (!ids || ids.length === 0) {
+      return [];
+    }
+
+    const discounts = await this.find({
+      filter: { _id: { $in: ids } },
+    });
+
+    return discounts.data;
+  }
+
   async createDiscount(user: User, createDiscountDto: CreateDiscountDto): Promise<Discount> {
     // Only admin can create discounts
     if (user.role !== Role.ADMIN) {
@@ -55,6 +68,29 @@ export class DiscountsService extends BaseService<Discount> {
       usageCount: 0, // Initialize usage count
       applicableHotels: hotels,
     });
+  }
+
+  async decreaseDiscountUsage(discountId: string): Promise<Discount> {
+    const discount = await this.findOne({ _id: discountId });
+    if (!discount) {
+      throw new NotFoundException(`Discount with ID ${discountId} not found`);
+    }
+
+    // if usageCount is already 0, do not decrease it and return error
+    if (discount.usageCount <= 0) {
+      throw new ForbiddenException('Discount usage count is already at 0');
+    }
+
+    await this.update(
+      {
+        usageCount: discount.usageCount > 0 ? discount.usageCount - 1 : 0, // Ensure usage count doesn't go below 0
+      },
+      {
+        _id: discountId,
+      },
+    );
+
+    return discount;
   }
 
   async updateDiscount(user: User, discountId: string, updateDiscountDto: UpdateDiscountDto) {
@@ -149,23 +185,25 @@ export class DiscountsService extends BaseService<Discount> {
     await this.model.updateOne({ _id: discountId }, { $inc: { usageCount: 1 } });
   }
 
-  protected preFind(
+  protected async preFind(
     options: FindManyOptions<Discount>,
     _currentUser?: User,
-  ): FindManyOptions<Discount> {
-    const findOptions = super.preFind(options, _currentUser);
-    const discountQueryDto = findOptions.queryDto as DiscountQueryDto;
+  ): Promise<FindManyOptions<Discount>> {
+    const findOptions = await super.preFind(options, _currentUser);
+    if (findOptions.queryDto) {
+      const discountQueryDto = findOptions.queryDto as DiscountQueryDto;
 
-    findOptions.filter = {
-      ...findOptions.filter,
-      ...(discountQueryDto.minAmount && { amount: { $gte: discountQueryDto.minAmount } }),
-      ...(discountQueryDto.id && { _id: discountQueryDto.id }),
-      ...(discountQueryDto.state && { state: discountQueryDto.state }),
-      ...(discountQueryDto.hotelId &&
-        discountQueryDto.hotelId.length > 0 && {
-          applicableHotels: { $in: discountQueryDto.hotelId },
-        }),
-    };
+      findOptions.filter = {
+        ...findOptions.filter,
+        ...(discountQueryDto.id && { _id: discountQueryDto.id }),
+        ...(discountQueryDto.minAmount && { amount: { $gte: discountQueryDto.minAmount } }),
+        ...(discountQueryDto.state && { state: discountQueryDto.state }),
+        ...(discountQueryDto.hotelId &&
+          discountQueryDto.hotelId.length > 0 && {
+            applicableHotels: { $in: discountQueryDto.hotelId },
+          }),
+      };
+    }
 
     return findOptions;
   }

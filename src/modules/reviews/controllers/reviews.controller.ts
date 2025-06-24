@@ -51,7 +51,10 @@ export class ReviewsController {
   async searchReviews(@Query() reviewQueryDto: ReviewQueryDto) {
     const result = await this.reviewsService.find({ queryDto: reviewQueryDto });
 
-    return this.transformToDto(result.data);
+    return {
+      data: this.transformToDto(result.data),
+      metaData: result.metadata,
+    };
   }
 
   @ApiOperation({

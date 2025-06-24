@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Exclude, Expose, Transform, Type } from 'class-transformer';
 import {
   IsArray,
+  IsDate,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -12,6 +13,27 @@ import {
 
 import { QueryDto, SchemaResponseDto } from '@/base/dtos';
 import { HotelResponseDto } from '@/modules/hotels/dtos/hotel.dto';
+
+export class RoomAvailabilityDto {
+  @ApiProperty({
+    description: 'Total rooms of this type (same as maxQuantity)',
+    example: 10,
+  })
+  total!: number;
+
+  @ApiProperty({
+    description: 'Number of booked rooms',
+    example: 7,
+    default: 0,
+  })
+  booked!: number;
+
+  @ApiProperty({
+    description: 'Number of available rooms (total - booked)',
+    example: 3,
+  })
+  available!: number;
+}
 
 @Exclude()
 export class RoomResponseDto extends SchemaResponseDto {
@@ -80,6 +102,35 @@ export class RoomResponseDto extends SchemaResponseDto {
   })
   @Expose()
   isActive!: boolean;
+
+  // properties flex
+  @ApiProperty({
+    description: 'Room availability information',
+    type: RoomAvailabilityDto,
+  })
+  @Expose()
+  @Type(() => RoomAvailabilityDto)
+  @Transform(({ obj }) => {
+    return {
+      total: obj.maxQuantity || 0,
+      booked: obj?.availability?.booked || 0,
+      available: (obj.maxQuantity || 0) - (obj?.availability?.booked || 0),
+    };
+  })
+  availability!: RoomAvailabilityDto;
+
+  @ApiProperty({
+    description: 'Whether the room is sold out',
+    example: false,
+    default: false,
+  })
+  @Expose()
+  @Transform(({ obj }) => {
+    const total = obj.maxQuantity || 0;
+    const booked = obj?.availability?.booked || 0;
+    return booked >= total;
+  })
+  isSoldOut!: boolean;
 }
 
 @Exclude()
@@ -271,6 +322,28 @@ export class RoomQueryDto extends QueryDto {
   @IsOptional()
   @IsString()
   hotel?: string;
+
+  @ApiProperty({
+    description: 'Filter rooms by check-in date (start date)',
+    example: '2025-06-23T14:00:00.000Z',
+    required: false,
+  })
+  @IsOptional()
+  @IsDate()
+  @Type(() => Date) // Ensure the value is transformed to a Date object
+  @Transform(({ value }) => (value ? new Date(value) : undefined))
+  checkIn?: Date;
+
+  @ApiProperty({
+    description: 'Filter rooms by check-out date (end date)', // Fix description
+    example: '2025-06-24T12:00:00.000Z',
+    required: false,
+  })
+  @IsOptional()
+  @IsDate()
+  @Type(() => Date) // Ensure the value is transformed to a Date object
+  @Transform(({ value }) => (value ? new Date(value) : undefined))
+  checkOut?: Date;
 
   @ApiProperty({
     description: 'Filter rooms by name',

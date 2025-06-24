@@ -3,6 +3,7 @@ import { Exclude, Expose, Transform, Type } from 'class-transformer';
 import {
   IsArray,
   IsDate,
+  IsEnum,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -13,6 +14,8 @@ import {
 import { SwaggerExamples } from '@/base/constants';
 import { QueryDto, SchemaResponseDto } from '@/base/dtos';
 import { UserProfileDto } from '@/modules/users/dtos/user.dtos';
+
+import { CancelEnum } from '../enums';
 
 class CheckinTimeRangeDto {
   @ApiProperty({
@@ -102,6 +105,20 @@ export class HotelResponseDto extends SchemaResponseDto {
   rating!: number;
 
   @ApiProperty({
+    description: 'Average price per night for the hotel',
+    example: 150.0,
+  })
+  @Expose()
+  priceHotel!: number;
+
+  @ApiProperty({
+    description: 'Cancellation policy in hours before check-in',
+    example: CancelEnum.REFUND_BEFORE_1_DAY,
+  })
+  @Expose()
+  cancelPolicy!: CancelEnum;
+
+  @ApiProperty({
     description: 'Services offered by the hotel',
     example: ['wifi', 'pool', 'parking', 'breakfast'],
     type: [String],
@@ -159,6 +176,25 @@ export class CreateHotelDto {
   @IsNotEmpty()
   @IsString()
   phoneNumber!: string;
+
+  @ApiProperty({
+    description: 'Average price per night for the hotel',
+    example: '150.000',
+  })
+  @IsNotEmpty()
+  @IsString()
+  @Type(() => Number)
+  @IsNumber()
+  priceHotel!: number;
+
+  @ApiProperty({
+    description: 'Cancellation policy',
+    example: CancelEnum.REFUND_BEFORE_1_DAY,
+    enum: CancelEnum,
+  })
+  @IsNotEmpty()
+  @IsEnum(CancelEnum) // Thay đổi từ @IsString() thành @IsEnum()
+  cancelPolicy!: CancelEnum; // Thay đổi từ string thành CancelEnum
 
   @ApiProperty({
     description: 'Check-in time range',
@@ -310,6 +346,26 @@ export class UpdateHotelDto {
   @Type(() => Number)
   @IsNumber()
   rating?: number;
+
+  @ApiProperty({
+    description: 'Cancellation policy',
+    example: CancelEnum.REFUND_BEFORE_1_DAY,
+    enum: CancelEnum,
+    required: false,
+  })
+  @IsOptional()
+  @IsEnum(CancelEnum) // Thay đổi từ @IsString() thành @IsEnum()
+  cancelPolicy?: CancelEnum; // Thay đổi từ string thành CancelEnum
+
+  @ApiProperty({
+    description: 'Average price per night for the hotel',
+    example: 150000,
+    required: false,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  priceHotel?: number; // Sửa từ required thành optional
 }
 
 export class HotelQueryDto extends QueryDto {
@@ -356,6 +412,36 @@ export class HotelQueryDto extends QueryDto {
   @IsArray()
   @IsString({ each: true })
   services?: string[];
+
+  @ApiProperty({
+    description: 'Filter by minimum price',
+    required: false,
+    example: 100000,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  minPrice?: number; // Đổi tên từ priceHotel thành minPrice
+
+  @ApiProperty({
+    description: 'Filter by maximum price',
+    required: false,
+    example: 500000,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  maxPrice?: number; // Thêm maxPrice
+
+  @ApiProperty({
+    description: 'Filter by cancellation policy',
+    example: CancelEnum.REFUND_BEFORE_1_DAY,
+    enum: CancelEnum,
+    required: false,
+  })
+  @IsOptional()
+  @IsEnum(CancelEnum) // Thay đổi từ @IsString() thành @IsEnum()
+  cancelPolicy?: CancelEnum; // Thay đổi từ string thành CancelEnum và thành optional
 }
 
 export class HotelQueryDtoForAdmin extends HotelQueryDto {

@@ -12,12 +12,12 @@ import {
 } from 'class-validator';
 
 import { SwaggerExamples } from '@/base/constants';
-import { QueryDto } from '@/base/dtos';
+import { QueryDto, SchemaResponseDto } from '@/base/dtos';
 import { DiscountState } from '@/modules/discounts/enums/discount.enum';
 import { HotelResponseDto } from '@/modules/hotels/dtos/hotel.dto';
 
 @Exclude()
-export class DiscountResponseDto {
+export class DiscountResponseDto extends SchemaResponseDto {
   @ApiProperty({
     description: 'The discount amount ( default: percentage )',
     example: 10, // 10% discount,

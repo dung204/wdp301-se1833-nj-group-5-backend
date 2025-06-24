@@ -1,15 +1,307 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+  forwardRef,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 
-import { BaseService } from '@/base/services';
+import { BaseService, FindManyOptions } from '@/base/services';
+import { Role } from '@/modules/auth/enums/role.enum';
+import { Discount } from '@/modules/discounts/schemas/discount.schema';
+import { DiscountsService } from '@/modules/discounts/services/discounts.service';
+import { HotelsService } from '@/modules/hotels/services/hotels.service';
+import { RoomsService } from '@/modules/rooms/services/rooms.service';
+import { User } from '@/modules/users/schemas/user.schema';
 
+import {
+  BookingQueryDtoForAdmin,
+  CreateBookingDto,
+  // UpdateBookingDto,
+} from '../dtos/booking.dto';
+import { BookingStatus } from '../enums/booking-status.enum';
 import { Booking } from '../schemas/booking.schema';
 
 @Injectable()
 export class BookingsService extends BaseService<Booking> {
-  constructor(@InjectModel(Booking.name) protected readonly model: Model<Booking>) {
+  constructor(
+    readonly discountService: DiscountsService,
+    readonly hotelsService: HotelsService,
+    @Inject(forwardRef(() => RoomsService))
+    readonly roomsService: RoomsService,
+    @InjectModel(Booking.name) protected readonly model: Model<Booking>,
+  ) {
     const logger = new Logger(BookingsService.name);
     super(model, logger);
+  }
+
+  async getBookingById(id: string): Promise<Booking> {
+    const booking = await this.findOne({ _id: id });
+    if (!booking) {
+      throw new NotFoundException(`Booking with ID ${id} not found`);
+    }
+    return booking;
+  }
+
+  /**
+   * Logic to create a new booking
+   * 1. Validate check-in and check-out dates
+   * 2. check hotel and room availability
+   * 3. check room availability of this day
+   * -> filter by condition: checkIn, checkOut, roomId, number of booking ( compare with maximum rooms )
+   */
+  async createBooking(user: User, createBookingDto: CreateBookingDto): Promise<Booking> {
+    // 1. check hotel and room availability
+    const hotel = await this.hotelsService.getHotelById(createBookingDto.hotel);
+
+    if (!hotel) {
+      throw new NotFoundException(`Hotel with ID ${createBookingDto.hotel} not found`);
+    }
+
+    const room = await this.roomsService.getRoomById(createBookingDto.room);
+    if (!room) {
+      throw new NotFoundException(`Room with ID ${createBookingDto.room} not found`);
+    }
+
+    // check user booking limit || customer also book all of rooms in hotel in one day
+    // with occupancy of room, if number of customer booking is greater than maximum occupancy of room
+    // -> throw error || recommend to book another room
+
+    // check room availability in this day
+    const bookedCount = await this.findBookingByBusyRoom(
+      room._id,
+      createBookingDto.checkIn,
+      createBookingDto.checkOut,
+    );
+
+    if (bookedCount.length >= room.maxQuantity) {
+      throw new BadRequestException('Room is fully booked for the selected dates');
+    }
+
+    let discounts = [] as Discount[];
+    // get all discounts for the booking
+    if (createBookingDto.discounts && createBookingDto.discounts.length > 0) {
+      discounts = await this.discountService.getDiscountsByIds(createBookingDto.discounts);
+
+      // decrease the discount amount if the discount is not applicable for the hotel
+      for (const discountId of discounts) {
+        await this.discountService.decreaseDiscountUsage(discountId._id);
+      }
+
+      // KHÔNG BẮT ĐƯỢC THROW NEW :))))))
+      // createBookingDto.discounts.forEach(async (discountId) => {
+      //   await this.discountService.decreaseDiscountUsage(discountId);
+      // });
+    }
+
+    // count total price
+    const totalPrice = room?.rate;
+    let discountAmount = 0;
+    let totalPriceAfterDiscounts = totalPrice;
+    // if discounts are applied, calculate the total price after applying discounts
+    if (discounts.length > 0) {
+      discountAmount = discounts.reduce((acc, discount) => acc + (discount.amount || 0), 0);
+      totalPriceAfterDiscounts = totalPrice - (discountAmount * totalPrice) / 100;
+    }
+
+    return this.createOne({
+      ...createBookingDto,
+      user: user,
+      hotel: hotel,
+      room: room,
+      totalPrice: totalPriceAfterDiscounts,
+      discounts: discounts,
+    });
+  }
+
+  // async cancelBooking(
+  //   user: User,
+  //   bookingId: string,
+  // ): Promise<Booking> {
+  //   const booking = await this.getBookingById(bookingId);
+
+  //   // Check permissions
+  //   if (booking.user.toString() !== user._id.toString() && user.role !== Role.ADMIN) {
+  //     throw new ForbiddenException('You do not have permission to cancel this booking');
+  //   }
+
+  //   // check date and base on hotel cancel policy to calculate refund amount
+
+  //   // check refund amount
+
+  //   return await this.update(
+  //     {
+  //       status: BookingStatus.CANCELLED,
+  //       cancelledAt: new Date(),
+  //       refundAmount,
+  //     },
+  //     { _id: bookingId },
+  //     user,
+  //   );
+  // }
+
+  /**
+   *  @description
+   * This function checks if a room is busy during the specified check-in and check-out dates.
+   * It returns a list of bookings that overlap with the requested dates.
+   * For example, if a booking exists from 2025-10-01 to 2025-10-05 and the requested dates are
+   * from 2025-10-03 to 2025-10-04, this booking will be returned as busy.
+   * If no bookings overlap, an empty array is returned.
+   * @note
+   * we have a formula to check if a booking is busy:
+   * @note
+   *  startDate < checkOut_Old && endDate > checkIn_Old -> busy: && is very important
+   */
+  async findBookingByBusyRoom(
+    roomId?: string,
+    checkIn?: Date,
+    checkOut?: Date,
+    userId?: string,
+  ): Promise<Booking[]> {
+    // Find bookings for the room that overlap with the requested dates
+    // không nên comment dòng này, vì nó sẽ làm mất tính năng tìm kiếm phòng trống
+    const query = {
+      room: roomId,
+      status: { $ne: BookingStatus.CANCELLED },
+      checkIn: { $lt: checkOut },
+      checkOut: { $gt: checkIn },
+      ...(userId && { userId: userId }),
+    };
+
+    const bookings = await this.model.find(query);
+
+    return bookings;
+  }
+
+  async bookedCountByHotel(hotelId: string, startDate: Date, endDate: Date) {
+    const bookedCounts = await this.model.aggregate([
+      // Giai đoạn 1: Lọc ra các booking có liên quan
+      {
+        $match: {
+          hotel: hotelId, // Lọc đúng khách sạn
+          status: { $ne: 'CANCELLED' }, // Bỏ qua các booking đã hủy
+          // Áp dụng logic xung đột lịch (overlap)
+          checkIn: { $lt: endDate },
+          checkOut: { $gt: startDate },
+        },
+      },
+      // Giai đoạn 2: Nhóm theo loại phòng và đếm
+      {
+        $group: {
+          _id: '$room', // Nhóm tất cả các booking lại theo trường 'room' (room ID)
+          bookedCount: { $sum: 1 }, // Với mỗi booking trong nhóm, đếm +1
+        },
+      },
+      // Giai đoạn 3 (Tùy chọn): Đổi tên trường _id cho dễ hiểu
+      {
+        $project: {
+          _id: 0, // Bỏ trường _id cũ
+          roomId: '$_id', // Đổi tên _id thành roomId
+          bookedCount: 1, // Giữ lại trường bookedCount
+        },
+      },
+    ]);
+
+    return bookedCounts;
+  }
+
+  async deleteBooking(user: User, bookingId: string): Promise<void> {
+    const booking = await this.findOne({ _id: bookingId });
+
+    if (!booking) {
+      throw new NotFoundException(`Booking with ID ${bookingId} not found`);
+    }
+
+    // Check permissions
+    if (booking.user.toString() !== user._id.toString() && user.role !== Role.ADMIN) {
+      throw new ForbiddenException('You do not have permission to delete this booking');
+    }
+
+    // Don't allow deletion of confirmed or checked-in bookings
+    if ([BookingStatus.CANCELLED].includes(booking.status)) {
+      throw new BadRequestException(
+        'Cannot delete confirmed or completed bookings. Use cancellation instead.',
+      );
+    }
+
+    await this.softDelete({ _id: bookingId });
+  }
+
+  protected async preFind(
+    options: FindManyOptions<Booking>,
+    currentUser?: User,
+  ): Promise<FindManyOptions<Booking>> {
+    const findOptions = await super.preFind(options, currentUser);
+
+    if (findOptions.queryDto) {
+      const bookingQueryDto = findOptions.queryDto as BookingQueryDtoForAdmin;
+
+      // Apply filters based on query parameters
+      findOptions.filter = {
+        ...findOptions.filter,
+        ...(bookingQueryDto.id && { _id: bookingQueryDto.id }),
+        ...(bookingQueryDto.userId && { user: bookingQueryDto.userId }),
+        ...(bookingQueryDto.hotelId && { hotel: bookingQueryDto.hotelId }),
+        ...(bookingQueryDto.roomId && { room: bookingQueryDto.roomId }),
+        ...(bookingQueryDto.status && { status: bookingQueryDto.status }),
+        ...(bookingQueryDto.cancelPolicy && { cancelPolicy: bookingQueryDto.cancelPolicy }),
+      };
+
+      // Filter by check-in date range
+      if (bookingQueryDto.checkIn || bookingQueryDto.checkOut) {
+        const dateFilter: any = {};
+        if (bookingQueryDto.checkIn) {
+          dateFilter.$gte = bookingQueryDto.checkIn;
+        }
+        if (bookingQueryDto.checkOut) {
+          dateFilter.$lte = bookingQueryDto.checkOut;
+        }
+        findOptions.filter = {
+          ...findOptions.filter,
+          checkIn: dateFilter,
+        };
+      }
+
+      // Filter by price range
+      if (bookingQueryDto.minPrice || bookingQueryDto.maxPrice) {
+        const priceFilter: any = {};
+        if (bookingQueryDto.minPrice) {
+          priceFilter.$gte = bookingQueryDto.minPrice;
+        }
+        if (bookingQueryDto.maxPrice) {
+          priceFilter.$lte = bookingQueryDto.maxPrice;
+        }
+        findOptions.filter = {
+          ...findOptions.filter,
+          totalPrice: priceFilter,
+        };
+      }
+
+      // Role-based filtering
+      if (currentUser?.role === Role.CUSTOMER) {
+        // Customers can only see their own bookings
+        findOptions.filter = {
+          ...findOptions.filter,
+          user: currentUser._id,
+        };
+      } else if (currentUser?.role === Role.HOTEL_OWNER) {
+        // Hotel owners can only see bookings for their hotels
+        // This requires a more complex query with populate
+        // For now, let's add a note that this needs hotel lookup
+        // TODO: Implement hotel owner filtering with aggregation pipeline
+      }
+
+      // Admin can filter by hotel owner ID
+      if (bookingQueryDto.hotelOwnerId && currentUser?.role === Role.ADMIN) {
+        // This would require aggregation to join with hotels collection
+        // TODO: Implement aggregation pipeline for hotel owner filtering
+      }
+    }
+
+    return findOptions;
   }
 }

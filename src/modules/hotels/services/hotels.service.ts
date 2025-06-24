@@ -24,28 +24,23 @@ export class HotelsService extends BaseService<Hotel> {
     return hotel;
   }
 
+  async getHotelsByOwnerId(ownerId: string): Promise<Hotel[]> {
+    const hotels = await this.model
+      .find({ filter: { owner: ownerId, deleteTimestamp: null } })
+      .lean()
+      .exec();
+    if (!hotels || hotels.length === 0) {
+      throw new NotFoundException(`No hotels found for owner with ID ${ownerId}`);
+    }
+    return hotels;
+  }
+
   async createHotel(user: User, createHotelDto: CreateHotelDto): Promise<Hotel> {
     return this.createOne({
       ...createHotelDto,
       owner: user,
     });
   }
-
-  // protected async preSoftDelete(_filter?: RootFilterQuery<Hotel> | undefined, _currentUser?: User): Promise<void> {
-  //   if (!_filter || Object.keys(_filter).length === 0) {
-  //     throw new NotFoundException('No hotel found to delete');
-  //   }
-
-  //   const { _id } = _filter as { _id: string };
-  //   const hotel = await this.getHotelById(_id);
-  //   if (!hotel) {
-  //     throw new NotFoundException(`Hotel with ID ${_id} not found`);
-  //   }
-
-  //   if(hotel.owner.toString() !== _currentUser?._id.toString() && _currentUser?.role !== Role.ADMIN) {
-  //     throw new ForbiddenException('You do not have permission to delete this hotel');
-  //   }
-  // }
 
   async deleteHotel(user: User, hotelId: string): Promise<void> {
     const hotel = await this.findOne({ _id: hotelId });
@@ -86,10 +81,14 @@ export class HotelsService extends BaseService<Hotel> {
     };
   }
 
-  protected preFind(options: FindManyOptions<Hotel>, currentUser?: User): FindManyOptions<Hotel> {
-    const findOptions = super.preFind(options, currentUser);
+  protected async preFind(
+    options: FindManyOptions<Hotel>,
+    currentUser?: User,
+  ): Promise<FindManyOptions<Hotel>> {
+    const findOptions = await super.preFind(options, currentUser);
     const hotelQueryDto = findOptions.queryDto as HotelQueryDtoForAdmin;
 
+    // logic and filter for fields base on HotelQueryDtoForAdmin
     findOptions.filter = {
       ...findOptions.filter,
       ...(hotelQueryDto.name && { name: { $regex: hotelQueryDto.name, $options: 'i' } }),
@@ -100,8 +99,28 @@ export class HotelsService extends BaseService<Hotel> {
         hotelQueryDto.services.length > 0 && {
           services: { $in: hotelQueryDto.services.map((service) => new RegExp(service, 'i')) },
         }),
+      ...(hotelQueryDto.cancelPolicy && { cancelPolicy: hotelQueryDto.cancelPolicy }),
     };
 
+    // filter by priceHotel
+    if (hotelQueryDto.minPrice || hotelQueryDto.maxPrice) {
+      const priceFilter: any = {};
+
+      if (hotelQueryDto.minPrice) {
+        priceFilter.$gte = hotelQueryDto.minPrice;
+      }
+
+      if (hotelQueryDto.maxPrice) {
+        priceFilter.$lte = hotelQueryDto.maxPrice;
+      }
+
+      findOptions.filter = {
+        ...findOptions.filter,
+        priceHotel: priceFilter,
+      };
+    }
+
+    // if role is hotel owner,filter hotel by owner
     if (currentUser?.role === Role.HOTEL_OWNER) {
       findOptions.filter = {
         ...findOptions.filter,
@@ -109,6 +128,8 @@ export class HotelsService extends BaseService<Hotel> {
       };
     }
 
+    // If the query is made by an admin and includes ownerId, filter by ownerId
+    // only admin can query by ownerId
     if (hotelQueryDto.ownerId && currentUser?.role === Role.ADMIN) {
       // If admin is querying by ownerId, apply that filter
       findOptions.filter = {
@@ -117,6 +138,7 @@ export class HotelsService extends BaseService<Hotel> {
       };
     }
 
+    // If the query is made by an admin and includes isActive, filter by deleteTimestamp
     if (hotelQueryDto.isActive) {
       switch (hotelQueryDto.isActive) {
         case 'true':

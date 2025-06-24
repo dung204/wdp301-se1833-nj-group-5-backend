@@ -1,9 +1,17 @@
-import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+  forwardRef,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 
 import { BaseService, FindManyOptions } from '@/base/services';
 import { Role } from '@/modules/auth/enums/role.enum';
+import { BookingsService } from '@/modules/bookings/services/bookings.service';
 import { HotelsService } from '@/modules/hotels/services/hotels.service';
 import { User } from '@/modules/users/schemas/user.schema';
 
@@ -14,10 +22,56 @@ import { Room } from '../schemas/room.schema';
 export class RoomsService extends BaseService<Room> {
   constructor(
     @InjectModel(Room.name) protected readonly model: Model<Room>,
+    @Inject(forwardRef(() => BookingsService))
+    private readonly bookingService: BookingsService,
     private readonly hotelsService: HotelsService,
   ) {
     const logger = new Logger(RoomsService.name);
     super(model, logger);
+  }
+
+  async getRoomsByFilterAndSearch(roomQueryDto: RoomQueryAdminDto) {
+    const findOptions: FindManyOptions<Room> = {
+      queryDto: roomQueryDto,
+      filter: { deleteTimestamp: null }, // Only active rooms
+    };
+    // list rooms with pagination, sorting and filtering options
+    let response = await this.find(findOptions);
+
+    if (roomQueryDto.hotel && roomQueryDto.checkIn && roomQueryDto.checkOut) {
+      // filter booked rooms
+      const bookedRoom = await this.bookingService.bookedCountByHotel(
+        roomQueryDto.hotel,
+        roomQueryDto.checkIn,
+        roomQueryDto.checkOut,
+      );
+
+      const bookedMap = new Map(
+        bookedRoom.map((item) => [item.roomId.toString(), item.bookedCount]),
+      );
+
+      // Thêm thông tin về số lượng phòng trống vào kết quả cuối cùng
+      const resultsWithAvailability = response.data.map((roomType) => {
+        const booked = bookedMap.get(roomType._id.toString()) || 0; // Lấy số phòng đã đặt, nếu không có thì là 0
+        const available = roomType.maxQuantity - booked;
+
+        return {
+          ...roomType,
+          availability: {
+            total: roomType.maxQuantity,
+            booked: booked,
+            available: available > 0 ? available : 0, // Đảm bảo số phòng trống không bị âm
+          },
+          isSoldOut: available <= 0, // Thêm một cờ để biết đã hết phòng hay chưa
+        };
+      });
+
+      response = {
+        ...response,
+        data: resultsWithAvailability,
+      };
+    }
+    return response;
   }
 
   async getRoomById(id: string): Promise<Room> {
@@ -79,8 +133,11 @@ export class RoomsService extends BaseService<Room> {
     return response.data;
   }
 
-  preFind(options: FindManyOptions<Room>, currentUser?: User): FindManyOptions<Room> {
-    const findOptions = super.preFind(options, currentUser);
+  protected async preFind(
+    options: FindManyOptions<Room>,
+    currentUser?: User,
+  ): Promise<FindManyOptions<Room>> {
+    const findOptions = await super.preFind(options, currentUser);
     const roomQueryDto = findOptions.queryDto as RoomQueryAdminDto;
 
     findOptions.filter = {
