@@ -1,7 +1,8 @@
 import { HttpModule } from '@nestjs/axios';
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 
+import { BookingsModule } from '../bookings/bookings.module';
 import { TransactionsController } from './controllers/transactions.controller';
 import { Transaction, TransactionSchema } from './schemas/transaction.schema';
 import { TransactionsService } from './services/transactions.service';
@@ -10,6 +11,7 @@ import { TransactionsService } from './services/transactions.service';
   imports: [
     MongooseModule.forFeature([{ name: Transaction.name, schema: TransactionSchema }]),
     HttpModule,
+    forwardRef(() => BookingsModule),
   ],
   controllers: [TransactionsController],
   providers: [TransactionsService],

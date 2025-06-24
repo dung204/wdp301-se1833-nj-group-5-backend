@@ -7,9 +7,10 @@ import { Model } from 'mongoose';
 import { configs } from '@/base/configs';
 import { RedisService } from '@/base/database';
 import { BaseService } from '@/base/services';
+import { BookingsService } from '@/modules/bookings/services/bookings.service';
 import { User } from '@/modules/users/schemas/user.schema';
 
-import { MomoNotifyDto } from '../dtos/transaction.dtos';
+import { CreateTransactionDto, MomoNotifyDto } from '../dtos/transaction.dtos';
 import { Transaction } from '../schemas/transaction.schema';
 
 @Injectable()
@@ -20,9 +21,23 @@ export class TransactionsService extends BaseService<Transaction> {
     @InjectModel(Transaction.name) protected readonly model: Model<Transaction>,
     private readonly httpService: HttpService,
     private readonly redisService: RedisService,
+    private readonly bookingService: BookingsService,
   ) {
     const logger = new Logger(TransactionsService.name);
     super(model, logger);
+  }
+
+  async createTransaction(createTransition: CreateTransactionDto) {
+    const booking = await this.bookingService.getBookingById(createTransition.booking);
+
+    if (!booking) {
+      throw new NotFoundException('Booking not found');
+    }
+
+    return await this.createOne({
+      ...createTransition,
+      booking,
+    });
   }
 
   async handleMomoTransactionNotify(momoNotifyDto: MomoNotifyDto) {

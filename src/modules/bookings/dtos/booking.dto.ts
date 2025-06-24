@@ -14,6 +14,7 @@ import { QueryDto, SchemaResponseDto } from '@/base/dtos';
 import { HotelResponseDto } from '@/modules/hotels/dtos/hotel.dto';
 import { CancelEnum } from '@/modules/hotels/enums';
 import { RoomResponseDto } from '@/modules/rooms/dtos/room.dto';
+import { PaymentMethodEnum } from '@/modules/transactions/schemas/transaction.schema';
 import { UserProfileDto } from '@/modules/users/dtos/user.dtos';
 
 import { BookingStatus } from '../enums/booking-status.enum';
@@ -45,14 +46,14 @@ export class BookingResponseDto extends SchemaResponseDto {
 
   @ApiProperty({
     description: 'Check-in date',
-    example: '2024-01-15T14:00:00.000Z',
+    example: '2025-06-25T14:00:00.000Z',
   })
   @Expose()
   checkIn!: Date;
 
   @ApiProperty({
     description: 'Check-out date',
-    example: '2024-01-18T12:00:00.000Z',
+    example: '2025-06-27T14:00:00.000Z',
   })
   @Expose()
   checkOut!: Date;
@@ -102,6 +103,20 @@ export class BookingResponseDto extends SchemaResponseDto {
   })
   @Expose()
   refundAmount?: number;
+
+  @ApiProperty({
+    description: 'Payment Url',
+    type: String,
+  })
+  @Expose()
+  paymentUrl!: string;
+
+  @ApiProperty({
+    description: 'Payment method used for the booking',
+    type: String,
+  })
+  @Expose()
+  paymentMethod!: string;
 }
 
 export class CreateBookingDto {
@@ -169,6 +184,16 @@ export class CreateBookingDto {
   @IsString({ each: true })
   @Transform(({ value }) => (typeof value === 'string' ? value.split(',') : value))
   discounts?: string[];
+
+  @ApiProperty({
+    description: 'Payment method',
+    enum: PaymentMethodEnum,
+    example: PaymentMethodEnum.PAYMENT_GATEWAY,
+  })
+  @IsNotEmpty()
+  @IsEnum(PaymentMethodEnum)
+  @IsString()
+  paymentMethod!: PaymentMethodEnum;
 }
 
 export class UpdateBookingDto {
