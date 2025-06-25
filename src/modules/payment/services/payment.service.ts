@@ -64,4 +64,49 @@ export class PayosService {
       );
     }
   }
+
+  async checkPaymentStatus(orderCode: number) {
+    try {
+      const response = await this.httpService.axiosRef.get(`${this.PAYOS_API_URL}/${orderCode}`, {
+        headers: {
+          'x-client-id': this.PAYOS_CLIENT_ID,
+          'x-api-key': this.PAYOS_API_KEY,
+        },
+      });
+
+      if (!response.data) {
+        throw new BadGatewayException('Invalid response from PayOS when checking payment status');
+      }
+
+      // Trả về thông tin trạng thái thanh toán
+      return {
+        orderCode: response.data.data.orderCode,
+        status: response.data.data.status, // PENDING, PAID, CANCELLED
+        amount: response.data.data.amount,
+        transactions: response.data.data.transactions,
+        createdAt: response.data.data.createdAt,
+        paidAt: response.data.data.paidAt,
+      };
+    } catch (error) {
+      throw new BadGatewayException(
+        `Failed to check payment status: ${
+          error instanceof Error ? error.message : 'Error in checkPaymentStatus'
+        }`,
+      );
+    }
+  }
+
+  // Helper method để kiểm tra xem order đã thanh toán hay chưa
+  async isOrderPaid(orderCode: number): Promise<boolean> {
+    try {
+      const paymentStatus = await this.checkPaymentStatus(orderCode);
+      return paymentStatus.status === 'PAID';
+    } catch (error) {
+      throw new BadGatewayException(
+        `Failed to check if order is paid: ${
+          error instanceof Error ? error.message : 'Error in isOrderPaid'
+        }`,
+      );
+    }
+  }
 }
