@@ -12,6 +12,7 @@ import {
 } from 'class-validator';
 
 import { QueryDto, SchemaResponseDto } from '@/base/dtos';
+import { transformToDate, transformToFloatNumber, transformToStringArray } from '@/base/utils';
 import { HotelResponseDto } from '@/modules/hotels/dtos/hotel.dto';
 
 export class RoomAvailabilityDto {
@@ -165,9 +166,9 @@ export class CreateRoomDto {
     example: 150,
   })
   @IsNotEmpty()
-  @IsNumber()
-  @IsPositive()
-  @Type(() => Number)
+  @Transform(transformToFloatNumber)
+  @IsNumber({}, { message: 'Rate must be a number' })
+  @IsPositive({ message: 'Rate must be a positive number' })
   rate!: number;
 
   @ApiProperty({
@@ -175,9 +176,9 @@ export class CreateRoomDto {
     example: 35,
   })
   @IsNotEmpty()
-  @IsNumber()
-  @IsPositive()
-  @Type(() => Number)
+  @Transform(transformToFloatNumber)
+  @IsNumber({}, { message: 'Size must be a number' })
+  @IsPositive({ message: 'Size must be a positive number' })
   size!: number;
 
   @ApiProperty({
@@ -185,9 +186,9 @@ export class CreateRoomDto {
     example: 2,
   })
   @IsNotEmpty()
-  @IsNumber()
-  @Min(1)
-  @Type(() => Number)
+  @Transform(transformToFloatNumber)
+  @IsNumber({}, { message: 'Occupancy must be a number' })
+  @Min(1, { message: 'Occupancy must be at least 1' })
   occupancy!: number;
 
   @ApiProperty({
@@ -199,7 +200,7 @@ export class CreateRoomDto {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  @Transform(({ value }) => (typeof value === 'string' ? value.split(',') : value))
+  @Transform(transformToStringArray)
   services?: string[];
 
   @ApiProperty({
@@ -211,7 +212,7 @@ export class CreateRoomDto {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  @Transform(({ value }) => (typeof value === 'string' ? value.split(',') : value))
+  @Transform(transformToStringArray)
   images?: string[];
 
   @ApiProperty({
@@ -219,9 +220,9 @@ export class CreateRoomDto {
     example: 5,
   })
   @IsNotEmpty()
-  @IsNumber()
-  @Min(1)
-  @Type(() => Number)
+  @Transform(transformToFloatNumber)
+  @IsNumber({}, { message: 'Max quantity must be a number' })
+  @Min(1, { message: 'Max quantity must be at least 1' })
   maxQuantity!: number;
 }
 
@@ -241,9 +242,9 @@ export class UpdateRoomDto {
     required: false,
   })
   @IsOptional()
-  @IsNumber()
-  @IsPositive()
-  @Type(() => Number)
+  @Transform(transformToFloatNumber)
+  @IsNumber({}, { message: 'Rate must be a number' })
+  @IsPositive({ message: 'Rate must be a positive number' })
   rate?: number;
 
   @ApiProperty({
@@ -252,9 +253,9 @@ export class UpdateRoomDto {
     required: false,
   })
   @IsOptional()
-  @IsNumber()
-  @IsPositive()
-  @Type(() => Number)
+  @Transform(transformToFloatNumber)
+  @IsNumber({}, { message: 'Size must be a number' })
+  @IsPositive({ message: 'Size must be a positive number' })
   size?: number;
 
   @ApiProperty({
@@ -263,9 +264,9 @@ export class UpdateRoomDto {
     required: false,
   })
   @IsOptional()
-  @IsNumber()
-  @Min(1)
-  @Type(() => Number)
+  @Transform(transformToFloatNumber)
+  @IsNumber({}, { message: 'Occupancy must be a number' })
+  @Min(1, { message: 'Occupancy must be at least 1' })
   occupancy?: number;
 
   @ApiProperty({
@@ -277,7 +278,7 @@ export class UpdateRoomDto {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  @Transform(({ value }) => (typeof value === 'string' ? value.split(',') : value))
+  @Transform(transformToStringArray)
   services?: string[];
 
   @ApiProperty({
@@ -289,7 +290,7 @@ export class UpdateRoomDto {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  @Transform(({ value }) => (typeof value === 'string' ? value.split(',') : value))
+  @Transform(transformToStringArray)
   images?: string[];
 
   @ApiProperty({
@@ -298,9 +299,9 @@ export class UpdateRoomDto {
     required: false,
   })
   @IsOptional()
-  @IsNumber()
-  @Min(1)
-  @Type(() => Number)
+  @Transform(transformToFloatNumber)
+  @IsNumber({}, { message: 'Max quantity must be a number' })
+  @Min(1, { message: 'Max quantity must be at least 1' })
   maxQuantity?: number;
 }
 
@@ -330,19 +331,19 @@ export class RoomQueryDto extends QueryDto {
   })
   @IsOptional()
   @IsDate()
-  @Type(() => Date) // Ensure the value is transformed to a Date object
-  @Transform(({ value }) => (value ? new Date(value) : undefined))
+  @Type(() => Date)
+  @Transform(transformToDate)
   checkIn?: Date;
 
   @ApiProperty({
-    description: 'Filter rooms by check-out date (end date)', // Fix description
+    description: 'Filter rooms by check-out date (end date)',
     example: '2025-06-24T12:00:00.000Z',
     required: false,
   })
   @IsOptional()
   @IsDate()
-  @Type(() => Date) // Ensure the value is transformed to a Date object
-  @Transform(({ value }) => (value ? new Date(value) : undefined))
+  @Type(() => Date)
+  @Transform(transformToDate)
   checkOut?: Date;
 
   @ApiProperty({
@@ -358,8 +359,8 @@ export class RoomQueryDto extends QueryDto {
     required: false,
   })
   @IsOptional()
-  @IsNumber()
-  @Type(() => Number)
+  @Transform(transformToFloatNumber)
+  @IsNumber({}, { message: 'Min rate must be a number' })
   minRate?: number;
 
   @ApiProperty({
@@ -367,8 +368,8 @@ export class RoomQueryDto extends QueryDto {
     required: false,
   })
   @IsOptional()
-  @IsNumber()
-  @Type(() => Number)
+  @Transform(transformToFloatNumber)
+  @IsNumber({}, { message: 'Max rate must be a number' })
   maxRate?: number;
 
   @ApiProperty({
@@ -376,8 +377,8 @@ export class RoomQueryDto extends QueryDto {
     required: false,
   })
   @IsOptional()
-  @IsNumber()
-  @Type(() => Number)
+  @Transform(transformToFloatNumber)
+  @IsNumber({}, { message: 'Min occupancy must be a number' })
   minOccupancy?: number;
 
   @ApiProperty({
@@ -388,6 +389,7 @@ export class RoomQueryDto extends QueryDto {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
+  @Transform(transformToStringArray)
   services?: string[];
 }
 

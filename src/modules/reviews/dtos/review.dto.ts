@@ -1,8 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Exclude, Expose, Type } from 'class-transformer';
+import { Exclude, Expose, Transform, Type } from 'class-transformer';
 import { IsNotEmpty, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
 
 import { QueryDto, SchemaResponseDto } from '@/base/dtos';
+import { transformToFloatNumber } from '@/base/utils/transform.utils';
 import { HotelResponseDto } from '@/modules/hotels/dtos/hotel.dto';
 import { UserProfileDto } from '@/modules/users/dtos/user.dtos';
 
@@ -64,10 +65,10 @@ export class CreateReviewDto {
     maximum: 5,
   })
   @IsNotEmpty()
-  @IsNumber()
-  @Type(() => Number)
-  @Min(1)
-  @Max(5)
+  @Transform(transformToFloatNumber) // 1. Transform đứng trước
+  @IsNumber({}, { message: 'Rating must be a number' }) // 2. IsNumber đứng sau
+  @Min(1, { message: 'Rating must be at least 1' })
+  @Max(5, { message: 'Rating must not exceed 5' })
   rating!: number;
 }
 
@@ -87,9 +88,10 @@ export class UpdateReviewDto {
     required: false,
   })
   @IsOptional()
-  @IsNumber()
-  @Min(1)
-  @Max(5)
+  @Transform(transformToFloatNumber) // 1. Transform đứng trước
+  @IsNumber({}, { message: 'Rating must be a number' }) // 2. IsNumber đứng sau
+  @Min(1, { message: 'Rating must be at least 1' })
+  @Max(5, { message: 'Rating must not exceed 5' })
   rating?: number;
 }
 
@@ -125,9 +127,9 @@ export class ReviewQueryDto extends QueryDto {
     required: false,
   })
   @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
-  @Max(5)
+  @Transform(transformToFloatNumber) // 1. Transform đứng trước
+  @IsNumber({}, { message: 'Min rating must be a number' }) // 2. IsNumber đứng sau
+  @Min(1, { message: 'Min rating must be at least 1' })
+  @Max(5, { message: 'Min rating must not exceed 5' })
   minRating?: number;
 }

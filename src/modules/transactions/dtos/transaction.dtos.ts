@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Exclude, Expose, Type } from 'class-transformer';
-import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsDecimal, IsEnum, IsNotEmpty, IsOptional, IsString, Validate } from 'class-validator';
 
 import { SchemaResponseDto } from '@/base/dtos';
 import { BookingResponseDto } from '@/modules/bookings/dtos/booking.dto';
@@ -78,8 +78,8 @@ export class CreateTransactionDto {
     example: 500000,
   })
   @IsNotEmpty()
-  @Type(() => Number)
-  @IsNumber()
+  @IsDecimal()
+  @Validate((value: string) => parseFloat(value) > 0)
   amount!: number;
 
   @ApiProperty({

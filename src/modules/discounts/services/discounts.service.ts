@@ -115,7 +115,7 @@ export class DiscountsService extends BaseService<Discount> {
           );
         }
 
-        hotels.push();
+        hotels.push(hotel);
       }
     }
 

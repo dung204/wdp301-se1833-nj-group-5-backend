@@ -1,8 +1,17 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Exclude, Expose, Type } from 'class-transformer';
-import { IsDate, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import { Exclude, Expose, Transform, Type } from 'class-transformer';
+import {
+  IsDate,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsPositive,
+  IsString,
+  Min,
+} from 'class-validator';
 
 import { SchemaResponseDto } from '@/base/dtos';
+import { transformToFloatNumber } from '@/base/utils/transform.utils';
 import { HotelResponseDto } from '@/modules/hotels/dtos/hotel.dto';
 
 @Exclude()
@@ -60,8 +69,9 @@ export class CreateDailyRevenueReportDto {
     example: 2500000,
   })
   @IsNotEmpty()
-  @Type(() => Number)
-  @IsNumber()
+  @Transform(transformToFloatNumber) // 1. Transform đứng trước
+  @IsNumber({}, { message: 'Total revenue must be a number' }) // 2. IsNumber đứng sau
+  @IsPositive({ message: 'Total revenue must be positive' })
   totalRevenue!: number;
 
   @ApiProperty({
@@ -69,8 +79,9 @@ export class CreateDailyRevenueReportDto {
     example: 8,
   })
   @IsNotEmpty()
-  @Type(() => Number)
-  @IsNumber()
+  @Transform(transformToFloatNumber) // 1. Transform đứng trước
+  @IsNumber({}, { message: 'Total bookings must be a number' }) // 2. IsNumber đứng sau
+  @IsPositive({ message: 'Total bookings must be positive' })
   totalBookings!: number;
 }
 
@@ -91,8 +102,9 @@ export class UpdateDailyRevenueReportDto {
     required: false,
   })
   @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
+  @Transform(transformToFloatNumber) // 1. Transform đứng trước
+  @IsNumber({}, { message: 'Total revenue must be a number' }) // 2. IsNumber đứng sau
+  @IsPositive({ message: 'Total revenue must be positive' })
   totalRevenue?: number;
 
   @ApiProperty({
@@ -101,8 +113,9 @@ export class UpdateDailyRevenueReportDto {
     required: false,
   })
   @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
+  @Transform(transformToFloatNumber) // 1. Transform đứng trước
+  @IsNumber({}, { message: 'Total bookings must be a number' }) // 2. IsNumber đứng sau
+  @IsPositive({ message: 'Total bookings must be positive' })
   totalBookings?: number;
 }
 
@@ -138,8 +151,9 @@ export class RevenueQueryDto {
     required: false,
   })
   @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
+  @Transform(transformToFloatNumber) // 1. Transform đứng trước
+  @IsNumber({}, { message: 'Min revenue must be a number' }) // 2. IsNumber đứng sau
+  @IsPositive({ message: 'Min revenue must be positive' })
   minRevenue?: number;
 
   @ApiProperty({
@@ -147,8 +161,9 @@ export class RevenueQueryDto {
     required: false,
   })
   @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
+  @Transform(transformToFloatNumber) // 1. Transform đứng trước
+  @IsNumber({}, { message: 'Max revenue must be a number' }) // 2. IsNumber đứng sau
+  @IsPositive({ message: 'Max revenue must be positive' })
   maxRevenue?: number;
 
   @ApiProperty({
@@ -156,8 +171,9 @@ export class RevenueQueryDto {
     required: false,
   })
   @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
+  @Transform(transformToFloatNumber) // 1. Transform đứng trước
+  @IsNumber({}, { message: 'Min bookings must be a number' }) // 2. IsNumber đứng sau
+  @IsPositive({ message: 'Min bookings must be positive' })
   minBookings?: number;
 
   @ApiProperty({
@@ -165,8 +181,9 @@ export class RevenueQueryDto {
     required: false,
   })
   @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
+  @Transform(transformToFloatNumber) // 1. Transform đứng trước
+  @IsNumber({}, { message: 'Max bookings must be a number' }) // 2. IsNumber đứng sau
+  @IsPositive({ message: 'Max bookings must be positive' })
   maxBookings?: number;
 
   @ApiProperty({
@@ -194,8 +211,9 @@ export class MonthlyRevenueQueryDto {
     example: 2025,
   })
   @IsNotEmpty()
-  @Type(() => Number)
-  @IsNumber()
+  @Transform(transformToFloatNumber) // 1. Transform đứng trước
+  @IsNumber({}, { message: 'Year must be a number' }) // 2. IsNumber đứng sau
+  @Min(2000, { message: 'Year must be at least 2000' })
   year!: number;
 
   @ApiProperty({

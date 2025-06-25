@@ -3,11 +3,12 @@ import { Exclude, Expose, Transform, Type } from 'class-transformer';
 import {
   IsArray,
   IsDate,
+  IsDecimal,
   IsEnum,
   IsNotEmpty,
-  IsNumber,
   IsOptional,
   IsString,
+  Validate,
 } from 'class-validator';
 
 import { QueryDto, SchemaResponseDto } from '@/base/dtos';
@@ -233,8 +234,8 @@ export class UpdateBookingDto {
     required: false,
   })
   @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
+  @IsDecimal()
+  @Validate((value: string) => parseFloat(value) > 0)
   totalPrice?: number;
 
   @ApiProperty({
@@ -322,8 +323,8 @@ export class BookingQueryDto extends QueryDto {
     required: false,
   })
   @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
+  @IsDecimal()
+  @Validate((value: string) => parseFloat(value) > 0)
   minPrice?: number;
 
   @ApiProperty({
@@ -331,8 +332,8 @@ export class BookingQueryDto extends QueryDto {
     required: false,
   })
   @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
+  @IsDecimal()
+  @Validate((value: string) => parseFloat(value) > 0)
   maxPrice?: number;
 }
 
