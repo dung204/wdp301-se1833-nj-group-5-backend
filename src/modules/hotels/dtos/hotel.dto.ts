@@ -98,7 +98,7 @@ export class HotelResponseDto extends SchemaResponseDto {
     type: [String],
   })
   @Expose()
-  avatar!: string[];
+  images!: string[];
 
   @ApiProperty({
     description: 'Rating of the hotel (0-5)',
@@ -230,7 +230,7 @@ export class CreateHotelDto {
   @IsArray()
   @IsString({ each: true })
   @Transform(transformToStringArray)
-  avatar?: string[];
+  images?: string[];
 
   @ApiProperty({
     description: 'Services offered by the hotel',
@@ -328,7 +328,7 @@ export class UpdateHotelDto {
   @IsArray()
   @IsString({ each: true })
   @Transform(transformToStringArray)
-  avatar?: string[];
+  images?: string[];
 
   @ApiProperty({
     description: 'Services offered by the hotel',

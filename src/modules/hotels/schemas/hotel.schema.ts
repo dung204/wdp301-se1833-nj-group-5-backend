@@ -61,9 +61,9 @@ export class Hotel extends BaseSchema {
 
   @Prop({
     type: [String],
-    default: ['https://example.com/default-avatar.png'],
+    default: ['https://example.com/default-image.png'],
   })
-  avatar!: string[];
+  images!: string[];
 
   @Prop({
     type: Number,
