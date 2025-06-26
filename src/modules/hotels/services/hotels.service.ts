@@ -69,7 +69,7 @@ export class HotelsService extends BaseService<Hotel> {
 
     const oldHotel = _oldRecords[0];
     if (
-      oldHotel.owner.toString() !== _currentUser?._id.toString() &&
+      oldHotel.owner._id.toString() !== _currentUser?._id.toString() &&
       _currentUser?.role !== Role.ADMIN
     ) {
       throw new ForbiddenException('You do not have permission to update this hotel');

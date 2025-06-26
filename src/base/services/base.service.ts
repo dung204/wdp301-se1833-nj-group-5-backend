@@ -85,7 +85,10 @@ export class BaseService<Schema extends BaseSchema> {
   }
 
   async update(updateDto: Partial<Schema>, filter?: RootFilterQuery<Schema>, currentUser?: User) {
-    const oldRecords = await this.model.find(filter ?? {}).exec();
+    const oldRecords = (await this.model
+      .find(filter ?? {})
+      .lean()
+      .exec()) as Schema[];
 
     if (oldRecords.length === 0) {
       throw new NotFoundException('Record(s) not found.');
