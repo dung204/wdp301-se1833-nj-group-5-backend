@@ -182,7 +182,6 @@ export class CreateHotelDto {
     example: '150.000',
   })
   @IsNotEmpty()
-  @IsString()
   @Type(() => Number)
   @IsNumber()
   priceHotel!: number;

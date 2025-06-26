@@ -57,12 +57,12 @@ export class HotelsService extends BaseService<Hotel> {
     await this.softDelete({ _id: hotelId });
   }
 
-  protected preUpdate(
+  protected async preUpdate(
     updateDto: UpdateHotelDto,
     _oldRecords: Hotel[],
     _filter?: RootFilterQuery<Hotel> | undefined,
     _currentUser?: User,
-  ): Partial<Hotel> {
+  ): Promise<Partial<Hotel>> {
     if (_oldRecords.length === 0) {
       throw new NotFoundException('Hotel not found for update');
     }
