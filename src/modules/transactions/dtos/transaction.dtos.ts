@@ -1,4 +1,134 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Exclude, Expose, Type } from 'class-transformer';
+import { IsDecimal, IsEnum, IsNotEmpty, IsOptional, IsString, Validate } from 'class-validator';
+
+import { SchemaResponseDto } from '@/base/dtos';
+import { BookingResponseDto } from '@/modules/bookings/dtos/booking.dto';
+
+import { PaymentMethodEnum, TransactionStatus } from '../schemas/transaction.schema';
+
+@Exclude()
+export class TransactionResponseDto extends SchemaResponseDto {
+  @ApiProperty({
+    description: 'Booking information',
+    type: BookingResponseDto,
+  })
+  @Expose()
+  @Type(() => BookingResponseDto)
+  booking!: BookingResponseDto;
+
+  @ApiProperty({
+    description: 'Transaction amount',
+    example: 500000,
+  })
+  @Expose()
+  amount!: number;
+
+  @ApiProperty({
+    description: 'Payment method',
+    enum: PaymentMethodEnum,
+    example: PaymentMethodEnum.PAYMENT_GATEWAY,
+  })
+  @Expose()
+  paymentMethod!: PaymentMethodEnum;
+
+  @ApiProperty({
+    description: 'Transaction status',
+    enum: TransactionStatus,
+    example: TransactionStatus.SUCCESS,
+  })
+  @Expose()
+  status!: TransactionStatus;
+
+  @ApiProperty({
+    description: 'Transaction code from payment gateway',
+    example: 'TXN_1720418915988',
+    required: false,
+  })
+  @Expose()
+  transactionCode?: string;
+
+  @ApiProperty({
+    description: 'Payment gateway name',
+    example: 'PAYOS',
+    required: false,
+  })
+  @Expose()
+  paymentGateway?: string;
+
+  @ApiProperty({
+    description: 'Failure reason if transaction failed',
+    example: 'Insufficient balance',
+    required: false,
+  })
+  @Expose()
+  failureReason?: string;
+}
+export class CreateTransactionDto {
+  @ApiProperty({
+    description: 'Booking ID for the transaction',
+    example: '84d67269-7470-4ef1-bfbb-c66e7cf8c955',
+  })
+  @IsNotEmpty()
+  @IsString()
+  booking!: string;
+
+  @ApiProperty({
+    description: 'Transaction amount',
+    example: 500000,
+  })
+  @IsNotEmpty()
+  @IsDecimal()
+  @Validate((value: string) => parseFloat(value) > 0)
+  amount!: number;
+
+  @ApiProperty({
+    description: 'Payment method',
+    enum: PaymentMethodEnum,
+    example: PaymentMethodEnum.PAYMENT_GATEWAY,
+  })
+  @IsNotEmpty()
+  @IsEnum(PaymentMethodEnum)
+  @IsString()
+  paymentMethod!: PaymentMethodEnum; // string; -> nếu để string ở đây thì sẽ không có enum
+
+  @ApiProperty({
+    description: 'Transaction status',
+    enum: TransactionStatus,
+    example: TransactionStatus.PENDING,
+    required: false,
+  })
+  @IsOptional()
+  @IsEnum(TransactionStatus)
+  status?: TransactionStatus;
+
+  @ApiProperty({
+    description: 'Transaction code from payment gateway',
+    example: 'TXN_1720418915988',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  transactionCode?: string;
+
+  @ApiProperty({
+    description: 'Payment gateway name',
+    example: 'PAYOS',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  paymentGateway?: string;
+
+  @ApiProperty({
+    description: 'Failure reason if transaction failed',
+    example: 'Insufficient balance',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  failureReason?: string;
+}
 
 export class MomoNotifyDto {
   @ApiProperty({

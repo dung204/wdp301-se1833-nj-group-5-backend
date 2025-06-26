@@ -8,11 +8,14 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  Max,
+  Min,
   ValidateNested,
 } from 'class-validator';
 
 import { SwaggerExamples } from '@/base/constants';
 import { QueryDto, SchemaResponseDto } from '@/base/dtos';
+import { transformToFloatNumber, transformToJSON, transformToStringArray } from '@/base/utils';
 import { UserProfileDto } from '@/modules/users/dtos/user.dtos';
 
 import { CancelEnum } from '../enums';
@@ -95,7 +98,7 @@ export class HotelResponseDto extends SchemaResponseDto {
     type: [String],
   })
   @Expose()
-  avatar!: string[];
+  images!: string[];
 
   @ApiProperty({
     description: 'Rating of the hotel (0-5)',
@@ -179,11 +182,12 @@ export class CreateHotelDto {
 
   @ApiProperty({
     description: 'Average price per night for the hotel',
-    example: '150.000',
+    example: 150000,
   })
   @IsNotEmpty()
-  @Type(() => Number)
-  @IsNumber()
+  @Transform(transformToFloatNumber)
+  @IsNumber({}, { message: 'Price must be a number' })
+  @Min(0, { message: 'Price must be positive' })
   priceHotel!: number;
 
   @ApiProperty({
@@ -192,8 +196,8 @@ export class CreateHotelDto {
     enum: CancelEnum,
   })
   @IsNotEmpty()
-  @IsEnum(CancelEnum) // Thay đổi từ @IsString() thành @IsEnum()
-  cancelPolicy!: CancelEnum; // Thay đổi từ string thành CancelEnum
+  @IsEnum(CancelEnum)
+  cancelPolicy!: CancelEnum;
 
   @ApiProperty({
     description: 'Check-in time range',
@@ -203,10 +207,9 @@ export class CreateHotelDto {
     },
     type: CheckinTimeRangeDto,
   })
-  @ValidateNested() // thông báo cho hệ thống rằng thuộc tính này là một đối tượng lồng nhau
-  // nó sẽ có type tương ứng với CheckinTimeRangeDto
+  @ValidateNested()
   @Type(() => CheckinTimeRangeDto)
-  @Transform(({ value }) => (typeof value === 'string' ? JSON.parse(value) : value))
+  @Transform(transformToJSON)
   checkinTime!: CheckinTimeRangeDto;
 
   @ApiProperty({
@@ -224,10 +227,10 @@ export class CreateHotelDto {
     required: false,
   })
   @IsOptional()
-  @IsArray() // kiểm tra xem thuộc tính này có phải là một mảng hay không
-  @IsString({ each: true }) // từng phần tử trong mảng phải là một chuỗi
-  @Transform(({ value }) => (typeof value === 'string' ? value.split(',') : value))
-  avatar?: string[];
+  @IsArray()
+  @IsString({ each: true })
+  @Transform(transformToStringArray)
+  images?: string[];
 
   @ApiProperty({
     description: 'Services offered by the hotel',
@@ -238,16 +241,18 @@ export class CreateHotelDto {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  @Transform(({ value }) => (typeof value === 'string' ? value.split(',') : value))
+  @Transform(transformToStringArray)
   services?: string[];
 
   @ApiProperty({
     description: 'Rating',
-    example: '5',
+    example: 5,
   })
   @IsNotEmpty()
-  @Type(() => Number)
-  @IsNumber()
+  @Transform(transformToFloatNumber)
+  @IsNumber({}, { message: 'Rating must be a number' })
+  @Min(1, { message: 'Rating must be at least 1' })
+  @Max(5, { message: 'Rating must not exceed 5' })
   rating!: number;
 }
 
@@ -300,7 +305,7 @@ export class UpdateHotelDto {
   @IsOptional()
   @ValidateNested()
   @Type(() => CheckinTimeRangeDto)
-  @Transform(({ value }) => (typeof value === 'string' ? JSON.parse(value) : value))
+  @Transform(transformToJSON)
   checkinTime?: CheckinTimeRangeDto;
 
   @ApiProperty({
@@ -322,8 +327,8 @@ export class UpdateHotelDto {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  @Transform(({ value }) => (typeof value === 'string' ? value.split(',') : value))
-  avatar?: string[];
+  @Transform(transformToStringArray)
+  images?: string[];
 
   @ApiProperty({
     description: 'Services offered by the hotel',
@@ -334,16 +339,19 @@ export class UpdateHotelDto {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  @Transform(({ value }) => (typeof value === 'string' ? value.split(',') : value))
+  @Transform(transformToStringArray)
   services?: string[];
 
   @ApiProperty({
     description: 'Rating',
-    example: '5',
+    example: 5,
+    required: false,
   })
   @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
+  @Transform(transformToFloatNumber)
+  @IsNumber({}, { message: 'Rating must be a number' })
+  @Min(1, { message: 'Rating must be at least 1' })
+  @Max(5, { message: 'Rating must not exceed 5' })
   rating?: number;
 
   @ApiProperty({
@@ -353,8 +361,8 @@ export class UpdateHotelDto {
     required: false,
   })
   @IsOptional()
-  @IsEnum(CancelEnum) // Thay đổi từ @IsString() thành @IsEnum()
-  cancelPolicy?: CancelEnum; // Thay đổi từ string thành CancelEnum
+  @IsEnum(CancelEnum)
+  cancelPolicy?: CancelEnum;
 
   @ApiProperty({
     description: 'Average price per night for the hotel',
@@ -362,9 +370,10 @@ export class UpdateHotelDto {
     required: false,
   })
   @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  priceHotel?: number; // Sửa từ required thành optional
+  @Transform(transformToFloatNumber)
+  @IsNumber({}, { message: 'Price must be a number' })
+  @Min(0, { message: 'Price must be positive' })
+  priceHotel?: number;
 }
 
 export class HotelQueryDto extends QueryDto {
@@ -398,8 +407,10 @@ export class HotelQueryDto extends QueryDto {
     required: false,
   })
   @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
+  @Transform(transformToFloatNumber)
+  @IsNumber({}, { message: 'Rating must be a number' })
+  @Min(1, { message: 'Rating must be at least 1' })
+  @Max(5, { message: 'Rating must not exceed 5' })
   minRating?: number;
 
   @ApiProperty({
@@ -410,6 +421,7 @@ export class HotelQueryDto extends QueryDto {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
+  @Transform(transformToStringArray)
   services?: string[];
 
   @ApiProperty({
@@ -418,9 +430,10 @@ export class HotelQueryDto extends QueryDto {
     example: 100000,
   })
   @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  minPrice?: number; // Đổi tên từ priceHotel thành minPrice
+  @Transform(transformToFloatNumber)
+  @IsNumber({}, { message: 'Price must be a number' })
+  @Min(0, { message: 'Price must be positive' })
+  minPrice?: number;
 
   @ApiProperty({
     description: 'Filter by maximum price',
@@ -428,9 +441,10 @@ export class HotelQueryDto extends QueryDto {
     example: 500000,
   })
   @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  maxPrice?: number; // Thêm maxPrice
+  @Transform(transformToFloatNumber)
+  @IsNumber({}, { message: 'Price must be a number' })
+  @Min(0, { message: 'Price must be positive' })
+  maxPrice?: number;
 
   @ApiProperty({
     description: 'Filter by cancellation policy',
@@ -439,8 +453,8 @@ export class HotelQueryDto extends QueryDto {
     required: false,
   })
   @IsOptional()
-  @IsEnum(CancelEnum) // Thay đổi từ @IsString() thành @IsEnum()
-  cancelPolicy?: CancelEnum; // Thay đổi từ string thành CancelEnum và thành optional
+  @IsEnum(CancelEnum)
+  cancelPolicy?: CancelEnum;
 }
 
 export class HotelQueryDtoForAdmin extends HotelQueryDto {

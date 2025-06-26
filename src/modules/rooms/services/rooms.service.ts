@@ -123,7 +123,7 @@ export class RoomsService extends BaseService<Room> {
       throw new ForbiddenException('You do not have permission to delete this room');
     }
 
-    await this.softDelete({ _id: roomId });
+    await this.softDelete({ _id: roomId }, user);
   }
 
   async getRoomsByHotel(hotelId: string): Promise<Room[]> {

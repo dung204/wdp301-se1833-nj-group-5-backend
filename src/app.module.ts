@@ -11,6 +11,7 @@ import { BookingsModule } from './modules/bookings/bookings.module';
 import { DiscountsModule } from './modules/discounts/discounts.module';
 import { HotelsModule } from './modules/hotels/hotels.module';
 import { PaymentMethodsModule } from './modules/payment-methods/payment-methods.module';
+import { PaymentsModule } from './modules/payment/payment.module';
 import { RevenueModule } from './modules/revenue-report/revenue.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { RoomsModule } from './modules/rooms/rooms.module';
@@ -35,6 +36,7 @@ import { UsersModule } from './modules/users/users.module';
     ReviewsModule,
     SupportRequestsModule,
     RevenueModule,
+    PaymentsModule,
   ],
   providers: [
     {

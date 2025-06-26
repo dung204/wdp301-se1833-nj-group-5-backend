@@ -6,6 +6,7 @@ import { Discount } from '@/modules/discounts/schemas/discount.schema';
 import { CancelEnum } from '@/modules/hotels/enums';
 import { Hotel } from '@/modules/hotels/schemas/hotel.schema';
 import { Room } from '@/modules/rooms/schemas/room.schema';
+import { PaymentMethodEnum } from '@/modules/transactions/schemas/transaction.schema';
 import { User } from '@/modules/users/schemas/user.schema';
 
 import { BookingStatus } from '../enums/booking-status.enum';
@@ -51,7 +52,15 @@ export class Booking extends BaseSchema {
     default: BookingStatus.NOT_PAID_YET,
     required: false,
   })
-  status: BookingStatus = BookingStatus.NOT_PAID_YET; // default status is NOT_PAID_YET
+  status!: BookingStatus;
+
+  @Prop({
+    type: Number,
+    required: true,
+    unique: true, // Đảm bảo không bao giờ có 2 đơn hàng trùng mã
+    index: true, // Đánh index để webhook của PayOS tìm kiếm nhanh
+  })
+  orderCode!: number; // Đây chính là mã đơn hàng gửi cho PayOS
 
   @Prop({
     type: Number,
@@ -65,6 +74,13 @@ export class Booking extends BaseSchema {
     required: true,
   })
   discounts: Discount[] = []; // list of discounts applied to the booking
+
+  @Prop({
+    type: String,
+    enum: Object.values(PaymentMethodEnum),
+    required: true,
+  })
+  paymentMethod!: PaymentMethodEnum; // cancellation policy for the booking
 
   // Add cancellation-related fields
   @Prop({

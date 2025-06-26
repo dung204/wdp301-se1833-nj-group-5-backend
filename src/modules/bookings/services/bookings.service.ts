@@ -108,6 +108,9 @@ export class BookingsService extends BaseService<Booking> {
       totalPriceAfterDiscounts = totalPrice - (discountAmount * totalPrice) / 100;
     }
 
+    // get orderCode = timeStamp
+    const orderCode = Date.now();
+
     return this.createOne({
       ...createBookingDto,
       user: user,
@@ -115,6 +118,8 @@ export class BookingsService extends BaseService<Booking> {
       room: room,
       totalPrice: totalPriceAfterDiscounts,
       discounts: discounts,
+      orderCode: orderCode, // unique order code for the booking
+      status: BookingStatus.NOT_PAID_YET, // default status
     });
   }
 
@@ -228,7 +233,7 @@ export class BookingsService extends BaseService<Booking> {
       );
     }
 
-    await this.softDelete({ _id: bookingId });
+    await this.softDelete({ _id: bookingId }, user);
   }
 
   protected async preFind(

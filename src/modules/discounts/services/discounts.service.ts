@@ -115,7 +115,7 @@ export class DiscountsService extends BaseService<Discount> {
           );
         }
 
-        hotels.push();
+        hotels.push(hotel);
       }
     }
 
@@ -173,7 +173,7 @@ export class DiscountsService extends BaseService<Discount> {
       throw new NotFoundException(`Discount with ID ${discountId} not found`);
     }
 
-    await this.softDelete({ _id: discountId });
+    await this.softDelete({ _id: discountId }, user);
   }
 
   async incrementUsageCount(discountId: string): Promise<void> {

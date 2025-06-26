@@ -73,7 +73,7 @@ export class ReviewsService extends BaseService<Review> {
       throw new ForbiddenException('You do not have permission to delete this review');
     }
 
-    await this.softDelete({ _id: reviewId });
+    await this.softDelete({ _id: reviewId }, user);
   }
 
   async getReviewsByUser(userId: string): Promise<Review[]> {

@@ -35,6 +35,13 @@ export class ConfigService {
     requestType: 'captureWallet',
     lang: 'en',
   };
+
+  PAYOS = {
+    clientId: process.env['PAYOS_CLIENT_ID'] ?? '',
+    apiKey: process.env['PAYOS_API_KEY'] ?? '',
+    checksumKey: process.env['PAYOS_CHECKSUM_KEY'] ?? '',
+    apiUrl: 'https://api-merchant.payos.vn/v2/payment-requests',
+  };
 }
 
 export const configs = new ConfigService();

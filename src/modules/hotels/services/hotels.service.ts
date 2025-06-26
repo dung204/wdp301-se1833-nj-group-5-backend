@@ -54,7 +54,7 @@ export class HotelsService extends BaseService<Hotel> {
       throw new ForbiddenException('You do not have permission to delete this hotel');
     }
 
-    await this.softDelete({ _id: hotelId });
+    await this.softDelete({ _id: hotelId }, user);
   }
 
   protected async preUpdate(

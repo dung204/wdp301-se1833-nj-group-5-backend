@@ -7,12 +7,14 @@ import {
   IsNotEmpty,
   IsNumber,
   IsOptional,
+  IsPositive,
   IsString,
   Min,
 } from 'class-validator';
 
 import { SwaggerExamples } from '@/base/constants';
 import { QueryDto, SchemaResponseDto } from '@/base/dtos';
+import { transformToFloatNumber, transformToStringArray } from '@/base/utils/transform.utils';
 import { DiscountState } from '@/modules/discounts/enums/discount.enum';
 import { HotelResponseDto } from '@/modules/hotels/dtos/hotel.dto';
 
@@ -84,9 +86,9 @@ export class CreateDiscountDto {
     example: 10,
   })
   @IsNotEmpty()
-  @IsNumber()
-  @Type(() => Number)
-  @Min(0)
+  @Transform(transformToFloatNumber)
+  @IsNumber({}, { message: 'Amount must be a number' })
+  @IsPositive({ message: 'Amount must be a positive number' })
   amount!: number;
 
   @ApiProperty({
@@ -104,9 +106,8 @@ export class CreateDiscountDto {
   })
   @IsNotEmpty()
   @IsArray()
-  @Transform(({ value }) => {
-    return typeof value === 'string' ? value.split(',') : value;
-  })
+  @IsString({ each: true })
+  @Transform(transformToStringArray)
   applicableHotels!: string[];
 
   @ApiProperty({
@@ -114,9 +115,9 @@ export class CreateDiscountDto {
     example: 1,
   })
   @IsNotEmpty()
-  @IsNumber()
-  @Type(() => Number)
-  @Min(1)
+  @Transform(transformToFloatNumber)
+  @IsNumber({}, { message: 'Max quality per user must be a number' })
+  @Min(1, { message: 'Max quality per user must be at least 1' })
   maxQualityPerUser!: number;
 
   @ApiProperty({
@@ -137,9 +138,9 @@ export class UpdateDiscountDto {
     required: false,
   })
   @IsOptional()
-  @IsNumber()
-  @Type(() => Number)
-  @Min(0)
+  @Transform(transformToFloatNumber)
+  @IsNumber({}, { message: 'Amount must be a number' })
+  @IsPositive({ message: 'Amount must be a positive number' })
   amount?: number;
 
   @ApiProperty({
@@ -160,9 +161,7 @@ export class UpdateDiscountDto {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  @Transform(({ value }) => {
-    return typeof value === 'string' ? value.split(',') : value;
-  })
+  @Transform(transformToStringArray)
   applicableHotels?: string[];
 
   @ApiProperty({
@@ -171,9 +170,9 @@ export class UpdateDiscountDto {
     required: false,
   })
   @IsOptional()
-  @IsNumber()
-  @Type(() => Number)
-  @Min(1)
+  @Transform(transformToFloatNumber)
+  @IsNumber({}, { message: 'Max quality per user must be a number' })
+  @Min(1, { message: 'Max quality per user must be at least 1' })
   maxQualityPerUser?: number;
 
   @ApiProperty({
@@ -204,8 +203,9 @@ export class DiscountQueryDto extends QueryDto {
     example: 10,
   })
   @IsOptional()
-  @IsNumber()
-  @Type(() => Number)
+  @Transform(transformToFloatNumber)
+  @IsNumber({}, { message: 'Min amount must be a number' })
+  @IsPositive({ message: 'Min amount must be a positive number' })
   minAmount?: number;
 
   @ApiProperty({
@@ -225,9 +225,8 @@ export class DiscountQueryDto extends QueryDto {
     example: ['eb4ddc1f-e320-4fbb-8bfa-eed8b06d64aa'],
   })
   @IsOptional()
+  @IsArray()
   @IsString({ each: true })
-  @Transform(({ value }) => {
-    return typeof value === 'string' ? value.split(',') : value;
-  })
-  hotelId?: string;
+  @Transform(transformToStringArray)
+  hotelId?: string[];
 }

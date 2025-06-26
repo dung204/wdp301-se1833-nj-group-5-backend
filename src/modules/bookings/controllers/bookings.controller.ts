@@ -13,14 +13,30 @@ import {
 } from '@/modules/bookings/dtos/booking.dto';
 import { Booking } from '@/modules/bookings/schemas/booking.schema';
 import { BookingsService } from '@/modules/bookings/services/bookings.service';
+import { PayosService } from '@/modules/payment/services/payment.service';
+import { TransactionResponseDto } from '@/modules/transactions/dtos/transaction.dtos';
+import {
+  PaymentMethodEnum,
+  Transaction,
+  TransactionStatus,
+} from '@/modules/transactions/schemas/transaction.schema';
+import { TransactionsService } from '@/modules/transactions/services/transactions.service';
 import { User } from '@/modules/users/schemas/user.schema';
 
 @Controller('bookings')
 export class BookingsController {
-  constructor(private readonly bookingsService: BookingsService) {}
+  constructor(
+    private readonly bookingsService: BookingsService,
+    private readonly transactionsService: TransactionsService,
+    private readonly payosService: PayosService,
+  ) {}
 
   private transformToDto(data: Booking | Booking[]): BookingResponseDto | BookingResponseDto[] {
     return plainToInstance(BookingResponseDto, data);
+  }
+
+  private transformToDtoTransaction(data: Transaction): TransactionResponseDto {
+    return plainToInstance(TransactionResponseDto, data);
   }
 
   @ApiOperation({
@@ -54,8 +70,31 @@ export class BookingsController {
   @AllowRoles([Role.ADMIN, Role.HOTEL_OWNER, Role.CUSTOMER])
   @Post('/')
   async BookingHotel(@CurrentUser() user: User, @Body() createBookingDto: CreateBookingDto) {
-    const result = await this.bookingsService.createBooking(user, createBookingDto);
+    // 1. create a new booking
+    const booking = await this.bookingsService.createBooking(user, createBookingDto);
 
-    return this.transformToDto(result);
+    if (booking.paymentMethod === PaymentMethodEnum.PAYMENT_GATEWAY) {
+      // 1. create a new transaction
+      const _ = await this.transactionsService.createTransaction({
+        booking: booking._id,
+        amount: booking.totalPrice,
+        paymentMethod: booking.paymentMethod,
+        status: TransactionStatus.PENDING,
+        paymentGateway: 'PAYOS',
+      });
+
+      // 2. call paymentService to create a payment URL
+      const paymentLinkData = await this.payosService.createPaymentLink(booking);
+
+      // 3. return the payment link
+      return {
+        data: {
+          ...this.transformToDto(booking),
+          paymentLink: paymentLinkData.checkoutUrl,
+        },
+      };
+    }
+
+    return this.transformToDto(booking);
   }
 }

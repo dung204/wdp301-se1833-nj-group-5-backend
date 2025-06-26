@@ -11,9 +11,9 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiNoContentResponse, ApiOperation, ApiParam } from '@nestjs/swagger';
-import { plainToInstance } from 'class-transformer';
 
 import { ApiSuccessResponse } from '@/base/decorators';
+import { transformDataToDto } from '@/base/utils';
 import { AllowRoles } from '@/modules/auth/decorators/allow-roles.decorator';
 import { CurrentUser } from '@/modules/auth/decorators/current-user.decorator';
 import { Public } from '@/modules/auth/decorators/public.decorator';
@@ -28,15 +28,11 @@ import {
 import { RoomsService } from '@/modules/rooms/services/rooms.service';
 import { User } from '@/modules/users/schemas/user.schema';
 
-import { Room } from '../schemas/room.schema';
+import { DeletedRoomResponseDto } from './../dtos/room.dto';
 
 @Controller('rooms')
 export class RoomsController {
   constructor(private readonly roomsService: RoomsService) {}
-
-  private transformToDto(data: Room | Room[]): RoomResponseDto | RoomResponseDto[] {
-    return plainToInstance(RoomResponseDto, data);
-  }
 
   @ApiOperation({
     summary: 'Search filter rooms, get all rooms',
@@ -52,7 +48,7 @@ export class RoomsController {
   async searchRooms(@Query() roomQueryDto: RoomQueryDto) {
     const result = await this.roomsService.getRoomsByFilterAndSearch(roomQueryDto);
     return {
-      data: this.transformToDto(result.data),
+      data: transformDataToDto(RoomResponseDto, result.data),
       metadata: result.metadata,
     };
   }
@@ -80,10 +76,11 @@ export class RoomsController {
     schema: RoomResponseDto,
     description: 'Room created successfully',
   })
+  @AllowRoles([Role.ADMIN, Role.HOTEL_OWNER])
   @Post()
   async createRoom(@CurrentUser() user: User, @Body() createRoomDto: CreateRoomDto) {
     const result = await this.roomsService.createRoom(user, createRoomDto);
-    return this.transformToDto(result);
+    return transformDataToDto(DeletedRoomResponseDto, result);
   }
 
   @ApiOperation({
@@ -96,13 +93,14 @@ export class RoomsController {
     description: 'Room updated successfully',
   })
   @Patch(':id')
+  @AllowRoles([Role.ADMIN, Role.HOTEL_OWNER])
   async updateRoom(
     @CurrentUser() user: User,
     @Param('id') id: string,
     @Body() updateRoomDto: UpdateRoomDto,
   ) {
     const result = await this.roomsService.updateRoom(user, id, updateRoomDto);
-    return this.transformToDto(result);
+    return transformDataToDto(DeletedRoomResponseDto, result);
   }
 
   @ApiOperation({
@@ -115,6 +113,7 @@ export class RoomsController {
   })
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @AllowRoles([Role.ADMIN, Role.HOTEL_OWNER])
   async deleteRoom(@CurrentUser() user: User, @Param('id') id: string) {
     return this.roomsService.deleteRoom(user, id);
   }
@@ -130,10 +129,14 @@ export class RoomsController {
   })
   @Patch('restore/:id')
   @HttpCode(HttpStatus.OK)
-  async restoreRoom(@Param('id') id: string) {
-    const result = await this.roomsService.restore({
-      _id: id,
-    });
-    return this.transformToDto(result);
+  @AllowRoles([Role.ADMIN, Role.HOTEL_OWNER])
+  async restoreRoom(@Param('id') id: string, @CurrentUser() user: User) {
+    const result = await this.roomsService.restore(
+      {
+        _id: id,
+      },
+      user,
+    );
+    return transformDataToDto(DeletedRoomResponseDto, result);
   }
 }
