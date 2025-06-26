@@ -50,7 +50,7 @@ export class HotelsService extends BaseService<Hotel> {
     }
 
     // Kiểm tra quyền xóa
-    if (hotel.owner.toString() !== user._id.toString() && user.role !== Role.ADMIN) {
+    if (hotel.owner._id.toString() !== user._id.toString() && user.role !== Role.ADMIN) {
       throw new ForbiddenException('You do not have permission to delete this hotel');
     }
 
