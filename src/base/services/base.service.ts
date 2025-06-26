@@ -59,26 +59,29 @@ export class BaseService<Schema extends BaseSchema> {
   }
 
   async findOne(filter: RootFilterQuery<Schema>, currentUser?: User) {
-    const preProcessedOptions = this.preFindOne(filter, currentUser);
+    const preProcessedOptions = (await this.preFindOne(
+      filter,
+      currentUser,
+    )) as RootFilterQuery<Schema>;
     const data = (await this.model.findOne(preProcessedOptions).lean().exec()) as Schema;
     return this.postFindOne(data, preProcessedOptions, currentUser);
   }
 
   async count(options: FindManyOptions<Schema> = {}, currentUser?: User) {
-    const preProcessedOptions = this.preCount(options, currentUser);
+    const preProcessedOptions = await this.preCount(options, currentUser);
     return this.model.countDocuments(preProcessedOptions.filter);
   }
 
-  async createOne(createDto: Partial<Schema>) {
-    const doc = this.preCreateOne(createDto);
+  async createOne(createDto: Partial<Schema>, _currentUser?: User) {
+    const doc = await this.preCreateOne(createDto, _currentUser);
     const record = await this.model.create(doc);
-    return this.postCreateOne(record, createDto);
+    return this.postCreateOne(record, createDto, _currentUser);
   }
 
-  async create(createDtos: Partial<Schema>[]) {
-    const docs = this.preCreate(createDtos);
+  async create(createDtos: Partial<Schema>[], _currentUser?: User) {
+    const docs = await this.preCreate(createDtos, _currentUser);
     const records = await this.model.create(...docs);
-    return this.postCreate(records, createDtos);
+    return this.postCreate(records, createDtos, _currentUser);
   }
 
   async update(updateDto: Partial<Schema>, filter?: RootFilterQuery<Schema>, currentUser?: User) {
@@ -88,13 +91,13 @@ export class BaseService<Schema extends BaseSchema> {
       throw new NotFoundException('Record(s) not found.');
     }
 
-    const doc = this.preUpdate(updateDto, oldRecords, filter, currentUser);
+    const doc = await this.preUpdate(updateDto, oldRecords, filter, currentUser);
     await this.model.updateMany(filter ?? {}, doc).exec();
     const newRecords = (await this.model
       .find(filter ?? {})
       .lean()
       .exec()) as Schema[];
-    return this.postUpdate(newRecords, oldRecords, updateDto, filter);
+    return this.postUpdate(newRecords, oldRecords, updateDto, filter, currentUser);
   }
 
   async softDelete(
@@ -104,25 +107,27 @@ export class BaseService<Schema extends BaseSchema> {
     filter?: RootFilterQuery<Schema>,
     _currentUser?: User,
   ) {
-    this.preSoftDelete(filter, _currentUser);
+    await this.preSoftDelete(filter, _currentUser);
     const deletedRecords = await this.update(
       {
         deleteTimestamp: new Date(),
       } as unknown as Partial<Schema>,
       filter,
+      _currentUser,
     );
-    return this.postSoftDelete(deletedRecords, filter);
+    return this.postSoftDelete(deletedRecords, filter, _currentUser);
   }
 
-  async restore(options?: FindManyOptions<Schema>) {
-    this.preRestore(options);
+  async restore(options?: FindManyOptions<Schema>, _currentUser?: User) {
+    await this.preRestore(options, _currentUser);
     const deletedRecords = await this.update(
       {
         deleteTimestamp: null,
       } as unknown as Partial<Schema>,
       options,
+      _currentUser,
     );
-    return this.postRestore(deletedRecords, options);
+    return this.postRestore(deletedRecords, options, _currentUser);
   }
 
   /* ---------- Pre-processing functions ---------- */
@@ -146,37 +151,37 @@ export class BaseService<Schema extends BaseSchema> {
     };
   }
 
-  protected preFindOne(
+  protected async preFindOne(
     filter: RootFilterQuery<Schema>,
     /**
      * This arg is not used in the base class,
      * but can be used in derived class
      */
     _currentUser?: User,
-  ): RootFilterQuery<Schema> {
+  ): Promise<RootFilterQuery<Schema>> {
     return filter;
   }
 
-  protected preCount(
+  protected async preCount(
     options: FindManyOptions<Schema>,
     /**
      * This arg is not used in the base class,
      * but can be used in derived class
      */
     _currentUser?: User,
-  ): FindManyOptions<Schema> {
+  ): Promise<FindManyOptions<Schema>> {
     return options;
   }
 
-  protected preCreateOne(createDto: any): Partial<Schema> {
+  protected async preCreateOne(createDto: any, _currentUser?: User): Promise<Partial<Schema>> {
     return createDto;
   }
 
-  protected preCreate(createDtos: any[]): Partial<Schema>[] {
+  protected async preCreate(createDtos: any[], _currentUser?: User): Promise<Partial<Schema>[]> {
     return createDtos;
   }
 
-  protected preUpdate(
+  protected async preUpdate(
     updateDto: any,
     /**
      * This arg is not used in the base class,
@@ -189,14 +194,14 @@ export class BaseService<Schema extends BaseSchema> {
      */
     _filter?: RootFilterQuery<Schema>,
     _currentUser?: User,
-  ): Partial<Schema> {
+  ): Promise<Partial<Schema>> {
     return {
       ...updateDto,
       updateTimestamp: new Date(),
     };
   }
 
-  protected preSoftDelete(
+  protected async preSoftDelete(
     /**
      * This arg is not used in the base class,
      * but can be used in derived class
@@ -205,12 +210,17 @@ export class BaseService<Schema extends BaseSchema> {
     _currentUser?: User,
   ) {}
 
-  protected preRestore(
+  protected async preRestore(
     /**
      * This arg is not used in the base class,
      * but can be used in derived class
      */
     _options?: FindManyOptions<Schema>,
+    /**
+     * This arg is not used in the base class,
+     * but can be used in derived class
+     */
+    _currentUser?: User,
   ) {}
 
   /* ---------- Post-processing functions ---------- */
@@ -240,7 +250,7 @@ export class BaseService<Schema extends BaseSchema> {
     };
   }
 
-  protected postFindOne(
+  protected async postFindOne(
     data: Schema | null,
     /**
      * This arg is not used in the base class,
@@ -256,29 +266,39 @@ export class BaseService<Schema extends BaseSchema> {
     return data;
   }
 
-  protected postCreateOne(
+  protected async postCreateOne(
     record: Schema,
     /**
      * This arg is not used in the base class,
      * but can be used in derived class
      */
     _createDto: any,
+    /**
+     * This arg is not used in the base class,
+     * but can be used in derived class
+     */
+    _currentUser?: User,
   ) {
     return this.findOne({ _id: record._id }) as Promise<Schema>;
   }
 
-  protected postCreate(
+  protected async postCreate(
     records: Schema[],
     /**
      * This arg is not used in the base class,
      * but can be used in derived class
      */
     _createDtos: any[],
+    /**
+     * This arg is not used in the base class,
+     * but can be used in derived class
+     */
+    _currentUser?: User,
   ) {
     return records;
   }
 
-  protected postUpdate(
+  protected async postUpdate(
     newRecords: Schema[],
     /**
      * This arg is not used in the base class,
@@ -295,19 +315,32 @@ export class BaseService<Schema extends BaseSchema> {
      * but can be used in derived class
      */
     _filter?: RootFilterQuery<Schema>,
+    /**
+     * This arg is not used in the base class,
+     * but can be used in derived class
+     */
+    _currentUser?: User,
   ) {
     return this.model.find({
       _id: { $in: newRecords.map((record) => record._id) },
     });
   }
 
-  protected postSoftDelete(deletedRecords: Schema[], _filter?: RootFilterQuery<Schema>) {
+  protected async postSoftDelete(
+    deletedRecords: Schema[],
+    _filter?: RootFilterQuery<Schema>,
+    _currentUser?: User,
+  ) {
     return this.model.find({
       _id: { $in: deletedRecords.map((record) => record._id) },
     });
   }
 
-  protected postRestore(restoredRecords: Schema[], _options?: FindManyOptions<Schema>) {
+  protected async postRestore(
+    restoredRecords: Schema[],
+    _options?: FindManyOptions<Schema>,
+    _currentUser?: User,
+  ) {
     return this.model.find({
       _id: { $in: restoredRecords.map((record) => record._id) },
     });

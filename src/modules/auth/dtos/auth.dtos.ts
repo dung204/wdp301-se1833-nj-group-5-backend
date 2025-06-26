@@ -2,6 +2,9 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsEmail, IsJWT, IsNotEmpty, Length } from 'class-validator';
 
 import { SwaggerExamples } from '@/base/constants';
+import { Gender } from '@/modules/users/enums/gender.enum';
+
+import { Role } from '../enums/role.enum';
 
 export class LoginDto {
   @ApiProperty({
@@ -47,11 +50,28 @@ class LoginUserPayload {
   id!: string;
 
   @ApiProperty({
+    description: 'The role of the user',
+    enum: Role,
+    enumName: 'Role',
+    example: SwaggerExamples.ROLE,
+  })
+  role!: Role;
+
+  @ApiProperty({
     description: 'The full name of the user',
     example: SwaggerExamples.FULLNAME,
-    nullable: true,
+    required: false,
   })
   fullName?: string;
+
+  @ApiProperty({
+    description: 'The gender of the user',
+    enum: Gender,
+    enumName: 'Gender',
+    example: SwaggerExamples.GENDER,
+    required: false,
+  })
+  gender?: Gender;
 }
 
 export class LoginSuccessDto {
