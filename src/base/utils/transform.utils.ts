@@ -1,3 +1,5 @@
+import { ClassConstructor, plainToInstance } from 'class-transformer';
+
 const transformToStringArray = ({ value }: { value: any }): string[] => {
   // Handle null, undefined, or empty string
   if (value === null || value === undefined || value === '') {
@@ -26,4 +28,19 @@ const transformToJSON = ({ value }: { value: any }): any => {
 
 const transformToDate = ({ value }: { value: any }) => (value ? new Date(value) : undefined);
 
-export { transformToStringArray, transformToFloatNumber, transformToJSON, transformToDate };
+/**
+ * Transform data to DTO using class-transformer
+ * @param dtoClass - Target DTO class
+ * @param data - Source data (single object or array)
+ * @returns Transformed DTO instance(s)
+ */
+const transformDataToDto = <T, K>(dtoClass: ClassConstructor<T>, data: K | K[]): T | T[] => {
+  return plainToInstance(dtoClass, data);
+};
+export {
+  transformToStringArray,
+  transformToFloatNumber,
+  transformToJSON,
+  transformToDate,
+  transformDataToDto,
+};

@@ -233,7 +233,7 @@ export class BookingsService extends BaseService<Booking> {
       );
     }
 
-    await this.softDelete({ _id: bookingId });
+    await this.softDelete({ _id: bookingId }, user);
   }
 
   protected async preFind(

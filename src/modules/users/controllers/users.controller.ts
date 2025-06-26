@@ -114,9 +114,12 @@ export class UsersController {
       throw new ForbiddenException('You can not delete yourself.');
     }
 
-    await this.usersService.softDelete({
-      _id: id,
-    });
+    await this.usersService.softDelete(
+      {
+        _id: id,
+      },
+      currentUser,
+    );
   }
 
   @ApiOperation({

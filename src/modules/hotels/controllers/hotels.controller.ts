@@ -11,18 +11,18 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiNoContentResponse, ApiOperation, ApiParam } from '@nestjs/swagger';
-import { plainToInstance } from 'class-transformer';
 
 import { ApiSuccessResponse } from '@/base/decorators';
+import { transformDataToDto } from '@/base/utils';
 import { AllowRoles } from '@/modules/auth/decorators/allow-roles.decorator';
 import { CurrentUser } from '@/modules/auth/decorators/current-user.decorator';
 import { Public } from '@/modules/auth/decorators/public.decorator';
 import { Role } from '@/modules/auth/enums/role.enum';
-import { Hotel } from '@/modules/hotels/schemas/hotel.schema';
 import { User } from '@/modules/users/schemas/user.schema';
 
 import {
   CreateHotelDto,
+  DeletedHotelResponseDto,
   HotelQueryDto,
   HotelQueryDtoForAdmin,
   HotelResponseDto,
@@ -33,10 +33,6 @@ import { HotelsService } from '../services/hotels.service';
 @Controller('hotels')
 export class HotelsController {
   constructor(private readonly hotelsService: HotelsService) {}
-
-  private transformToDto(data: Hotel | Hotel[]): HotelResponseDto | HotelResponseDto[] {
-    return plainToInstance(HotelResponseDto, data);
-  }
 
   @ApiOperation({
     summary: 'Search filter hotels, get all hotels, get hotel by ID',
@@ -56,7 +52,7 @@ export class HotelsController {
     });
 
     return {
-      data: this.transformToDto(result.data),
+      data: transformDataToDto(HotelResponseDto, result.data),
       metadata: result.metadata,
     };
   }
@@ -85,7 +81,7 @@ export class HotelsController {
     );
 
     return {
-      data: this.transformToDto(result.data),
+      data: transformDataToDto(DeletedHotelResponseDto, result.data),
       metadata: result.metadata,
     };
   }
@@ -105,7 +101,7 @@ export class HotelsController {
       ...createHotelDto,
       owner: user,
     });
-    return this.transformToDto(hotel);
+    return transformDataToDto(DeletedHotelResponseDto, hotel);
   }
 
   @ApiOperation({
@@ -124,7 +120,10 @@ export class HotelsController {
     @Param('id') id: string,
     @Body() updateHotelDto: UpdateHotelDto,
   ) {
-    return this.hotelsService.update(updateHotelDto, { _id: id }, user);
+    return transformDataToDto(
+      DeletedHotelResponseDto,
+      this.hotelsService.update(updateHotelDto, { _id: id }, user),
+    );
   }
 
   @ApiOperation({
@@ -155,11 +154,14 @@ export class HotelsController {
   @AllowRoles([Role.ADMIN, Role.HOTEL_OWNER])
   @Patch('restore/:id')
   @HttpCode(HttpStatus.OK)
-  async restoreHotel(@Param('id') id: string) {
-    const result = await this.hotelsService.restore({
-      _id: id,
-    });
+  async restoreHotel(@Param('id') id: string, @CurrentUser() user: User) {
+    const result = await this.hotelsService.restore(
+      {
+        _id: id,
+      },
+      user,
+    );
 
-    return this.transformToDto(result);
+    return transformDataToDto(DeletedHotelResponseDto, result);
   }
 }
