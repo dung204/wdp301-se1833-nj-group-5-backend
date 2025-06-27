@@ -85,7 +85,7 @@ export class RoomsService extends BaseService<Room> {
   async createRoom(user: User, createRoomDto: CreateRoomDto): Promise<Room> {
     // Check if hotel exists and user has permission
     const hotel = await this.hotelsService.getHotelById(createRoomDto.hotel);
-    if (hotel.owner.toString() !== user._id.toString() && user.role !== Role.ADMIN) {
+    if (hotel.owner._id.toString() !== user._id.toString() && user.role !== Role.ADMIN) {
       throw new ForbiddenException('You do not have permission to create rooms for this hotel');
     }
 
@@ -103,7 +103,7 @@ export class RoomsService extends BaseService<Room> {
 
     // Get hotel to check permissions
     const hotel = await this.hotelsService.getHotelById(room.hotel?._id.toString());
-    if (hotel.owner.toString() !== user._id.toString() && user.role !== Role.ADMIN) {
+    if (hotel.owner._id.toString() !== user._id.toString() && user.role !== Role.ADMIN) {
       throw new ForbiddenException('You do not have permission to update this room');
     }
 
@@ -119,7 +119,7 @@ export class RoomsService extends BaseService<Room> {
     // Get hotel to check permissions
     const hotelId = room.hotel?._id;
     const hotel = await this.hotelsService.getHotelById(hotelId);
-    if (hotel.owner.toString() !== user._id.toString() && user.role !== Role.ADMIN) {
+    if (hotel.owner._id.toString() !== user._id.toString() && user.role !== Role.ADMIN) {
       throw new ForbiddenException('You do not have permission to delete this room');
     }
 
@@ -155,6 +155,15 @@ export class RoomsService extends BaseService<Room> {
     };
 
     // if role is hotel owner -> only show rooms in their hotel and base on hotel -> WIP
+    if (currentUser?.role === Role.HOTEL_OWNER) {
+      const hotel = await this.hotelsService.getHotelsByOwnerId(currentUser._id);
+      findOptions.filter = {
+        ...findOptions.filter,
+        hotel: {
+          $in: hotel.map((h) => h._id),
+        },
+      };
+    }
 
     // Default to only active rooms
     // if role is admin or hotel owner, we can show all rooms
