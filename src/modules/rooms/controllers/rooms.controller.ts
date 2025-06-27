@@ -65,7 +65,11 @@ export class RoomsController {
   @AllowRoles([Role.ADMIN, Role.HOTEL_OWNER])
   @Get('/admin')
   async searchRoomAdmin(@CurrentUser() user: User, @Query() roomQueryDto: RoomQueryAdminDto) {
-    return this.roomsService.find({ queryDto: roomQueryDto }, user);
+    const result = await this.roomsService.find({ queryDto: roomQueryDto }, user);
+    return {
+      data: transformDataToDto(DeletedRoomResponseDto, result.data),
+      metadata: result.metadata,
+    };
   }
 
   @ApiOperation({

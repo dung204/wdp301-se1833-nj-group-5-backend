@@ -25,10 +25,7 @@ export class HotelsService extends BaseService<Hotel> {
   }
 
   async getHotelsByOwnerId(ownerId: string): Promise<Hotel[]> {
-    const hotels = await this.model
-      .find({ filter: { owner: ownerId, deleteTimestamp: null } })
-      .lean()
-      .exec();
+    const hotels = await this.model.find({ owner: ownerId, deleteTimestamp: null }).lean().exec();
     if (!hotels || hotels.length === 0) {
       throw new NotFoundException(`No hotels found for owner with ID ${ownerId}`);
     }
@@ -50,7 +47,7 @@ export class HotelsService extends BaseService<Hotel> {
     }
 
     // Kiểm tra quyền xóa
-    if (hotel.owner.toString() !== user._id.toString() && user.role !== Role.ADMIN) {
+    if (hotel.owner._id.toString() !== user._id.toString() && user.role !== Role.ADMIN) {
       throw new ForbiddenException('You do not have permission to delete this hotel');
     }
 
@@ -69,7 +66,7 @@ export class HotelsService extends BaseService<Hotel> {
 
     const oldHotel = _oldRecords[0];
     if (
-      oldHotel.owner.toString() !== _currentUser?._id.toString() &&
+      oldHotel.owner._id.toString() !== _currentUser?._id.toString() &&
       _currentUser?.role !== Role.ADMIN
     ) {
       throw new ForbiddenException('You do not have permission to update this hotel');
