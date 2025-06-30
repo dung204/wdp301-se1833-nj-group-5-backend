@@ -10,6 +10,7 @@ import { JwtGuard } from './modules/auth/guards/jwt.guard';
 import { BookingsModule } from './modules/bookings/bookings.module';
 import { DiscountsModule } from './modules/discounts/discounts.module';
 import { HotelsModule } from './modules/hotels/hotels.module';
+import { MessagesModule } from './modules/messages/messages.module';
 import { PaymentMethodsModule } from './modules/payment-methods/payment-methods.module';
 import { PaymentsModule } from './modules/payment/payment.module';
 import { RevenueModule } from './modules/revenue-report/revenue.module';
@@ -30,6 +31,7 @@ import { UsersModule } from './modules/users/users.module';
     HotelsModule,
     RoomsModule,
     BookingsModule,
+    MessagesModule,
     TransactionsModule,
     PaymentMethodsModule,
     DiscountsModule,
