@@ -142,6 +142,6 @@ export class MessagesController {
   @Delete(':messageId')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteMessage(@CurrentUser() user: User, @Param('messageId') messageId: string) {
-    await this.messagesService.softDelete({ _id: messageId, sender: user._id }, user);
+    await this.messagesService.deleteMessage(user, messageId);
   }
 }

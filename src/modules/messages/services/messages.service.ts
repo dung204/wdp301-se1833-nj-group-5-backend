@@ -82,6 +82,27 @@ export class MessagesService extends BaseService<Message> {
     )) as unknown as Message;
   }
 
+  async deleteMessage(user: User, messageId: string): Promise<void> {
+    // 1. Find the message to ensure it exists
+    const message = await this.findOne({ _id: messageId });
+    if (!message) {
+      throw new NotFoundException(`Message with ID ${messageId} not found`);
+    }
+
+    // 2. Validate that the current user is the sender of the message
+    if (message.sender._id.toString() !== user._id.toString()) {
+      throw new ForbiddenException('You can only delete your own sent messages');
+    }
+
+    // 3. Check if message is already deleted
+    if (message.deleteTimestamp) {
+      throw new ForbiddenException('Message has already been deleted');
+    }
+
+    // 4. Perform soft delete
+    await this.softDelete({ _id: messageId }, user);
+  }
+
   async getConversations(user: User, _queryDto?: MessageQueryDto) {
     // Get all conversations where user is participant
     const pipeline: any[] = [
@@ -163,7 +184,10 @@ export class MessagesService extends BaseService<Message> {
 
   async findMessagesInConversation(bookingId: string): Promise<Message[]> {
     return this.find({
-      filter: { booking: bookingId },
+      filter: {
+        booking: bookingId,
+        deleteTimestamp: null,
+      },
       sort: { createTimestamp: 1 },
     }).then((result) => result.data);
   }
@@ -270,6 +294,12 @@ export class MessagesService extends BaseService<Message> {
     currentUser?: User,
   ): Promise<FindManyOptions<Message>> {
     const findOptions = await super.preFind(options, currentUser);
+
+    // Filter out deleted messages by default
+    findOptions.filter = {
+      ...findOptions.filter,
+      deleteTimestamp: null,
+    };
 
     if (findOptions.queryDto) {
       const messageQueryDto = findOptions.queryDto as MessageQueryDto;
