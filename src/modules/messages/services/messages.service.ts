@@ -73,13 +73,18 @@ export class MessagesService extends BaseService<Message> {
       return message; // Already read
     }
 
-    return (await this.update(
+    // Update the message
+    await this.update(
       {
         isRead: true,
         readAt: new Date(),
       },
       { _id: messageId },
-    )) as unknown as Message;
+    );
+
+    // Return the updated message
+    const updatedMessage = await this.findOne({ _id: messageId });
+    return updatedMessage!;
   }
 
   async deleteMessage(user: User, messageId: string): Promise<void> {
