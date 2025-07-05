@@ -18,11 +18,7 @@ import { HotelsService } from '@/modules/hotels/services/hotels.service';
 import { RoomsService } from '@/modules/rooms/services/rooms.service';
 import { User } from '@/modules/users/schemas/user.schema';
 
-import {
-  BookingQueryDtoForAdmin,
-  CreateBookingDto,
-  // UpdateBookingDto,
-} from '../dtos/booking.dto';
+import { BookingQueryDtoForAdmin, CreateBookingDto } from '../dtos/booking.dto';
 import { BookingStatus } from '../enums/booking-status.enum';
 import { Booking } from '../schemas/booking.schema';
 
@@ -40,7 +36,12 @@ export class BookingsService extends BaseService<Booking> {
   }
 
   async getBookingById(id: string): Promise<Booking> {
-    const booking = await this.findOne({ _id: id });
+    const booking = await this.model
+      .findById(id)
+      .populate('hotel')
+      .populate('room')
+      .populate('user');
+
     if (!booking) {
       throw new NotFoundException(`Booking with ID ${id} not found`);
     }

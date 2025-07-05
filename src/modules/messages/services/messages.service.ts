@@ -130,6 +130,34 @@ export class MessagesService extends BaseService<Message> {
       },
       {
         $lookup: {
+          from: 'hotels',
+          localField: 'bookingInfo.hotel',
+          foreignField: '_id',
+          as: 'hotelData',
+        },
+      },
+      {
+        $lookup: {
+          from: 'rooms',
+          localField: 'bookingInfo.room',
+          foreignField: '_id',
+          as: 'roomData',
+        },
+      },
+      {
+        $addFields: {
+          'bookingInfo.hotel': { $arrayElemAt: ['$hotelData', 0] },
+          'bookingInfo.room': { $arrayElemAt: ['$roomData', 0] },
+        },
+      },
+      {
+        $project: {
+          hotelData: 0,
+          roomData: 0,
+        },
+      },
+      {
+        $lookup: {
           from: 'users',
           localField: 'sender',
           foreignField: '_id',
@@ -195,6 +223,27 @@ export class MessagesService extends BaseService<Message> {
       },
       sort: { createTimestamp: 1 },
     }).then((result) => result.data);
+  }
+
+  // Override find method to populate booking relationships
+  async find(options: FindManyOptions<Message>, user?: User) {
+    // Call the parent find method first
+    const result = await super.find(options, user);
+
+    // Then populate the booking relationships for each message
+    await this.model.populate(result.data, [
+      {
+        path: 'booking',
+        populate: [
+          { path: 'hotel', model: 'Hotel' },
+          { path: 'room', model: 'Room' },
+        ],
+      },
+      { path: 'sender', model: 'User' },
+      { path: 'receiver', model: 'User' },
+    ]);
+
+    return result;
   }
 
   private async validateUser(userId: string): Promise<User> {
