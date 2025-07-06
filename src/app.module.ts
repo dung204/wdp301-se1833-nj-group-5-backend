@@ -10,12 +10,12 @@ import { JwtGuard } from './modules/auth/guards/jwt.guard';
 import { BookingsModule } from './modules/bookings/bookings.module';
 import { DiscountsModule } from './modules/discounts/discounts.module';
 import { HotelsModule } from './modules/hotels/hotels.module';
+import { MinioStorageModule } from './modules/minio-storage/minio-storage.module';
 import { PaymentMethodsModule } from './modules/payment-methods/payment-methods.module';
 import { PaymentsModule } from './modules/payment/payment.module';
 import { RevenueModule } from './modules/revenue-report/revenue.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { RoomsModule } from './modules/rooms/rooms.module';
-import { SupportRequestsModule } from './modules/support-requests/support-requests.module';
 import { TransactionsModule } from './modules/transactions/transactions.module';
 import { UsersModule } from './modules/users/users.module';
 
@@ -34,9 +34,9 @@ import { UsersModule } from './modules/users/users.module';
     PaymentMethodsModule,
     DiscountsModule,
     ReviewsModule,
-    SupportRequestsModule,
     RevenueModule,
     PaymentsModule,
+    MinioStorageModule,
   ],
   providers: [
     {

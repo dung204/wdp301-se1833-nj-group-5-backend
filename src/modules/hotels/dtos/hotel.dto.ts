@@ -222,14 +222,11 @@ export class CreateHotelDto {
 
   @ApiProperty({
     description: 'Hotel images',
-    example: ['https://example.com/hotel1.jpg', 'https://example.com/hotel2.jpg'],
-    type: [String],
+    type: 'string',
+    format: 'binary',
+    isArray: true,
     required: false,
   })
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  @Transform(transformToStringArray)
   images?: string[];
 
   @ApiProperty({
@@ -319,16 +316,24 @@ export class UpdateHotelDto {
   checkoutTime?: Date;
 
   @ApiProperty({
-    description: 'Hotel images',
-    example: ['https://example.com/hotel1.jpg', 'https://example.com/hotel2.jpg'],
-    type: [String],
+    description: 'New hotel images to upload',
+    isArray: true,
+    type: 'string',
+    format: 'binary',
+    required: false,
+  })
+  newImages: string[] = [];
+
+  @ApiProperty({
+    description: 'Hotel image file names to delete',
+    isArray: true,
+    type: 'string',
     required: false,
   })
   @IsOptional()
-  @IsArray()
   @IsString({ each: true })
-  @Transform(transformToStringArray)
-  images?: string[];
+  @Transform(({ value }) => (typeof value === 'string' ? value.split(',') : value))
+  imagesToDelete: string[] = [];
 
   @ApiProperty({
     description: 'Services offered by the hotel',

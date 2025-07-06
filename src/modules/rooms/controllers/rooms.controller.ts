@@ -2,15 +2,21 @@ import {
   Body,
   Controller,
   Delete,
+  FileTypeValidator,
   Get,
   HttpCode,
   HttpStatus,
+  MaxFileSizeValidator,
   Param,
+  ParseFilePipe,
   Patch,
   Post,
   Query,
+  UploadedFiles,
+  UseInterceptors,
 } from '@nestjs/common';
-import { ApiNoContentResponse, ApiOperation, ApiParam } from '@nestjs/swagger';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { ApiConsumes, ApiNoContentResponse, ApiOperation, ApiParam } from '@nestjs/swagger';
 
 import { ApiSuccessResponse } from '@/base/decorators';
 import { transformDataToDto } from '@/base/utils';
@@ -28,6 +34,7 @@ import {
 import { RoomsService } from '@/modules/rooms/services/rooms.service';
 import { User } from '@/modules/users/schemas/user.schema';
 
+import { Room } from '../schemas/room.schema';
 import { DeletedRoomResponseDto } from './../dtos/room.dto';
 
 @Controller('rooms')
@@ -76,14 +83,29 @@ export class RoomsController {
     summary: 'Create a new room',
     description: 'Create a new room in a hotel (only for hotel owner or admin)',
   })
+  @ApiConsumes('multipart/form-data')
   @ApiSuccessResponse({
     schema: RoomResponseDto,
     description: 'Room created successfully',
   })
+  @UseInterceptors(FilesInterceptor('images', 10))
   @AllowRoles([Role.ADMIN, Role.HOTEL_OWNER])
   @Post()
-  async createRoom(@CurrentUser() user: User, @Body() createRoomDto: CreateRoomDto) {
-    const result = await this.roomsService.createRoom(user, createRoomDto);
+  async createRoom(
+    @UploadedFiles(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 5 * 1024 ** 2 }), // 5 MB
+          new FileTypeValidator({ fileType: 'image/*' }),
+        ],
+        fileIsRequired: false,
+      }),
+    )
+    images: Express.Multer.File[],
+    @CurrentUser() user: User,
+    @Body() createRoomDto: CreateRoomDto,
+  ) {
+    const result = await this.roomsService.createRoom(user, createRoomDto, images);
     return transformDataToDto(DeletedRoomResponseDto, result);
   }
 
@@ -91,20 +113,38 @@ export class RoomsController {
     summary: 'Update a room',
     description: 'Update a room (only for hotel owner or admin)',
   })
+  @ApiConsumes('multipart/form-data')
   @ApiParam({ name: 'id', description: 'Room ID' })
   @ApiSuccessResponse({
     schema: RoomResponseDto,
     description: 'Room updated successfully',
   })
   @Patch(':id')
+  @UseInterceptors(FilesInterceptor('newImages', 10))
   @AllowRoles([Role.ADMIN, Role.HOTEL_OWNER])
   async updateRoom(
+    @UploadedFiles(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 5 * 1024 ** 2 }), // 5 MB
+          new FileTypeValidator({ fileType: 'image/*' }),
+        ],
+        fileIsRequired: false,
+      }),
+    )
+    newImages: Express.Multer.File[],
     @CurrentUser() user: User,
     @Param('id') id: string,
     @Body() updateRoomDto: UpdateRoomDto,
   ) {
-    const result = await this.roomsService.updateRoom(user, id, updateRoomDto);
-    return transformDataToDto(DeletedRoomResponseDto, result);
+    return transformDataToDto(
+      DeletedRoomResponseDto,
+      await this.roomsService.update(
+        { ...updateRoomDto, newImages } as Partial<Room>,
+        { _id: id },
+        user,
+      ),
+    );
   }
 
   @ApiOperation({

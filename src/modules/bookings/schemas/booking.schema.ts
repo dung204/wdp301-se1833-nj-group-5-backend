@@ -77,7 +77,7 @@ export class Booking extends BaseSchema {
 
   @Prop({
     type: String,
-    enum: Object.values(PaymentMethodEnum),
+    enum: PaymentMethodEnum,
     required: true,
   })
   paymentMethod!: PaymentMethodEnum; // cancellation policy for the booking
@@ -85,7 +85,7 @@ export class Booking extends BaseSchema {
   // Add cancellation-related fields
   @Prop({
     type: String,
-    enum: Object.values(CancelEnum),
+    enum: CancelEnum,
     required: false,
   })
   cancelPolicy!: CancelEnum; // cancellation policy for the booking

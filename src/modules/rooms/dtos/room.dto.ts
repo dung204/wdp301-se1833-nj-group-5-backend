@@ -204,15 +204,12 @@ export class CreateRoomDto {
   services?: string[];
 
   @ApiProperty({
-    description: 'Images of the room',
-    example: ['https://example.com/room1.jpg', 'https://example.com/room2.jpg'],
-    type: [String],
+    description: 'Room images',
+    type: 'string',
+    format: 'binary',
+    isArray: true,
     required: false,
   })
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  @Transform(transformToStringArray)
   images?: string[];
 
   @ApiProperty({
@@ -282,16 +279,24 @@ export class UpdateRoomDto {
   services?: string[];
 
   @ApiProperty({
-    description: 'Images of the room',
-    example: ['https://example.com/room1.jpg', 'https://example.com/room2.jpg'],
-    type: [String],
+    description: 'New room images to upload',
+    isArray: true,
+    type: 'string',
+    format: 'binary',
+    required: false,
+  })
+  newImages: string[] = [];
+
+  @ApiProperty({
+    description: 'Room image file names to delete',
+    isArray: true,
+    type: 'string',
     required: false,
   })
   @IsOptional()
-  @IsArray()
   @IsString({ each: true })
-  @Transform(transformToStringArray)
-  images?: string[];
+  @Transform(({ value }) => (typeof value === 'string' ? value.split(',') : value))
+  imagesToDelete: string[] = [];
 
   @ApiProperty({
     description: 'Maximum quantity of this room type available',

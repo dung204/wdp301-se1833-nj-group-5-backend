@@ -1,5 +1,5 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiOperation } from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
 
 import { ApiSuccessResponse } from '@/base/decorators';
@@ -19,7 +19,6 @@ import {
 import { DailyRevenueReport } from '../schemas/revenue.schema';
 import { RevenueService } from '../services/revenue.service';
 
-@ApiTags('Revenue Reports')
 @Controller('revenue-report')
 export class RevenueController {
   constructor(private readonly revenueService: RevenueService) {}

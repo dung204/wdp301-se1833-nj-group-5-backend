@@ -1,12 +1,11 @@
 import { Body, Controller, Get, Param, ParseIntPipe } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiOperation } from '@nestjs/swagger';
 
 import { Public } from '@/modules/auth/decorators/public.decorator';
 import { TransactionsService } from '@/modules/transactions/services/transactions.service';
 
 import { PayosService } from '../services/payment.service';
 
-@ApiTags('Payments')
 @Controller('payments')
 export class PaymentsController {
   constructor(

@@ -7,12 +7,14 @@ import {
   forwardRef,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { randomUUID } from 'crypto';
+import { Model, RootFilterQuery } from 'mongoose';
 
 import { BaseService, FindManyOptions } from '@/base/services';
 import { Role } from '@/modules/auth/enums/role.enum';
 import { BookingsService } from '@/modules/bookings/services/bookings.service';
 import { HotelsService } from '@/modules/hotels/services/hotels.service';
+import { MinioStorageService } from '@/modules/minio-storage/minio-storage.service';
 import { User } from '@/modules/users/schemas/user.schema';
 
 import { CreateRoomDto, RoomQueryAdminDto, UpdateRoomDto } from '../dtos/room.dto';
@@ -25,6 +27,7 @@ export class RoomsService extends BaseService<Room> {
     @Inject(forwardRef(() => BookingsService))
     private readonly bookingService: BookingsService,
     private readonly hotelsService: HotelsService,
+    private readonly minioStorageService: MinioStorageService,
   ) {
     const logger = new Logger(RoomsService.name);
     super(model, logger);
@@ -82,32 +85,30 @@ export class RoomsService extends BaseService<Room> {
     return room;
   }
 
-  async createRoom(user: User, createRoomDto: CreateRoomDto): Promise<Room> {
+  async createRoom(
+    user: User,
+    createRoomDto: CreateRoomDto,
+    images: Express.Multer.File[],
+  ): Promise<Room> {
     // Check if hotel exists and user has permission
     const hotel = await this.hotelsService.getHotelById(createRoomDto.hotel);
     if (hotel.owner._id.toString() !== user._id.toString() && user.role !== Role.ADMIN) {
       throw new ForbiddenException('You do not have permission to create rooms for this hotel');
     }
 
+    const id = randomUUID();
+    const imageFileNames = (
+      await Promise.all(
+        images.map((image) => this.minioStorageService.uploadFile(image, true, `hotels/${id}`)),
+      )
+    ).map((image) => image.fileName);
+
     return this.createOne({
       ...createRoomDto,
+      _id: id,
       hotel: hotel,
+      images: imageFileNames,
     });
-  }
-
-  async updateRoom(user: User, roomId: string, updateRoomDto: UpdateRoomDto) {
-    const room = await this.findOne({ _id: roomId });
-    if (!room) {
-      throw new NotFoundException(`Room with ID ${roomId} not found`);
-    }
-
-    // Get hotel to check permissions
-    const hotel = await this.hotelsService.getHotelById(room.hotel?._id.toString());
-    if (hotel.owner._id.toString() !== user._id.toString() && user.role !== Role.ADMIN) {
-      throw new ForbiddenException('You do not have permission to update this room');
-    }
-
-    return this.update(updateRoomDto, { _id: roomId });
   }
 
   async deleteRoom(user: User, roomId: string): Promise<void> {
@@ -131,6 +132,49 @@ export class RoomsService extends BaseService<Room> {
       filter: { hotel: hotelId, isActive: true },
     });
     return response.data;
+  }
+
+  protected async preUpdate(
+    updateDto: UpdateRoomDto,
+    oldRooms: Room[],
+    _filter?: RootFilterQuery<Room>,
+    currentUser?: User,
+  ): Promise<Partial<Room>> {
+    // Get hotel to check permissions
+    const hotel = await this.hotelsService.getHotelById(oldRooms[0].hotel?._id.toString());
+    if (
+      hotel.owner._id.toString() !== currentUser?._id.toString() &&
+      currentUser?.role !== Role.ADMIN
+    ) {
+      throw new ForbiddenException('You do not have permission to update this room');
+    }
+
+    const newImages = updateDto.newImages as unknown as Express.Multer.File[];
+
+    for (const imageToDelete of updateDto.imagesToDelete) {
+      if (!oldRooms[0].images.includes(imageToDelete)) {
+        throw new NotFoundException(`Image '${imageToDelete}' is not found.`);
+      }
+    }
+
+    await Promise.all(
+      updateDto.imagesToDelete.map((image) => this.minioStorageService.deleteFile(image)),
+    );
+
+    const newImageFileNames = (
+      await Promise.all(
+        (newImages ?? []).map((image) =>
+          this.minioStorageService.uploadFile(image, true, `rooms/${oldRooms[0]._id}`),
+        ),
+      )
+    ).map((image) => image.fileName);
+
+    return {
+      ...updateDto,
+      images: oldRooms[0].images
+        .filter((image) => !updateDto.imagesToDelete.includes(image))
+        .concat(newImageFileNames),
+    };
   }
 
   protected async preFind(

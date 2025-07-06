@@ -1,9 +1,11 @@
 import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
+import { randomUUID } from 'crypto';
 import { Model, RootFilterQuery } from 'mongoose';
 
 import { BaseService, FindManyOptions } from '@/base/services';
 import { Role } from '@/modules/auth/enums/role.enum';
+import { MinioStorageService } from '@/modules/minio-storage/minio-storage.service';
 import { User } from '@/modules/users/schemas/user.schema';
 
 import { CreateHotelDto, HotelQueryDtoForAdmin, UpdateHotelDto } from '../dtos/hotel.dto';
@@ -11,7 +13,10 @@ import { Hotel } from '../schemas/hotel.schema';
 
 @Injectable()
 export class HotelsService extends BaseService<Hotel> {
-  constructor(@InjectModel(Hotel.name) protected readonly model: Model<Hotel>) {
+  constructor(
+    @InjectModel(Hotel.name) protected readonly model: Model<Hotel>,
+    private readonly minioStorageService: MinioStorageService,
+  ) {
     const logger = new Logger(HotelsService.name);
     super(model, logger);
   }
@@ -32,10 +37,23 @@ export class HotelsService extends BaseService<Hotel> {
     return hotels;
   }
 
-  async createHotel(user: User, createHotelDto: CreateHotelDto): Promise<Hotel> {
+  async createHotel(
+    user: User,
+    createHotelDto: CreateHotelDto,
+    images: Express.Multer.File[],
+  ): Promise<Hotel> {
+    const id = randomUUID();
+    const imageFileNames = (
+      await Promise.all(
+        images.map((image) => this.minioStorageService.uploadFile(image, true, `hotels/${id}`)),
+      )
+    ).map((image) => image.fileName);
+
     return this.createOne({
       ...createHotelDto,
+      _id: id,
       owner: user,
+      images: imageFileNames,
     });
   }
 
@@ -72,8 +90,31 @@ export class HotelsService extends BaseService<Hotel> {
       throw new ForbiddenException('You do not have permission to update this hotel');
     }
 
+    const newImages = updateDto.newImages as unknown as Express.Multer.File[];
+
+    for (const imageToDelete of updateDto.imagesToDelete) {
+      if (!oldHotel.images.includes(imageToDelete)) {
+        throw new NotFoundException(`Image '${imageToDelete}' is not found.`);
+      }
+    }
+
+    await Promise.all(
+      updateDto.imagesToDelete.map((image) => this.minioStorageService.deleteFile(image)),
+    );
+
+    const newImageFileNames = (
+      await Promise.all(
+        (newImages ?? []).map((image) =>
+          this.minioStorageService.uploadFile(image, true, `hotels/${oldHotel._id}`),
+        ),
+      )
+    ).map((image) => image.fileName);
+
     return {
       ...updateDto,
+      images: oldHotel.images
+        .filter((image) => !updateDto.imagesToDelete.includes(image))
+        .concat(newImageFileNames),
       updateTimestamp: new Date(),
     };
   }

@@ -3,7 +3,6 @@ import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 
 import { BookingsModule } from '../bookings/bookings.module';
-import { TransactionsController } from './controllers/transactions.controller';
 import { Transaction, TransactionSchema } from './schemas/transaction.schema';
 import { TransactionsService } from './services/transactions.service';
 
@@ -13,7 +12,6 @@ import { TransactionsService } from './services/transactions.service';
     HttpModule,
     forwardRef(() => BookingsModule),
   ],
-  controllers: [TransactionsController],
   providers: [TransactionsService],
   exports: [TransactionsService],
 })
