@@ -432,7 +432,6 @@ export class HotelQueryDto extends QueryDto {
   @ApiProperty({
     description: 'Filter by minimum price',
     required: false,
-    example: 100000,
   })
   @IsOptional()
   @Transform(transformToFloatNumber)
@@ -443,7 +442,6 @@ export class HotelQueryDto extends QueryDto {
   @ApiProperty({
     description: 'Filter by maximum price',
     required: false,
-    example: 500000,
   })
   @IsOptional()
   @Transform(transformToFloatNumber)

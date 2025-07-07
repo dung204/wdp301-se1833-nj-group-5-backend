@@ -9,6 +9,8 @@ import { StripUndefinedPipe } from '@/base/pipes';
 
 import { AppModule } from './app.module';
 
+declare const module: any;
+
 async function bootstrap() {
   const logger = new Logger(bootstrap.name);
   const app = await NestFactory.create(AppModule, {
@@ -20,6 +22,12 @@ async function bootstrap() {
     }),
   });
   const httpService = new HttpService();
+
+  // Webpack HMR
+  if (module.hot) {
+    module.hot.accept();
+    module.hot.dispose(() => app.close());
+  }
 
   // URL prefix: /api/v1
   app.setGlobalPrefix('/api');
