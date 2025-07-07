@@ -234,4 +234,29 @@ export class RoomsService extends BaseService<Room> {
 
     return findOptions;
   }
+
+  protected async postFind(data: Room[], options: FindManyOptions<Room>, _currentUser?: User) {
+    const result = await super.postFind(data, options, _currentUser);
+
+    const mappedRooms: Room[] = [];
+
+    for (const room of result.data) {
+      const roomImages: string[] = [];
+      for (const image of room.images) {
+        const imageUrl = await this.minioStorageService.getFileUrl(image, true);
+
+        if (imageUrl) {
+          roomImages.push(imageUrl);
+        }
+      }
+
+      room.images = roomImages;
+      mappedRooms.push(room);
+    }
+
+    return {
+      data: mappedRooms,
+      metadata: result.metadata,
+    };
+  }
 }
