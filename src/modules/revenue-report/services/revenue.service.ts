@@ -268,7 +268,7 @@ export class RevenueService extends BaseService<DailyRevenueReport> {
       };
 
       // compare user.role
-      if (_currentUser?.role === 'HOTEL_OWNER') {
+      if (_currentUser?.role === Role.HOTEL_OWNER) {
         // get hotelId from current user
         const hotels = await this.hotelService.getHotelsByOwnerId(_currentUser._id);
 
@@ -282,7 +282,7 @@ export class RevenueService extends BaseService<DailyRevenueReport> {
         //     hotelId: revenueQueryDto.hotelId,
         //   }),
         // };
-      } else if (_currentUser?.role === 'ADMIN') {
+      } else if (_currentUser?.role === Role.ADMIN) {
         findOptions.filter = {
           ...findOptions.filter,
           ...(revenueQueryDto.hotelId && {

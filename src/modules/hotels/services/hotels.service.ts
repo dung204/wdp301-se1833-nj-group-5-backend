@@ -30,11 +30,7 @@ export class HotelsService extends BaseService<Hotel> {
   }
 
   async getHotelsByOwnerId(ownerId: string): Promise<Hotel[]> {
-    const hotels = await this.model.find({ owner: ownerId, deleteTimestamp: null }).lean().exec();
-    if (!hotels || hotels.length === 0) {
-      throw new NotFoundException(`No hotels found for owner with ID ${ownerId}`);
-    }
-    return hotels;
+    return this.model.find({ owner: ownerId, deleteTimestamp: null }).lean().exec();
   }
 
   async createHotel(
