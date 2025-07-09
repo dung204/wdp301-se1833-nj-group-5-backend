@@ -14,7 +14,7 @@ import {
 } from 'class-validator';
 
 import { SwaggerExamples } from '@/base/constants';
-import { QueryDto, SchemaResponseDto } from '@/base/dtos';
+import { ImageDto, QueryDto, SchemaResponseDto } from '@/base/dtos';
 import { transformToFloatNumber, transformToJSON, transformToStringArray } from '@/base/utils';
 import { UserProfileDto } from '@/modules/users/dtos/user.dtos';
 
@@ -94,11 +94,11 @@ export class HotelResponseDto extends SchemaResponseDto {
 
   @ApiProperty({
     description: 'Hotel images',
-    example: ['https://example.com/hotel1.jpg', 'https://example.com/hotel2.jpg'],
-    type: [String],
+    isArray: true,
+    type: ImageDto,
   })
   @Expose()
-  images!: string[];
+  images!: ImageDto[];
 
   @ApiProperty({
     description: 'Rating of the hotel (0-5)',

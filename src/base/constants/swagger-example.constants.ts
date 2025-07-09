@@ -18,4 +18,6 @@ export const SwaggerExamples = {
   ORDER_FIELD: 'createTimestamp',
   ORDER_DIRECTION: 'DESC',
   ACCEPT_HOTEL: ['HOTEL1_ID', 'HOTEL2_ID'],
+  FILENAME: 'a.png',
+  URL: 'https://example.com',
 };

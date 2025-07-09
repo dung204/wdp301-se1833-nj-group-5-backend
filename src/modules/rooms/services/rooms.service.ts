@@ -10,6 +10,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { randomUUID } from 'crypto';
 import { Model, RootFilterQuery } from 'mongoose';
 
+import { ImageDto } from '@/base/dtos';
 import { BaseService, FindManyOptions } from '@/base/services';
 import { Role } from '@/modules/auth/enums/role.enum';
 import { BookingsService } from '@/modules/bookings/services/bookings.service';
@@ -241,16 +242,19 @@ export class RoomsService extends BaseService<Room> {
     const mappedRooms: Room[] = [];
 
     for (const room of result.data) {
-      const roomImages: string[] = [];
+      const roomImages: ImageDto[] = [];
       for (const image of room.images) {
         const imageUrl = await this.minioStorageService.getFileUrl(image, true);
 
         if (imageUrl) {
-          roomImages.push(imageUrl);
+          roomImages.push({
+            fileName: image,
+            url: imageUrl,
+          });
         }
       }
 
-      room.images = roomImages;
+      room.images = roomImages as any;
       mappedRooms.push(room);
     }
 

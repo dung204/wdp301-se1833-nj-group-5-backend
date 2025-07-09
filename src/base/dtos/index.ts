@@ -3,3 +3,4 @@ export * from './pagination.dto';
 export * from './order.dto';
 export * from './custom-request.dto';
 export * from './schema-response.dto';
+export * from './image.dto';

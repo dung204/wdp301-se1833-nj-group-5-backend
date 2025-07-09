@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { randomUUID } from 'crypto';
 import { Model, RootFilterQuery } from 'mongoose';
 
+import { ImageDto } from '@/base/dtos';
 import { BaseService, FindManyOptions } from '@/base/services';
 import { Role } from '@/modules/auth/enums/role.enum';
 import { MinioStorageService } from '@/modules/minio-storage/minio-storage.service';
@@ -199,16 +200,19 @@ export class HotelsService extends BaseService<Hotel> {
     const mappedHotels: Hotel[] = [];
 
     for (const hotel of result.data) {
-      const hotelImages: string[] = [];
+      const hotelImages: ImageDto[] = [];
       for (const image of hotel.images) {
         const imageUrl = await this.minioStorageService.getFileUrl(image, true);
 
         if (imageUrl) {
-          hotelImages.push(imageUrl);
+          hotelImages.push({
+            fileName: image,
+            url: imageUrl,
+          });
         }
       }
 
-      hotel.images = hotelImages;
+      hotel.images = hotelImages as any;
       mappedHotels.push(hotel);
     }
 

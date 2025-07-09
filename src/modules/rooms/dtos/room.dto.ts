@@ -11,7 +11,7 @@ import {
   Min,
 } from 'class-validator';
 
-import { QueryDto, SchemaResponseDto } from '@/base/dtos';
+import { ImageDto, QueryDto, SchemaResponseDto } from '@/base/dtos';
 import { transformToDate, transformToFloatNumber, transformToStringArray } from '@/base/utils';
 import { HotelResponseDto } from '@/modules/hotels/dtos/hotel.dto';
 
@@ -84,11 +84,11 @@ export class RoomResponseDto extends SchemaResponseDto {
 
   @ApiProperty({
     description: 'Images of the room',
-    example: ['https://example.com/room1.jpg', 'https://example.com/room2.jpg'],
-    type: [String],
+    isArray: true,
+    type: ImageDto,
   })
   @Expose()
-  images!: string[];
+  images!: ImageDto[];
 
   @ApiProperty({
     description: 'Maximum quantity of this room type available',
