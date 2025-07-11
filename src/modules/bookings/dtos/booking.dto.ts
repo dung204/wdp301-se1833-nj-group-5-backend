@@ -61,7 +61,7 @@ export class BookingResponseDto extends SchemaResponseDto {
 
   @ApiProperty({
     description: 'Booking status',
-    example: BookingStatus.NOT_PAID_YET,
+    example: BookingStatus.CONFIRMED,
     enum: BookingStatus,
   })
   @Expose()
@@ -220,7 +220,7 @@ export class UpdateBookingDto {
 
   @ApiProperty({
     description: 'Booking status',
-    example: BookingStatus.NOT_PAID_YET,
+    example: BookingStatus.CONFIRMED,
     enum: BookingStatus,
     required: false,
   })

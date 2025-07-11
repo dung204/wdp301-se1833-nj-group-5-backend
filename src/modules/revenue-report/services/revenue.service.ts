@@ -176,7 +176,7 @@ export class RevenueService extends BaseService<DailyRevenueReport> {
         $match: {
           checkIn: { $gte: startOfYesterday, $lte: endOfYesterday },
           status: {
-            $in: [BookingStatus.PAID, BookingStatus.NOT_PAID_YET],
+            $in: [BookingStatus.CONFIRMED, BookingStatus.COMPLETED],
           },
         },
       },

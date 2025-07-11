@@ -49,7 +49,7 @@ export class Booking extends BaseSchema {
   @Prop({
     type: String,
     enum: Object.values(BookingStatus),
-    default: BookingStatus.NOT_PAID_YET,
+    default: BookingStatus.CONFIRMED,
     required: false,
   })
   status!: BookingStatus;

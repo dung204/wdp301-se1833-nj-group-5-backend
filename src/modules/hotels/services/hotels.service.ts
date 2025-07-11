@@ -1,4 +1,11 @@
-import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+  forwardRef,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { randomUUID } from 'crypto';
 import { Model, RootFilterQuery } from 'mongoose';
@@ -7,6 +14,7 @@ import { ImageDto } from '@/base/dtos';
 import { BaseService, FindManyOptions } from '@/base/services';
 import { Role } from '@/modules/auth/enums/role.enum';
 import { MinioStorageService } from '@/modules/minio-storage/minio-storage.service';
+import { RoomsService } from '@/modules/rooms/services/rooms.service';
 import { User } from '@/modules/users/schemas/user.schema';
 
 import { CreateHotelDto, HotelQueryDtoForAdmin, UpdateHotelDto } from '../dtos/hotel.dto';
@@ -17,6 +25,7 @@ export class HotelsService extends BaseService<Hotel> {
   constructor(
     @InjectModel(Hotel.name) protected readonly model: Model<Hotel>,
     private readonly minioStorageService: MinioStorageService,
+    @Inject(forwardRef(() => RoomsService)) private readonly roomsService: RoomsService,
   ) {
     const logger = new Logger(HotelsService.name);
     super(model, logger);
@@ -136,6 +145,11 @@ export class HotelsService extends BaseService<Hotel> {
         }),
       ...(hotelQueryDto.cancelPolicy && { cancelPolicy: hotelQueryDto.cancelPolicy }),
     };
+
+    if (hotelQueryDto.occupancy) {
+      const hotelIds = await this.roomsService.findHotelIdsByRoomOccupancy(hotelQueryDto.occupancy);
+      findOptions.filter._id = { $in: hotelIds };
+    }
 
     // filter by priceHotel
     if (hotelQueryDto.minPrice || hotelQueryDto.maxPrice) {

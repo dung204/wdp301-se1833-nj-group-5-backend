@@ -27,7 +27,7 @@ export class RoomsService extends BaseService<Room> {
     @InjectModel(Room.name) protected readonly model: Model<Room>,
     @Inject(forwardRef(() => BookingsService))
     private readonly bookingService: BookingsService,
-    private readonly hotelsService: HotelsService,
+    @Inject(forwardRef(() => HotelsService)) private readonly hotelsService: HotelsService,
     private readonly minioStorageService: MinioStorageService,
   ) {
     const logger = new Logger(RoomsService.name);
@@ -262,5 +262,16 @@ export class RoomsService extends BaseService<Room> {
       data: mappedRooms,
       metadata: result.metadata,
     };
+  }
+
+  // In your hotels service
+  async findHotelIdsByRoomOccupancy(minOccupancy: number) {
+    // First find rooms with the required occupancy
+    const roomsWithOccupancy = await this.model
+      .find({ occupancy: { $gte: minOccupancy }, isActive: true })
+      .distinct('hotel')
+      .exec();
+
+    return roomsWithOccupancy as unknown as string[];
   }
 }

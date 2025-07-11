@@ -4,6 +4,7 @@ import {
   IsArray,
   IsDate,
   IsEnum,
+  IsInt,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -458,6 +459,17 @@ export class HotelQueryDto extends QueryDto {
   @IsOptional()
   @IsEnum(CancelEnum)
   cancelPolicy?: CancelEnum;
+
+  @ApiProperty({
+    description: 'Number of people to stay',
+    example: 1,
+    required: false,
+  })
+  @IsOptional()
+  @Transform(({ value }) => parseInt(value as string))
+  @IsInt()
+  @Min(1)
+  occupancy?: number;
 }
 
 export class HotelQueryDtoForAdmin extends HotelQueryDto {

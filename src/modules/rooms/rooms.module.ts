@@ -13,7 +13,7 @@ import { RoomsService } from './services/rooms.service';
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: Room.name, schema: RoomSchema }]),
-    HotelsModule,
+    forwardRef(() => HotelsModule),
     forwardRef(() => BookingsModule),
     MinioStorageModule,
   ],

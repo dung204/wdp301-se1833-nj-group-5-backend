@@ -119,7 +119,7 @@ export class BookingsService extends BaseService<Booking> {
       totalPrice: totalPriceAfterDiscounts,
       discounts: discounts,
       orderCode: orderCode, // unique order code for the booking
-      status: BookingStatus.NOT_PAID_YET, // default status
+      status: BookingStatus.CONFIRMED, // default status
     });
   }
 
@@ -188,7 +188,7 @@ export class BookingsService extends BaseService<Booking> {
       {
         $match: {
           hotel: hotelId, // Lọc đúng khách sạn
-          status: { $ne: 'CANCELLED' }, // Bỏ qua các booking đã hủy
+          status: { $nin: [BookingStatus.COMPLETED, BookingStatus.CANCELLED] }, // Bỏ qua các booking đã hủy
           // Áp dụng logic xung đột lịch (overlap)
           checkIn: { $lt: endDate },
           checkOut: { $gt: startDate },
