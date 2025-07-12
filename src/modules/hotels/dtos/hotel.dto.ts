@@ -51,8 +51,22 @@ export class HotelResponseDto extends SchemaResponseDto {
   name!: string;
 
   @ApiProperty({
-    description: 'The address of the hotel',
-    example: '123 Main Street, City, Country',
+    description: 'Province name',
+    example: 'Hà Nội',
+  })
+  @Expose()
+  province!: string;
+
+  @ApiProperty({
+    description: 'Commune name',
+    example: 'Phường Hoàn Kiếm',
+  })
+  @Expose()
+  commune!: string;
+
+  @ApiProperty({
+    description: 'The detailed address of the hotel',
+    example: '123 Main Street',
   })
   @Expose()
   address!: string;
@@ -158,8 +172,24 @@ export class CreateHotelDto {
   name!: string;
 
   @ApiProperty({
-    description: 'The address of the hotel',
-    example: '123 Main Street, City, Country',
+    description: 'Province name',
+    example: 'Hà Nội',
+  })
+  @IsNotEmpty()
+  @IsString()
+  province!: string;
+
+  @ApiProperty({
+    description: 'Commune name',
+    example: 'Phường Hoàn Kiếm',
+  })
+  @IsNotEmpty()
+  @IsString()
+  commune!: string;
+
+  @ApiProperty({
+    description: 'The detailed address of the hotel',
+    example: '123 Main Street',
   })
   @IsNotEmpty()
   @IsString()
@@ -265,8 +295,26 @@ export class UpdateHotelDto {
   name?: string;
 
   @ApiProperty({
-    description: 'The address of the hotel',
-    example: '123 Main Street, City, Country',
+    description: 'Province name',
+    example: 'Hà Nội',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  province?: string;
+
+  @ApiProperty({
+    description: 'Commune name',
+    example: 'Phường Hoàn Kiếm',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  commune?: string;
+
+  @ApiProperty({
+    description: 'The detailed address of the hotel',
+    example: '123 Main Street',
     required: false,
   })
   @IsOptional()
