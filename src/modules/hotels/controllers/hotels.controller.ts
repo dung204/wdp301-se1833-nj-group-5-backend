@@ -32,10 +32,19 @@ import {
   HotelQueryDto,
   HotelQueryDtoForAdmin,
   HotelResponseDto,
+  HotelsWithAvailabilityResponseDto,
   UpdateHotelDto,
 } from '../dtos/hotel.dto';
 import { Hotel } from '../schemas/hotel.schema';
 import { HotelsService } from '../services/hotels.service';
+
+export interface HotelWithRooms extends Hotel {
+  rooms?: {
+    totalRooms: number;
+    bookedRooms: number;
+    availableRooms: number;
+  };
+}
 
 @Controller('hotels')
 export class HotelsController {
@@ -58,8 +67,36 @@ export class HotelsController {
       filter: { deleteTimestamp: null },
     });
 
+    /*
+      1. if checkIn and checkOut are provided, we will search for hotels with availability
+      2. if not provided, we will return all hotels without room availability information
+    */
+    if (hotelQueryDto.checkIn && hotelQueryDto.checkOut) {
+      const hotelsWithAvailability = await this.hotelsService.searchHotelsWithAvailability(
+        hotelQueryDto,
+        hotelQueryDto.checkIn,
+        hotelQueryDto.checkOut,
+      );
+
+      // Add room availability information to each hotel in result
+      result.data.forEach((hotel: HotelWithRooms) => {
+        const findHotel = hotelsWithAvailability.find(
+          (item) => item._id.toString() === hotel._id.toString(),
+        );
+
+        // If the hotel is found in the availability search, add room information
+        if (findHotel) {
+          hotel['rooms'] = {
+            totalRooms: findHotel.totalRooms || 0,
+            bookedRooms: findHotel.totalBookedRooms || 0,
+            availableRooms: findHotel.availableRooms || 0,
+          };
+        }
+      });
+    }
+
     return {
-      data: transformDataToDto(HotelResponseDto, result.data),
+      data: transformDataToDto(HotelsWithAvailabilityResponseDto, result.data),
       metadata: result.metadata,
     };
   }

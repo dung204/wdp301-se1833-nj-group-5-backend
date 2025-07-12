@@ -88,10 +88,8 @@ export class BookingsController {
 
       // 3. return the payment link
       return {
-        data: {
-          ...this.transformToDto(booking),
-          paymentLink: paymentLinkData.checkoutUrl,
-        },
+        ...this.transformToDto(booking),
+        paymentLink: paymentLinkData.checkoutUrl,
       };
     }
 
