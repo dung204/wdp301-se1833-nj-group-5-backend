@@ -23,7 +23,7 @@ import {
   CreateBookingDto,
   // UpdateBookingDto,
 } from '../dtos/booking.dto';
-import { BookingStatus } from '../enums/booking-status.enum';
+import { BookingStatus, ExceptionKeys } from '../enums/booking-status.enum';
 import { Booking } from '../schemas/booking.schema';
 
 @Injectable()
@@ -85,23 +85,31 @@ export class BookingsService extends BaseService<Booking> {
 
     // case 1: the number or booked room is greater than or equal to maximum occupancy of room
     if (amountRoomsBooked >= room.maxQuantity) {
-      throw new BadRequestException('Room is fully booked for the selected dates');
+      throw new BadRequestException({
+        message: 'Room is fully booked for the selected dates',
+        code: ExceptionKeys.ROOM_FULL,
+        suggestion: 'Please choose another room or date',
+      });
     }
 
     // case 2: the number of quantity ( from createBookingDto ) is greater than room that can not be booked
     if (createBookingDto.quantity > room.maxQuantity - amountRoomsBooked) {
-      throw new BadRequestException(
-        `You can only book up to ${room.maxQuantity - amountRoomsBooked} rooms for the selected dates`,
-      );
+      throw new BadRequestException({
+        message: `You can only book up to ${room.maxQuantity - amountRoomsBooked} rooms for the selected dates`,
+        code: ExceptionKeys.ROOM_LIMIT_EXCEEDED,
+        suggestion: 'Please reduce the number of rooms or choose another date',
+      });
     }
 
     // 2. check if the user has enough balance to book the room
     // the total people in the room must be less than or equal to maximum occupancy of room
     const maxPeople = room.occupancy * createBookingDto.quantity; // people in the room * quantity ( number of rooms booked )
     if (createBookingDto.minOccupancy > maxPeople) {
-      throw new BadRequestException(
-        `The people ( minimum occupancy ) of the booking is ${createBookingDto.minOccupancy}, but the maximum occupancy of the room is ${maxPeople}, you can book least ${createBookingDto.minOccupancy / room.occupancy} rooms`,
-      );
+      throw new BadRequestException({
+        message: `The people (minimum occupancy) of the booking is ${createBookingDto.minOccupancy}, but the maximum occupancy of the room is ${maxPeople}, you can book least ${createBookingDto.minOccupancy / room.occupancy} rooms`,
+        code: ExceptionKeys.MIN_OCCUPANCY_NOT_MET,
+        suggestion: 'Please reduce the number of people or choose another room',
+      });
     }
 
     // discounts will be associated with the Bill ( not be associated for each Room )
