@@ -237,8 +237,10 @@ export class HotelsService extends BaseService<Hotel> {
       ...(hotelQueryDto.cancelPolicy && { cancelPolicy: hotelQueryDto.cancelPolicy }),
     };
 
-    if (hotelQueryDto.occupancy) {
-      const hotelIds = await this.roomsService.findHotelIdsByRoomOccupancy(hotelQueryDto.occupancy);
+    if (hotelQueryDto.minOccupancy) {
+      const hotelIds = await this.roomsService.findHotelIdsByRoomOccupancy(
+        hotelQueryDto.minOccupancy,
+      );
       findOptions.filter._id = { $in: hotelIds };
     }
 

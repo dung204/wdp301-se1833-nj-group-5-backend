@@ -517,7 +517,7 @@ export class HotelQueryDto extends QueryDto {
   @Transform(({ value }) => parseInt(value as string))
   @IsInt()
   @Min(1)
-  occupancy?: number;
+  minOccupancy?: number;
 
   @ApiProperty({
     description: 'Check-in date',

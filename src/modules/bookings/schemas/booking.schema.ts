@@ -82,6 +82,18 @@ export class Booking extends BaseSchema {
   })
   paymentMethod!: PaymentMethodEnum; // cancellation policy for the booking
 
+  @Prop({
+    type: Number,
+    required: true,
+  })
+  quantity!: number; // number of rooms booked
+
+  @Prop({
+    type: Number,
+    required: true,
+  })
+  minOccupancy!: number; // minimum occupancy for the booking
+
   // Add cancellation-related fields
   @Prop({
     type: String,

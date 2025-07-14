@@ -6,6 +6,7 @@ import {
   IsDecimal,
   IsEnum,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsString,
   Validate,
@@ -73,6 +74,26 @@ export class BookingResponseDto extends SchemaResponseDto {
   })
   @Expose()
   totalPrice!: number;
+
+  @ApiProperty({
+    description: 'Quantity of rooms booked',
+    example: 2,
+  })
+  @Expose()
+  @Type(() => Number) // Ensure minOccupancy is a number
+  @IsNumber({}, { message: 'quantity must be a number' })
+  @Transform(({ value }) => parseFloat(value))
+  quantity!: number;
+
+  @ApiProperty({
+    description: 'Minimum occupancy for the booking',
+    example: 1,
+  })
+  @Expose()
+  @Type(() => Number) // Ensure minOccupancy is a number
+  @IsNumber({}, { message: 'minOccupancy must be a number' })
+  @Transform(({ value }) => parseFloat(value))
+  minOccupancy!: number;
 
   @ApiProperty({
     description: 'Cancellation policy applied to this booking',
@@ -195,6 +216,28 @@ export class CreateBookingDto {
   @IsEnum(PaymentMethodEnum)
   @IsString()
   paymentMethod!: PaymentMethodEnum;
+
+  @ApiProperty({
+    description: 'Quantity of rooms booked',
+    example: 2,
+  })
+  @Expose()
+  @Type(() => Number) // Ensure minOccupancy is a number
+  @IsNotEmpty()
+  @IsNumber({}, { message: 'quantity must be a number' })
+  @Transform(({ value }) => parseFloat(value))
+  quantity!: number;
+
+  @ApiProperty({
+    description: 'Minimum occupancy for the booking',
+    example: 1,
+  })
+  @Expose()
+  @Type(() => Number) // Ensure minOccupancy is a number
+  @IsNotEmpty()
+  @IsNumber({}, { message: 'minOccupancy must be a number' })
+  @Transform(({ value }) => parseFloat(value))
+  minOccupancy!: number;
 }
 
 export class UpdateBookingDto {
@@ -335,6 +378,26 @@ export class BookingQueryDto extends QueryDto {
   @IsDecimal()
   @Validate((value: string) => parseFloat(value) > 0)
   maxPrice?: number;
+
+  @ApiProperty({
+    description: 'Quantity of rooms booked',
+    example: 2,
+  })
+  @Expose()
+  @Type(() => Number) // Ensure minOccupancy is a number
+  @IsNumber({}, { message: 'quantity must be a number' })
+  @Transform(({ value }) => parseFloat(value))
+  quantity!: number;
+
+  @ApiProperty({
+    description: 'Minimum occupancy for the booking',
+    example: 1,
+  })
+  @Expose()
+  @Type(() => Number) // Ensure minOccupancy is a number
+  @IsNumber({}, { message: 'minOccupancy must be a number' })
+  @Transform(({ value }) => parseFloat(value))
+  minOccupancy!: number;
 }
 
 export class BookingQueryDtoForAdmin extends BookingQueryDto {

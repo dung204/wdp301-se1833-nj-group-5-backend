@@ -3,3 +3,9 @@ export enum BookingStatus {
   COMPLETED = 'COMPLETED',
   CANCELLED = 'CANCELLED',
 }
+
+export enum ExceptionKeys {
+  ROOM_FULL = 'ROOM_FULL',
+  ROOM_LIMIT_EXCEEDED = 'ROOM_LIMIT_EXCEEDED',
+  MIN_OCCUPANCY_NOT_MET = 'MIN_OCCUPANCY_NOT_MET',
+}
