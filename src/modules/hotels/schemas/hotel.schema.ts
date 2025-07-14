@@ -27,6 +27,18 @@ export class Hotel extends BaseSchema {
     type: String,
     required: true,
   })
+  province!: string;
+
+  @Prop({
+    type: String,
+    required: true,
+  })
+  commune!: string;
+
+  @Prop({
+    type: String,
+    required: true,
+  })
   address!: string;
 
   @Prop({
