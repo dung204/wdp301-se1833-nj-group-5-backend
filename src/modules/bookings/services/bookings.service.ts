@@ -151,6 +151,7 @@ export class BookingsService extends BaseService<Booking> {
       discounts: discounts,
       orderCode: orderCode, // unique order code for the booking
       status: BookingStatus.CONFIRMED, // default status
+      cancelPolicy: hotel.cancelPolicy,
     });
   }
 

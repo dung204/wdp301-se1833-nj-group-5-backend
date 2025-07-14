@@ -31,8 +31,8 @@ export class PayosService {
         orderCode: orderCode,
         amount: booking.totalPrice,
         description: `${orderCode}`,
-        returnUrl: `${process.env.FRONTEND_URL}/payment/success`,
-        cancelUrl: `${process.env.FRONTEND_URL}/payment/failed`,
+        returnUrl: `${process.env.FRONTEND_URL}/book/success`,
+        cancelUrl: `${process.env.FRONTEND_URL}/book/failed`,
       };
 
       // Tạo chuỗi để tạo checksum theo quy định của PayOS
