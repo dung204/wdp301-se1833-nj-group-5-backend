@@ -470,6 +470,24 @@ export class HotelQueryDto extends QueryDto {
   @IsInt()
   @Min(1)
   occupancy?: number;
+
+  @ApiProperty({
+    description: 'Check-in date',
+    example: '2025-07-14T14:00:00.000Z',
+    required: false,
+  })
+  @IsOptional()
+  @Type(() => Date)
+  checkIn!: Date;
+
+  @ApiProperty({
+    description: 'Check-in date',
+    example: '2025-07-15T14:00:00.000Z',
+    required: false,
+  })
+  @IsOptional()
+  @Type(() => Date)
+  checkOut!: Date;
 }
 
 export class HotelQueryDtoForAdmin extends HotelQueryDto {
@@ -491,4 +509,22 @@ export class HotelQueryDtoForAdmin extends HotelQueryDto {
   @IsOptional()
   @IsString()
   isActive?: string;
+}
+
+export class HotelsWithAvailabilityResponseDto extends HotelResponseDto {
+  @ApiProperty({
+    description: 'Room availability information',
+    example: {
+      totalRooms: 5,
+      bookedRooms: 2,
+      availableRooms: 3,
+    },
+    required: false,
+  })
+  @Expose()
+  rooms?: {
+    totalRooms: number;
+    bookedRooms: number;
+    availableRooms: number;
+  };
 }

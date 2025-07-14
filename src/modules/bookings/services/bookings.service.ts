@@ -188,7 +188,7 @@ export class BookingsService extends BaseService<Booking> {
       {
         $match: {
           hotel: hotelId, // Lọc đúng khách sạn
-          status: { $nin: [BookingStatus.COMPLETED, BookingStatus.CANCELLED] }, // Bỏ qua các booking đã hủy
+          status: { $nin: [BookingStatus.CANCELLED] }, // Chỉ lấy các booking chưa bị hủy
           // Áp dụng logic xung đột lịch (overlap)
           checkIn: { $lt: endDate },
           checkOut: { $gt: startDate },

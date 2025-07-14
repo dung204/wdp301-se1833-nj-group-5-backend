@@ -31,6 +31,97 @@ export class HotelsService extends BaseService<Hotel> {
     super(model, logger);
   }
 
+  async searchHotelsWithAvailability(
+    queryDto: HotelQueryDtoForAdmin,
+    checkIn: Date,
+    checkOut: Date,
+  ) {
+    const startDate = new Date(checkIn);
+    const endDate = new Date(checkOut);
+
+    // === BƯỚC 1: XÂY DỰNG ĐIỀU KIỆN LỌC BAN ĐẦU TRÊN COLLECTION HOTELS ===
+    const initialHotelMatch: any = {
+      isActive: true, // Mặc định chỉ lấy khách sạn đang hoạt động
+    };
+
+    const aggregationPipeline: any[] = [
+      // === GIAI ĐOẠN 1: LỌC CÁC KHÁCH SẠN THỎA MÃN ĐIỀU KIỆN CƠ BẢN ===
+      {
+        $match: initialHotelMatch,
+      },
+
+      // === GIAI ĐOẠN 2: "JOIN" VÀ LỌC SƠ BỘ TRÊN CÁC PHÒNG ĐANG HOẠT ĐỘNG ===
+      {
+        $lookup: {
+          from: 'rooms',
+          let: { hotel_id: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: { $eq: ['$hotel', '$$hotel_id'] },
+                isActive: true, // Chỉ lấy các loại phòng đang được mở bán
+              },
+            },
+          ],
+          as: 'roomDetails',
+        },
+      },
+
+      // === GIAI ĐOẠN 3: TÍNH TOÁN SỐ LƯỢNG PHÒNG TRỐNG (LOGIC CỐT LÕI) ===
+      {
+        $addFields: {
+          totalRooms: { $sum: '$roomDetails.maxQuantity' },
+        },
+      },
+      {
+        $lookup: {
+          from: 'bookings',
+          let: { hotel_id: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: { $eq: ['$hotel', '$$hotel_id'] },
+                status: { $ne: 'CANCELLED' },
+                checkIn: { $lt: endDate },
+                checkOut: { $gt: startDate },
+              },
+            },
+            // Nhóm theo room để đếm số booking per room
+            {
+              $group: {
+                _id: '$room',
+                bookingCount: { $sum: 1 },
+              },
+            },
+          ],
+          as: 'bookedRoomsInfo',
+        },
+      },
+      {
+        $addFields: {
+          // Tính tổng số phòng đã được đặt
+          totalBookedRooms: { $sum: '$bookedRoomsInfo.bookingCount' },
+          availableRooms: {
+            $subtract: ['$totalRooms', { $ifNull: [{ $sum: '$bookedRoomsInfo.bookingCount' }, 0] }],
+          },
+        },
+      },
+
+      // === GIAI ĐOẠN 5: ĐỊNH HÌNH KẾT QUẢ CUỐI CÙNG ===
+      {
+        $project: {
+          roomDetails: 0,
+          bookedRoomsInfo: 0,
+          __v: 0,
+        },
+      },
+    ];
+
+    const hotelsWithAvailability = await this.model.aggregate(aggregationPipeline);
+
+    return hotelsWithAvailability;
+  }
+
   async getHotelById(id: string): Promise<Hotel> {
     const hotel = await this.findOne({ _id: id });
     if (!hotel) {
