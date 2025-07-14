@@ -336,16 +336,19 @@ export class HotelsService extends BaseService<Hotel> {
   ) {
     if (!hotel) return hotel;
 
-    const hotelImages: string[] = [];
+    const hotelImages: ImageDto[] = [];
     for (const image of hotel.images) {
       const imageUrl = await this.minioStorageService.getFileUrl(image, true);
 
       if (imageUrl) {
-        hotelImages.push(imageUrl);
+        hotelImages.push({
+          fileName: image,
+          url: imageUrl,
+        });
       }
     }
 
-    hotel.images = hotelImages;
+    hotel.images = hotelImages as any;
     return hotel;
   }
 }

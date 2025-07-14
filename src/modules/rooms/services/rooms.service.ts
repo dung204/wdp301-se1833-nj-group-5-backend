@@ -264,6 +264,29 @@ export class RoomsService extends BaseService<Room> {
     };
   }
 
+  protected async postFindOne(
+    room: Room | null,
+    _filter: RootFilterQuery<Room>,
+    _currentUser?: User,
+  ): Promise<Room | null> {
+    if (!room) return room;
+
+    const roomImages: ImageDto[] = [];
+    for (const image of room.images) {
+      const imageUrl = await this.minioStorageService.getFileUrl(image, true);
+
+      if (imageUrl) {
+        roomImages.push({
+          fileName: image,
+          url: imageUrl,
+        });
+      }
+    }
+
+    room.images = roomImages as any;
+    return room;
+  }
+
   // In your hotels service
   async findHotelIdsByRoomOccupancy(minOccupancy: number) {
     // First find rooms with the required occupancy
