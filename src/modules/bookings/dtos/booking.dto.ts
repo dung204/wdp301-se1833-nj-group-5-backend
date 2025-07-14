@@ -1,3 +1,4 @@
+import { BadRequestException } from '@nestjs/common';
 import { ApiProperty } from '@nestjs/swagger';
 import { Exclude, Expose, Transform, Type } from 'class-transformer';
 import {
@@ -171,7 +172,7 @@ export class CreateBookingDto {
     today.setHours(0, 0, 0, 0);
 
     if (date < today) {
-      throw new Error('Check-in date must be today or in the future');
+      throw new BadRequestException('Check-in date must be today or in the future');
     }
     return date;
   })
@@ -190,7 +191,7 @@ export class CreateBookingDto {
     today.setHours(0, 0, 0, 0);
 
     if (date < today) {
-      throw new Error('Check-in date must be today or in the future');
+      throw new BadRequestException('Check-in date must be today or in the future');
     }
     return date;
   })
