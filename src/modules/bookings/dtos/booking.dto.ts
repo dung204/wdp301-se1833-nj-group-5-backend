@@ -384,22 +384,22 @@ export class BookingQueryDto extends QueryDto {
   @ApiProperty({
     description: 'Quantity of rooms booked',
     example: 2,
+    required: false,
   })
-  @Expose()
-  @Type(() => Number) // Ensure minOccupancy is a number
+  @IsOptional()
   @IsNumber({}, { message: 'quantity must be a number' })
   @Transform(({ value }) => parseFloat(value as string))
-  quantity!: number;
+  quantity?: number;
 
   @ApiProperty({
     description: 'Minimum occupancy for the booking',
     example: 1,
+    required: false,
   })
-  @Expose()
-  @Type(() => Number) // Ensure minOccupancy is a number
+  @IsOptional()
   @IsNumber({}, { message: 'minOccupancy must be a number' })
   @Transform(({ value }) => parseFloat(value as string))
-  minOccupancy!: number;
+  minOccupancy?: number;
 }
 
 export class BookingQueryDtoForAdmin extends BookingQueryDto {
