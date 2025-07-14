@@ -4,6 +4,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 
 import { ConfigModule } from './base/configs/config.module';
 import { DatabaseModule } from './base/database/database.module';
+import { ImageTransformInterceptor } from './base/interceptors/image-transform.interceptor';
 import { ResponseTransformInterceptor } from './base/interceptors/response-transform.interceptor';
 import { AuthModule } from './modules/auth/auth.module';
 import { JwtGuard } from './modules/auth/guards/jwt.guard';
@@ -39,6 +40,10 @@ import { UsersModule } from './modules/users/users.module';
     MinioStorageModule,
   ],
   providers: [
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ImageTransformInterceptor,
+    },
     {
       provide: APP_INTERCEPTOR,
       useClass: ResponseTransformInterceptor,

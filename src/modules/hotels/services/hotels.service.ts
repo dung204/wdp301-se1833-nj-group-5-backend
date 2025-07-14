@@ -10,7 +10,6 @@ import { InjectModel } from '@nestjs/mongoose';
 import { randomUUID } from 'crypto';
 import { Model, RootFilterQuery } from 'mongoose';
 
-import { ImageDto } from '@/base/dtos';
 import { BaseService, FindManyOptions } from '@/base/services';
 import { Role } from '@/modules/auth/enums/role.enum';
 import { MinioStorageService } from '@/modules/minio-storage/minio-storage.service';
@@ -299,56 +298,5 @@ export class HotelsService extends BaseService<Hotel> {
     }
 
     return findOptions;
-  }
-
-  protected async postFind(data: Hotel[], options: FindManyOptions<Hotel>, _currentUser?: User) {
-    const result = await super.postFind(data, options, _currentUser);
-
-    const mappedHotels: Hotel[] = [];
-
-    for (const hotel of result.data) {
-      const hotelImages: ImageDto[] = [];
-      for (const image of hotel.images) {
-        const imageUrl = await this.minioStorageService.getFileUrl(image, true);
-
-        if (imageUrl) {
-          hotelImages.push({
-            fileName: image,
-            url: imageUrl,
-          });
-        }
-      }
-
-      hotel.images = hotelImages as any;
-      mappedHotels.push(hotel);
-    }
-
-    return {
-      data: mappedHotels,
-      metadata: result.metadata,
-    };
-  }
-
-  protected async postFindOne(
-    hotel: Hotel | null,
-    _filter: RootFilterQuery<Hotel>,
-    _currentUser?: User,
-  ) {
-    if (!hotel) return hotel;
-
-    const hotelImages: ImageDto[] = [];
-    for (const image of hotel.images) {
-      const imageUrl = await this.minioStorageService.getFileUrl(image, true);
-
-      if (imageUrl) {
-        hotelImages.push({
-          fileName: image,
-          url: imageUrl,
-        });
-      }
-    }
-
-    hotel.images = hotelImages as any;
-    return hotel;
   }
 }

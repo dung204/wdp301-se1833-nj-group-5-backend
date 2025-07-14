@@ -45,6 +45,7 @@ export class BookingResponseDto extends SchemaResponseDto {
     type: RoomResponseDto,
   })
   @Expose()
+  @Type(() => RoomResponseDto)
   room!: RoomResponseDto;
 
   @ApiProperty({
@@ -83,7 +84,7 @@ export class BookingResponseDto extends SchemaResponseDto {
   @Expose()
   @Type(() => Number) // Ensure minOccupancy is a number
   @IsNumber({}, { message: 'quantity must be a number' })
-  @Transform(({ value }) => parseFloat(value))
+  @Transform(({ value }) => parseFloat(value as string))
   quantity!: number;
 
   @ApiProperty({
@@ -93,7 +94,7 @@ export class BookingResponseDto extends SchemaResponseDto {
   @Expose()
   @Type(() => Number) // Ensure minOccupancy is a number
   @IsNumber({}, { message: 'minOccupancy must be a number' })
-  @Transform(({ value }) => parseFloat(value))
+  @Transform(({ value }) => parseFloat(value as string))
   minOccupancy!: number;
 
   @ApiProperty({
@@ -167,7 +168,7 @@ export class CreateBookingDto {
   @Type(() => Date)
   @IsDate()
   @Transform(({ value }) => {
-    const date = new Date(value);
+    const date = new Date(value as string);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -186,7 +187,7 @@ export class CreateBookingDto {
   @Type(() => Date)
   @IsDate()
   @Transform(({ value }) => {
-    const date = new Date(value);
+    const date = new Date(value as string);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -226,7 +227,7 @@ export class CreateBookingDto {
   @Type(() => Number) // Ensure minOccupancy is a number
   @IsNotEmpty()
   @IsNumber({}, { message: 'quantity must be a number' })
-  @Transform(({ value }) => parseFloat(value))
+  @Transform(({ value }) => parseFloat(value as string))
   quantity!: number;
 
   @ApiProperty({
@@ -237,7 +238,7 @@ export class CreateBookingDto {
   @Type(() => Number) // Ensure minOccupancy is a number
   @IsNotEmpty()
   @IsNumber({}, { message: 'minOccupancy must be a number' })
-  @Transform(({ value }) => parseFloat(value))
+  @Transform(({ value }) => parseFloat(value as string))
   minOccupancy!: number;
 }
 
@@ -387,7 +388,7 @@ export class BookingQueryDto extends QueryDto {
   @Expose()
   @Type(() => Number) // Ensure minOccupancy is a number
   @IsNumber({}, { message: 'quantity must be a number' })
-  @Transform(({ value }) => parseFloat(value))
+  @Transform(({ value }) => parseFloat(value as string))
   quantity!: number;
 
   @ApiProperty({
@@ -397,7 +398,7 @@ export class BookingQueryDto extends QueryDto {
   @Expose()
   @Type(() => Number) // Ensure minOccupancy is a number
   @IsNumber({}, { message: 'minOccupancy must be a number' })
-  @Transform(({ value }) => parseFloat(value))
+  @Transform(({ value }) => parseFloat(value as string))
   minOccupancy!: number;
 }
 
