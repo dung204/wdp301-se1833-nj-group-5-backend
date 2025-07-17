@@ -243,6 +243,13 @@ export class HotelsService extends BaseService<Hotel> {
       findOptions.filter._id = { $in: hotelIds };
     }
 
+    if (hotelQueryDto.searchTerm) {
+      findOptions.filter.$or = [
+        { name: { $regex: hotelQueryDto.searchTerm, $options: 'i' } },
+        { address: { $regex: hotelQueryDto.searchTerm, $options: 'i' } },
+      ];
+    }
+
     // filter by priceHotel
     if (hotelQueryDto.minPrice || hotelQueryDto.maxPrice) {
       const priceFilter: any = {};
