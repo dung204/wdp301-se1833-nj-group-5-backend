@@ -1,8 +1,9 @@
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { ApiOperation } from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
 
 import { ApiSuccessResponse } from '@/base/decorators';
+import { transformDataToDto } from '@/base/utils';
 import { AllowRoles } from '@/modules/auth/decorators/allow-roles.decorator';
 import { CurrentUser } from '@/modules/auth/decorators/current-user.decorator';
 import { Role } from '@/modules/auth/enums/role.enum';
@@ -10,6 +11,7 @@ import {
   BookingQueryDtoForAdmin,
   BookingResponseDto,
   CreateBookingDto,
+  UpdateBookingDto,
 } from '@/modules/bookings/dtos/booking.dto';
 import { Booking } from '@/modules/bookings/schemas/booking.schema';
 import { BookingsService } from '@/modules/bookings/services/bookings.service';
@@ -94,5 +96,30 @@ export class BookingsController {
     }
 
     return this.transformToDto(booking);
+  }
+
+  @ApiOperation({
+    summary: 'Update a hotel',
+    description: 'Update a hotel (only for owner or admin)',
+  })
+  @ApiSuccessResponse({
+    schema: BookingResponseDto,
+    description: 'Hotel updated successfully',
+  })
+  @AllowRoles([Role.ADMIN, Role.HOTEL_OWNER, Role.CUSTOMER])
+  @Patch(':id')
+  async updateHotel(
+    @CurrentUser() user: User,
+    @Param('id') id: string,
+    @Body() updateBooking: UpdateBookingDto,
+  ) {
+    return transformDataToDto(
+      BookingResponseDto,
+      await this.bookingsService.update(
+        { ...updateBooking } as Partial<Booking>,
+        { _id: id },
+        user,
+      ),
+    );
   }
 }

@@ -1,3 +1,4 @@
 export * from './config.service';
 export * from './swagger.config';
 export * from './config.module';
+export * from './config.mail';

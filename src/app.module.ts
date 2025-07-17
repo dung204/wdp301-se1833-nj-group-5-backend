@@ -1,7 +1,9 @@
+import { MailerModule } from '@nestjs-modules/mailer';
 import { Module } from '@nestjs/common';
 import { APP_GUARD, APP_INTERCEPTOR, DiscoveryModule } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
 
+import { mailConfig } from './base/configs';
 import { ConfigModule } from './base/configs/config.module';
 import { DatabaseModule } from './base/database/database.module';
 import { ImageTransformInterceptor } from './base/interceptors/image-transform.interceptor';
@@ -23,6 +25,7 @@ import { UsersModule } from './modules/users/users.module';
 @Module({
   imports: [
     ScheduleModule.forRoot(),
+    MailerModule.forRootAsync(mailConfig),
     ConfigModule,
     DiscoveryModule,
     AuthModule,
