@@ -41,6 +41,9 @@ export class RevenueController {
   @AllowRoles([Role.ADMIN, Role.HOTEL_OWNER])
   @Get('/')
   async getAll(@CurrentUser() user: User, @Query() revenueQueryDto: RevenueQueryDto) {
+    // Set the day revenue report if not already set
+    await this.revenueService.setDayRevenueReport();
+    //
     const result = await this.revenueService.getRevenueDaily(revenueQueryDto);
     return this.transformToDto(result);
   }
@@ -60,6 +63,9 @@ export class RevenueController {
     @CurrentUser() user: User,
     @Query() queryDto: YearlyRevenueQueryDto,
   ): Promise<YearlyRevenueResponseDto[]> {
+    // Set the day revenue report if not already set
+    await this.revenueService.setDayRevenueReport();
+    //
     const result = await this.revenueService.getYearlyRevenue(user, queryDto.hotelId);
     return plainToInstance(YearlyRevenueResponseDto, result);
   }
@@ -79,6 +85,9 @@ export class RevenueController {
     @CurrentUser() user: User,
     @Query() queryDto: MonthlyRevenueQueryDto,
   ): Promise<MonthlyRevenueResponseDto[]> {
+    // Set the day revenue report if not already set
+    await this.revenueService.setDayRevenueReport();
+    //
     const result = await this.revenueService.getMonthlyRevenue(
       queryDto.year,
       user,
