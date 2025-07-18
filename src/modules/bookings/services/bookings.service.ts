@@ -18,11 +18,7 @@ import { HotelsService } from '@/modules/hotels/services/hotels.service';
 import { RoomsService } from '@/modules/rooms/services/rooms.service';
 import { User } from '@/modules/users/schemas/user.schema';
 
-import {
-  BookingQueryDtoForAdmin,
-  CreateBookingDto,
-  // UpdateBookingDto,
-} from '../dtos/booking.dto';
+import { BookingQueryDtoForAdmin, CreateBookingDto } from '../dtos/booking.dto';
 import { BookingStatus, ExceptionKeys } from '../enums/booking-status.enum';
 import { Booking } from '../schemas/booking.schema';
 
@@ -142,7 +138,7 @@ export class BookingsService extends BaseService<Booking> {
     // get orderCode = timeStamp
     const orderCode = Date.now();
 
-    return this.createOne({
+    return await this.createOne({
       ...createBookingDto,
       user: user,
       hotel: hotel,

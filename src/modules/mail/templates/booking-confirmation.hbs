@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xác nhận đặt phòng của bạn</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f5f5; color: #333; }
+        .email-container { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
+        
+        /* Header */
+        .header { background: linear-gradient(135deg, #4285f4 0%, #34a853 100%); padding: 30px 20px; text-align: center; color: white; }
+        .header h1 { font-size: 24px; margin-bottom: 8px; }
+        .header p { font-size: 14px; opacity: 0.9; }
+        
+        /* Success Badge */
+        .success-badge { background-color: #34a853; color: white; padding: 15px 20px; text-align: center; }
+        .success-badge h2 { font-size: 18px; margin-bottom: 5px; }
+        .success-badge p { font-size: 14px; }
+        
+        /* Content */
+        .content { padding: 30px 20px; }
+        .greeting { font-size: 16px; margin-bottom: 20px; }
+        .booking-id { background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 25px; text-align: center; }
+        .booking-id strong { font-size: 18px; color: #1a73e8; }
+        
+        /* Hotel Info */
+        .hotel-section { margin-bottom: 30px; }
+        .hotel-header { display: flex; align-items: center; margin-bottom: 15px; }
+        .hotel-stars { color: #ff9800; margin-left: 10px; }
+        .hotel-name { font-size: 20px; font-weight: bold; color: #1a73e8; }
+        .hotel-address { color: #666; margin-bottom: 15px; }
+        
+        /* Booking Details Table */
+        .details-table { width: 100%; border-collapse: collapse; margin-bottom: 25px; }
+        .details-table th { background-color: #f1f3f4; padding: 12px; text-align: left; font-weight: 600; border-bottom: 1px solid #e0e0e0; }
+        .details-table td { padding: 12px; border-bottom: 1px solid #e0e0e0; }
+        .details-table tr:last-child td { border-bottom: none; }
+        
+        /* Price Summary */
+        .price-summary { background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 25px; }
+        .price-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .total-price { font-size: 18px; font-weight: bold; color: #1a73e8; border-top: 1px solid #e0e0e0; padding-top: 12px; margin-top: 12px; }
+        
+        /* Contact Section */
+        .contact-section { background-color: #f1f3f4; padding: 20px; border-radius: 8px; margin-bottom: 25px; }
+        .contact-section h3 { margin-bottom: 15px; color: #1a73e8; }
+        .contact-buttons { display: flex; gap: 10px; }
+        .contact-btn { flex: 1; padding: 12px; text-align: center; border: 1px solid #1a73e8; border-radius: 6px; text-decoration: none; }
+        .contact-btn.primary { background-color: #1a73e8; color: white; }
+        .contact-btn.secondary { background-color: white; color: #1a73e8; }
+        
+        /* Footer */
+        .footer { background-color: #f1f3f4; padding: 20px; text-align: center; color: #666; font-size: 12px; }
+        
+        /* Status Badge */
+        .status-badge { display: inline-block; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+        .status-confirmed { background-color: #e8f5e8; color: #2e7d32; }
+        
+        /* Alert boxes */
+        .alert-cod { background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+        .alert-payment { background-color: #e8f5e8; border: 1px solid #c3e6c3; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+        .alert-cancel { background-color: #e3f2fd; border: 1px solid #bbdefb; padding: 15px; border-radius: 8px; margin-bottom: 25px; }
+        
+        /* Payment button hover effect */
+        .payment-btn:hover {
+            background-color: #1565c0 !important;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(26, 115, 232, 0.3);
+        }
+        /* Responsive */
+        @media (max-width: 600px) {
+            .contact-buttons { flex-direction: column; }
+            .hotel-header { flex-direction: column; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🎉 Đặt phòng thành công!</h1>
+            <p>Cảm ơn bạn đã tin tưởng dịch vụ của chúng tôi</p>
+        </div>
+        
+        <!-- Success Message -->
+        <div class="success-badge">
+            <h2>Đơn đặt của quý khách đã được xác nhận!</h2>
+            <p>Thông tin chi tiết được gửi kèm trong email này</p>
+        </div>
+        
+        <!-- Content -->
+        <div class="content">
+            <!-- Greeting -->
+            <div class="greeting">
+                <p>Chào <strong>{{user.fullName}}</strong>,</p>
+                <p>Cảm ơn bạn đã đặt phòng qua ứng dụng của chúng tôi. Đặt phòng của bạn đã được xác nhận và chúng tôi đang chờ đón bạn.</p>
+            </div>
+            
+            <!-- Booking ID -->
+            <div class="booking-id">
+                <p>Mã đặt phòng của bạn</p>
+                <strong>#{{orderCode}}</strong>
+            </div>
+            
+            <!-- Hotel Information -->
+            <div class="hotel-section">
+                <div class="hotel-header">
+                    <div class="hotel-name">{{hotel.name}}</div>
+                    <div class="hotel-stars">★★★★★</div>
+                </div>
+                <div class="hotel-address">📍 {{hotel.address}}</div>
+                <span class="status-badge status-confirmed">✓ Đã xác nhận</span>
+            </div>
+            
+            <!-- Booking Details -->
+            <table class="details-table">
+                <tr>
+                    <th>Loại phòng</th>
+                    <td>{{room.name}}</td>
+                </tr>
+                <tr>
+                    <th>Số lượng phòng</th>
+                    <td>{{quantity}} phòng</td>
+                </tr>
+                <tr>
+                    <th>Nhận phòng</th>
+                    <td>{{formatDate checkIn}}</td>
+                </tr>
+                <tr>
+                    <th>Trả phòng</th>
+                    <td>{{formatDate checkOut}}</td>
+                </tr>
+                <tr>
+                    <th>Khách tối đa</th>
+                    <td>{{minOccupancy}} người</td>
+                </tr>
+                <tr>
+                    <th>Phương thức thanh toán</th>
+                    <td>{{formatPaymentMethod paymentMethod}}</td>
+                </tr>
+            </table>
+            
+            <!-- COD Payment Notice -->
+            {{#if (isCOD paymentMethod)}}
+            <div class="alert-cod">
+                <h4 style="color: #856404; margin-bottom: 10px;">💰 Lưu ý thanh toán:</h4>
+                <p style="color: #856404;">
+                    <strong>Quý khách vui lòng gửi tiền tại khách sạn khi check-in.</strong><br>
+                    Xin mang theo đủ số tiền mặt: <strong>{{formatCurrency totalPrice}}</strong>
+                </p>
+            </div>
+            {{/if}}
+
+            <!-- Payment Gateway Notice -->
+            {{#if (isPaymentGateway paymentMethod)}}
+            <div class="alert-payment" style="background-color: #e8f5e8; border: 1px solid #c3e6c3; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                <h4 style="color: #2e7d32; margin-bottom: 10px;">💳 Thanh toán trực tuyến:</h4>
+                <p style="color: #2e7d32; margin-bottom: 15px;">
+                    <strong>Vui lòng hoàn tất thanh toán qua link bên dưới để xác nhận đặt phòng:</strong>
+                </p>
+                <div style="text-align: center; margin: 15px 0;">
+                    <a href="{{paymentLink}}" 
+                    style="display: inline-block; background-color: #1a73e8; color: white; padding: 12px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;"
+                    target="_blank">
+                        🔗 Thanh toán ngay
+                    </a>
+                </div>
+                <p style="color: #666; font-size: 14px; text-align: center;">
+                    Link thanh toán: <a href="{{paymentLink}}" style="color: #1a73e8;">{{paymentLink}}</a>
+                </p>
+                <div style="background-color: #fff3cd; padding: 10px; border-radius: 4px; margin-top: 10px;">
+                    <p style="color: #856404; font-size: 13px; margin: 0;">
+                        ⚠️ <strong>Lưu ý:</strong> Link thanh toán có thời hạn. Vui lòng thanh toán trong vòng 30 phút để đảm bảo đặt phòng được giữ chỗ.
+                    </p>
+                </div>
+            </div>
+            {{/if}}
+            
+            <!-- Cancel Policy Notice -->
+            <div class="alert-cancel">
+                <h4 style="color: #0277bd; margin-bottom: 10px;">📋 Chính sách hủy đặt phòng:</h4>
+                <p style="color: #0277bd;">
+                    <strong>{{formatCancelPolicy hotel.cancelPolicy}}</strong>
+                </p>
+            </div>
+            
+            <!-- Price Summary -->
+            <div class="price-summary">
+                <h3 style="margin-bottom: 15px; color: #1a73e8;">💰 Chi tiết giá</h3>
+                <div class="price-row">
+                    <span>{{room.name}} x {{quantity}} phòng</span>
+                    <span>{{formatCurrency totalPrice}}</span>
+                </div>
+                {{#if discounts.length}}
+                <div class="price-row">
+                    <span>🎫 Giảm giá áp dụng</span>
+                    <span style="color: #34a853;">- {{formatCurrency discountAmount}}</span>
+                </div>
+                {{/if}}
+                <div class="price-row total-price">
+                    <span>Tổng cộng</span>
+                    <span>{{formatCurrency totalPrice}}</span>
+                </div>
+            </div>
+            
+            <!-- Contact Section -->
+            <div class="contact-section">
+                <h3>🤝 Liên hệ hỗ trợ</h3>
+                <p style="margin-bottom: 15px;">Mọi thắc mắc, bạn có thể liên hệ với chúng tôi:</p>
+                <div class="contact-buttons">
+                    <a href="tel:+84123456789" class="contact-btn primary">📞 Gọi hotline</a>
+                    <a href="mailto:support@yourbookingapp.com" class="contact-btn secondary">✉️ Gửi email</a>
+                </div>
+            </div>
+            
+            <!-- Important Notes -->
+            <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 8px; margin-bottom: 25px;">
+                <h4 style="color: #856404; margin-bottom: 10px;">📋 Lưu ý quan trọng:</h4>
+                <ul style="color: #856404; padding-left: 20px;">
+                    <li>Vui lòng mang theo CMND/CCCD khi check-in</li>
+                    <li>Thời gian check-in: từ 14:00, check-out: trước 12:00</li>
+                    <li>Liên hệ khách sạn trước nếu check-in muộn</li>
+                </ul>
+            </div>
+            
+            <div style="text-align: center; margin-top: 30px;">
+                <p style="font-size: 16px; color: #1a73e8; font-weight: 600;">
+                    🌟 Chúc bạn có một kỳ nghỉ tuyệt vời! 🌟
+                </p>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p>&copy; {{currentYear}} Your Booking App. All rights reserved.</p>
+            <p>Đây là email tự động, vui lòng không reply email này.</p>
+        </div>
+    </div>
+</body>
+</html>

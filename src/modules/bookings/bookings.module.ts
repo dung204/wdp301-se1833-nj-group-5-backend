@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 
 import { DiscountsModule } from '../discounts/discounts.module';
 import { HotelsModule } from '../hotels/hotels.module';
+import { MailModule } from '../mail/mail.module';
 import { PaymentsModule } from '../payment/payment.module';
 import { RoomsModule } from '../rooms/rooms.module';
 import { TransactionsModule } from '../transactions/transactions.module';
@@ -15,6 +16,7 @@ import { BookingsService } from './services/bookings.service';
     DiscountsModule,
     HotelsModule,
     PaymentsModule,
+    forwardRef(() => MailModule),
     forwardRef(() => TransactionsModule),
     forwardRef(() => RoomsModule), // Forward reference to RoomsModule
     MongooseModule.forFeature([{ name: Booking.name, schema: BookingSchema }]),

@@ -536,6 +536,15 @@ export class HotelQueryDto extends QueryDto {
   @IsOptional()
   @Type(() => Date)
   checkOut!: Date;
+
+  @ApiProperty({
+    description: 'Filter hotels by name or address, it will have new name is searchTerm',
+    required: false,
+    example: 'Ha Noi',
+  })
+  @IsOptional()
+  @IsString()
+  searchTerm?: string;
 }
 
 export class HotelQueryDtoForAdmin extends HotelQueryDto {
