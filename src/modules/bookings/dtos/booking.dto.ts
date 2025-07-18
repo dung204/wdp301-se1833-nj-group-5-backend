@@ -21,6 +21,7 @@ import { PaymentMethodEnum } from '@/modules/transactions/schemas/transaction.sc
 import { UserProfileDto } from '@/modules/users/dtos/user.dtos';
 
 import { BookingStatus } from '../enums/booking-status.enum';
+import { Booking } from '../schemas/booking.schema';
 
 @Exclude()
 export class BookingResponseDto extends SchemaResponseDto {
@@ -410,4 +411,15 @@ export class BookingQueryDtoForAdmin extends BookingQueryDto {
   @IsOptional()
   @IsString()
   hotelOwnerId?: string;
+}
+
+export class BookingByPaymentLinkDto extends Booking {
+  @ApiProperty({
+    description: 'Payment link to find the booking',
+    example: 'https://example.com/payment/booking123',
+    required: false, // This field is optional
+  })
+  @IsOptional()
+  @IsString()
+  paymentLink!: string;
 }

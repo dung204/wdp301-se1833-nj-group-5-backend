@@ -15,6 +15,7 @@ import {
 } from '@/modules/bookings/dtos/booking.dto';
 import { Booking } from '@/modules/bookings/schemas/booking.schema';
 import { BookingsService } from '@/modules/bookings/services/bookings.service';
+import { MailService } from '@/modules/mail/services/mail.service';
 import { PayosService } from '@/modules/payment/services/payment.service';
 import { TransactionResponseDto } from '@/modules/transactions/dtos/transaction.dtos';
 import {
@@ -31,6 +32,7 @@ export class BookingsController {
     private readonly bookingsService: BookingsService,
     private readonly transactionsService: TransactionsService,
     private readonly payosService: PayosService,
+    private readonly mailService: MailService,
   ) {}
 
   private transformToDto(data: Booking | Booking[]): BookingResponseDto | BookingResponseDto[] {
@@ -75,6 +77,12 @@ export class BookingsController {
     // 1. create a new booking
     const booking = await this.bookingsService.createBooking(user, createBookingDto);
 
+    let dataReturn = {
+      ...this.transformToDto(booking),
+      paymentLink: '', // Default payment link is empty
+    };
+
+    // 2. if payment method is PAYMENT_GATEWAY, send confirmation email and return booking data
     if (booking.paymentMethod === PaymentMethodEnum.PAYMENT_GATEWAY) {
       // 1. create a new transaction
       const _ = await this.transactionsService.createTransaction({
@@ -89,13 +97,18 @@ export class BookingsController {
       const paymentLinkData = await this.payosService.createPaymentLink(booking);
 
       // 3. return the payment link
-      return {
+      dataReturn = {
         ...this.transformToDto(booking),
         paymentLink: paymentLinkData.checkoutUrl,
       };
     }
 
-    return this.transformToDto(booking);
+    await this.mailService.sendBookingConfirmationEmail({
+      ...booking,
+      paymentLink: dataReturn.paymentLink, // Pass the payment
+    });
+
+    return dataReturn;
   }
 
   @ApiOperation({

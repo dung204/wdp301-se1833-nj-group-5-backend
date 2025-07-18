@@ -15,7 +15,6 @@ import { Role } from '@/modules/auth/enums/role.enum';
 import { Discount } from '@/modules/discounts/schemas/discount.schema';
 import { DiscountsService } from '@/modules/discounts/services/discounts.service';
 import { HotelsService } from '@/modules/hotels/services/hotels.service';
-import { MailService } from '@/modules/mail/services/mail.service';
 import { RoomsService } from '@/modules/rooms/services/rooms.service';
 import { User } from '@/modules/users/schemas/user.schema';
 
@@ -28,7 +27,6 @@ export class BookingsService extends BaseService<Booking> {
   constructor(
     readonly discountService: DiscountsService,
     readonly hotelsService: HotelsService,
-    private readonly mailService: MailService,
     @Inject(forwardRef(() => RoomsService))
     readonly roomsService: RoomsService,
     @InjectModel(Booking.name) protected readonly model: Model<Booking>,
@@ -140,7 +138,7 @@ export class BookingsService extends BaseService<Booking> {
     // get orderCode = timeStamp
     const orderCode = Date.now();
 
-    const booking = await this.createOne({
+    return await this.createOne({
       ...createBookingDto,
       user: user,
       hotel: hotel,
@@ -151,10 +149,6 @@ export class BookingsService extends BaseService<Booking> {
       status: BookingStatus.CONFIRMED, // default status
       cancelPolicy: hotel.cancelPolicy,
     });
-
-    await this.mailService.sendBookingConfirmationEmail(booking);
-
-    return booking;
   }
 
   // async cancelBooking(
