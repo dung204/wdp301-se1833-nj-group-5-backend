@@ -72,3 +72,26 @@ export class UpdateUserDto {
   @IsEnum(Gender)
   gender?: Gender;
 }
+
+export class UpgradeRoleDto {
+  @ApiProperty({
+    description: 'The target role to upgrade to',
+    enum: [Role.HOTEL_OWNER],
+    enumName: 'UpgradeRole',
+    example: Role.HOTEL_OWNER,
+    required: true,
+  })
+  @IsEnum([Role.HOTEL_OWNER], {
+    message: 'Only upgrade to HOTEL_OWNER role is supported',
+  })
+  targetRole!: Role.HOTEL_OWNER;
+
+  @ApiProperty({
+    description: 'Optional justification for the role upgrade',
+    example: 'I want to add my hotel to the system',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  reason?: string;
+}

@@ -18,7 +18,12 @@ import { AllowRoles } from '@/modules/auth/decorators/allow-roles.decorator';
 import { CurrentUser } from '@/modules/auth/decorators/current-user.decorator';
 import { Role } from '@/modules/auth/enums/role.enum';
 
-import { DeletedUserProfileDto, UpdateUserDto, UserProfileDto } from '../dtos/user.dtos';
+import {
+  DeletedUserProfileDto,
+  UpdateUserDto,
+  UpgradeRoleDto,
+  UserProfileDto,
+} from '../dtos/user.dtos';
 import { User } from '../schemas/user.schema';
 import { UsersService } from '../services/users.service';
 
@@ -135,5 +140,21 @@ export class UsersController {
     return this.usersService.restore({
       _id: id,
     });
+  }
+
+  @ApiOperation({
+    summary: "Upgrade current user's role from CUSTOMER to HOTEL_OWNER",
+    description:
+      'Allows a customer to upgrade their role to hotel owner to add hotels to the system. All existing data (booking history, favorite hotels, etc.) will be preserved.',
+  })
+  @ApiSuccessResponse({
+    schema: UserProfileDto,
+    description: 'User role upgraded successfully',
+  })
+  @AllowRoles([Role.CUSTOMER])
+  @Patch('/upgrade-role')
+  async upgradeUserRole(@CurrentUser() currentUser: User, @Body() upgradeRoleDto: UpgradeRoleDto) {
+    const user = await this.usersService.upgradeUserRole(currentUser, upgradeRoleDto);
+    return UserProfileDto.mapToDto(user);
   }
 }
