@@ -585,3 +585,13 @@ export class HotelsWithAvailabilityResponseDto extends HotelResponseDto {
     availableRooms: number;
   };
 }
+
+@Exclude()
+export class DeletedHotelsWithAvailabilityResponseDto extends HotelsWithAvailabilityResponseDto {
+  @ApiProperty({
+    description: 'The timestamp when the hotel was deleted',
+    example: SwaggerExamples.DATE_FROM,
+  })
+  @Expose()
+  deleteTimestamp!: Date;
+}
