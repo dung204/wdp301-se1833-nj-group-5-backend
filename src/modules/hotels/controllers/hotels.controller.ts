@@ -29,6 +29,7 @@ import { User } from '@/modules/users/schemas/user.schema';
 import {
   CreateHotelDto,
   DeletedHotelResponseDto,
+  DeletedHotelsWithAvailabilityResponseDto,
   HotelQueryDto,
   HotelQueryDtoForAdmin,
   HotelResponseDto,
@@ -67,36 +68,18 @@ export class HotelsController {
       filter: { deleteTimestamp: null },
     });
 
-    /*
-      1. if checkIn and checkOut are provided, we will search for hotels with availability
-      2. if not provided, we will return all hotels without room availability information
-    */
-    if (hotelQueryDto.checkIn && hotelQueryDto.checkOut) {
-      const hotelsWithAvailability = await this.hotelsService.searchHotelsWithAvailability(
-        hotelQueryDto,
-        hotelQueryDto.checkIn,
-        hotelQueryDto.checkOut,
-      );
+    const checkIn = hotelQueryDto.checkIn || new Date(new Date().setHours(0, 0, 0, 0));
+    const checkOut = hotelQueryDto.checkOut || new Date(new Date().setHours(23, 59, 59, 999));
 
-      // Add room availability information to each hotel in result
-      result.data.forEach((hotel: HotelWithRooms) => {
-        const findHotel = hotelsWithAvailability.find(
-          (item) => item._id.toString() === hotel._id.toString(),
-        );
-
-        // If the hotel is found in the availability search, add room information
-        if (findHotel) {
-          hotel['rooms'] = {
-            totalRooms: findHotel.totalRooms || 0,
-            bookedRooms: findHotel.totalBookedRooms || 0,
-            availableRooms: findHotel.availableRooms || 0,
-          };
-        }
-      });
-    }
+    const hotelsWithRoomsAvailability = await this.setRoomsAvailabilityInHotels(
+      result.data as HotelWithRooms[],
+      checkIn,
+      checkOut,
+      hotelQueryDto,
+    );
 
     return {
-      data: transformDataToDto(HotelsWithAvailabilityResponseDto, result.data),
+      data: transformDataToDto(HotelsWithAvailabilityResponseDto, hotelsWithRoomsAvailability),
       metadata: result.metadata,
     };
   }
@@ -124,8 +107,21 @@ export class HotelsController {
       user,
     );
 
+    const checkIn = hotelQueryDto.checkIn || new Date(new Date().setHours(0, 0, 0, 0));
+    const checkOut = hotelQueryDto.checkOut || new Date(new Date().setHours(23, 59, 59, 999));
+
+    const hotelsWithRoomsAvailability = await this.setRoomsAvailabilityInHotels(
+      result.data as HotelWithRooms[],
+      checkIn,
+      checkOut,
+      hotelQueryDto,
+    );
+
     return {
-      data: transformDataToDto(DeletedHotelResponseDto, result.data),
+      data: transformDataToDto(
+        DeletedHotelsWithAvailabilityResponseDto,
+        hotelsWithRoomsAvailability,
+      ),
       metadata: result.metadata,
     };
   }
@@ -235,5 +231,37 @@ export class HotelsController {
     );
 
     return transformDataToDto(DeletedHotelResponseDto, result);
+  }
+
+  //
+  private async setRoomsAvailabilityInHotels(
+    hotels: HotelWithRooms[],
+    checkIn: Date,
+    checkOut: Date,
+    hotelQueryDto: HotelQueryDto,
+  ): Promise<HotelWithRooms[]> {
+    const hotelsWithAvailability = await this.hotelsService.searchHotelsWithAvailability(
+      hotelQueryDto,
+      checkIn,
+      checkOut,
+    );
+
+    // Add room availability information to each hotel in result
+    hotels.forEach((hotel: HotelWithRooms) => {
+      const findHotel = hotelsWithAvailability.find(
+        (item) => item._id.toString() === hotel._id.toString(),
+      );
+
+      // If the hotel is found in the availability search, add room information
+      if (findHotel) {
+        hotel['rooms'] = {
+          totalRooms: findHotel.totalRooms || 0,
+          bookedRooms: findHotel.totalBookedRooms || 0,
+          availableRooms: findHotel.availableRooms || 0,
+        };
+      }
+    });
+
+    return hotels;
   }
 }
