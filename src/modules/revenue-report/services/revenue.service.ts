@@ -154,12 +154,7 @@ export class RevenueService extends BaseService<DailyRevenueReport> {
     return matchStage;
   }
 
-  async setDayRevenueReport() {
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate());
-    const startOfYesterday = new Date(yesterday.setHours(0, 0, 0, 0));
-    const endOfYesterday = new Date(yesterday.setHours(23, 59, 59, 999));
-
+  async setDayRevenueReport(startOfYesterday: Date, endOfYesterday: Date) {
     const aggregationPipeline: PipelineStage[] = [
       // find bookings with status PAID and checkIn date within yesterday
       // to give the total revenue and total bookings for each hotel
@@ -223,7 +218,7 @@ export class RevenueService extends BaseService<DailyRevenueReport> {
     this.logger.log('Starting daily revenue aggregation job...');
 
     const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate());
+    yesterday.setDate(yesterday.getDate() - 1);
     const startOfYesterday = new Date(yesterday.setHours(0, 0, 0, 0));
     const endOfYesterday = new Date(yesterday.setHours(23, 59, 59, 999));
 
@@ -277,6 +272,73 @@ export class RevenueService extends BaseService<DailyRevenueReport> {
 
     this.logger.debug(`Daily revenue aggregation result: ${JSON.stringify(data)}`);
     this.logger.log('Daily revenue aggregation job finished.');
+  }
+
+  /**
+   * Tính toán lại tất cả revenue từ tất cả booking trong database
+   * Sử dụng để rebuild revenue data hoặc fix data
+   */
+  async calculateAllRevenue(): Promise<{ message: string; totalProcessed: number }> {
+    this.logger.log('Starting to calculate all revenue from all bookings...');
+
+    const aggregationPipeline: PipelineStage[] = [
+      // Lấy tất cả booking có status CONFIRMED hoặc COMPLETED
+      {
+        $match: {
+          status: {
+            $in: [BookingStatus.CONFIRMED, BookingStatus.COMPLETED],
+          },
+          // Có thể thêm điều kiện khác nếu cần
+          deleteTimestamp: null,
+        },
+      },
+      // Group theo hotel và ngày check-in
+      {
+        $group: {
+          _id: {
+            hotel: { $toString: '$hotel' }, // Convert ObjectId to string
+            date: { $dateToString: { format: '%Y-%m-%d', date: '$checkIn' } },
+          },
+          totalRevenue: { $sum: '$totalPrice' },
+          totalBookings: { $sum: 1 },
+        },
+      },
+      // Project để tạo structure phù hợp với DailyRevenueReport schema
+      {
+        $project: {
+          _id: { $concat: ['$_id.hotel', '_', '$_id.date'] },
+          hotel: '$_id.hotel',
+          date: { $toDate: '$_id.date' },
+          totalRevenue: '$totalRevenue',
+          totalBookings: '$totalBookings',
+        },
+      },
+      // Merge vào collection daily_revenue_reports
+      {
+        $merge: {
+          into: 'daily_revenue_reports',
+          on: ['hotel', 'date'],
+          whenMatched: 'replace', // Thay thế nếu đã tồn tại
+          whenNotMatched: 'insert', // Insert mới nếu chưa tồn tại
+        },
+      } as any,
+    ];
+
+    // Xóa tất cả data cũ trước khi tính toán lại (optional)
+    await this.model.deleteMany({});
+
+    // Thực hiện aggregation
+    const _ = await this.bookingModel.aggregate(aggregationPipeline);
+
+    // Đếm số lượng record được tạo
+    const totalProcessed = await this.model.countDocuments();
+
+    this.logger.log(`Finished calculating all revenue. Total records processed: ${totalProcessed}`);
+
+    return {
+      message: 'All revenue calculated successfully',
+      totalProcessed,
+    };
   }
 
   protected async preFind(
