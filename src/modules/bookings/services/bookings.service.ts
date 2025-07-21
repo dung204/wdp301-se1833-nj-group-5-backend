@@ -272,6 +272,29 @@ export class BookingsService extends BaseService<Booking> {
 
     this.logger.debug(`Pre-find options:`, findOptions.queryDto);
 
+    // Role-based filtering
+    if (currentUser?.role === Role.CUSTOMER) {
+      // Customers can only see their own bookings
+      findOptions.filter = {
+        ...findOptions.filter,
+        user: currentUser._id,
+      };
+    }
+
+    if (currentUser?.role === Role.HOTEL_OWNER) {
+      // Hotel owners can only see bookings for their hotels
+      // This requires a more complex query with populate
+      // For now, let's add a note that this needs hotel lookup
+      // TODO: Implement hotel owner filtering with aggregation pipeline
+      this.logger.debug(`Hotel owner ${currentUser._id} is trying to access bookings`);
+      // Fetch hotels owned
+      const ownerHotels = await this.hotelsService.getHotelsByOwnerId(currentUser._id);
+      findOptions.filter = {
+        ...findOptions.filter,
+        hotel: { $in: ownerHotels.map((hotel) => hotel._id) },
+      };
+    }
+
     if (findOptions.queryDto) {
       const bookingQueryDto = findOptions.queryDto as BookingQueryDtoForAdmin;
 
@@ -325,29 +348,6 @@ export class BookingsService extends BaseService<Booking> {
           hotel: { $eq: bookingQueryDto.hotelOwnerId },
         };
       }
-    }
-
-    // Role-based filtering
-    if (currentUser?.role === Role.CUSTOMER) {
-      // Customers can only see their own bookings
-      findOptions.filter = {
-        ...findOptions.filter,
-        user: currentUser._id,
-      };
-    }
-
-    if (currentUser?.role === Role.HOTEL_OWNER) {
-      // Hotel owners can only see bookings for their hotels
-      // This requires a more complex query with populate
-      // For now, let's add a note that this needs hotel lookup
-      // TODO: Implement hotel owner filtering with aggregation pipeline
-      this.logger.debug(`Hotel owner ${currentUser._id} is trying to access bookings`);
-      // Fetch hotels owned
-      const ownerHotels = await this.hotelsService.getHotelsByOwnerId(currentUser._id);
-      findOptions.filter = {
-        ...findOptions.filter,
-        hotel: { $in: ownerHotels.map((hotel) => hotel._id) },
-      };
     }
 
     return findOptions;

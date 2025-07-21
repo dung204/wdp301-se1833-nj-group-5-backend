@@ -184,20 +184,6 @@ export class RoomsService extends BaseService<Room> {
     const findOptions = await super.preFind(options, currentUser);
     const roomQueryDto = findOptions.queryDto as RoomQueryAdminDto;
 
-    findOptions.filter = {
-      ...findOptions.filter,
-      ...(roomQueryDto.name && { name: { $regex: roomQueryDto.name, $options: 'i' } }),
-      ...(roomQueryDto.id && { _id: roomQueryDto.id }),
-      ...(roomQueryDto.hotel && { hotel: roomQueryDto.hotel }),
-      ...(roomQueryDto.minRate && { rate: { $gte: roomQueryDto.minRate } }),
-      ...(roomQueryDto.maxRate && { rate: { $lte: roomQueryDto.maxRate } }),
-      ...(roomQueryDto.minOccupancy && { occupancy: { $gte: roomQueryDto.minOccupancy } }),
-      ...(roomQueryDto.services &&
-        roomQueryDto.services.length > 0 && {
-          services: { $in: roomQueryDto.services.map((service) => new RegExp(service, 'i')) },
-        }),
-    };
-
     // if role is hotel owner -> only show rooms in their hotel and base on hotel -> WIP
     if (currentUser?.role === Role.HOTEL_OWNER) {
       const hotel = await this.hotelsService.getHotelsByOwnerId(currentUser._id);
@@ -231,6 +217,20 @@ export class RoomsService extends BaseService<Room> {
         // case 'all' - no filter needed
       }
     }
+
+    findOptions.filter = {
+      ...findOptions.filter,
+      ...(roomQueryDto.name && { name: { $regex: roomQueryDto.name, $options: 'i' } }),
+      ...(roomQueryDto.id && { _id: roomQueryDto.id }),
+      ...(roomQueryDto.hotel && { hotel: roomQueryDto.hotel }),
+      ...(roomQueryDto.minRate && { rate: { $gte: roomQueryDto.minRate } }),
+      ...(roomQueryDto.maxRate && { rate: { $lte: roomQueryDto.maxRate } }),
+      ...(roomQueryDto.minOccupancy && { occupancy: { $gte: roomQueryDto.minOccupancy } }),
+      ...(roomQueryDto.services &&
+        roomQueryDto.services.length > 0 && {
+          services: { $in: roomQueryDto.services.map((service) => new RegExp(service, 'i')) },
+        }),
+    };
 
     return findOptions;
   }
