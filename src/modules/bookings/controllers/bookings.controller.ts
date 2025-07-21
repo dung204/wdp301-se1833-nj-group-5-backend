@@ -55,7 +55,12 @@ export class BookingsController {
   @AllowRoles([Role.ADMIN, Role.HOTEL_OWNER, Role.CUSTOMER])
   @Get('/')
   async GetAll(@CurrentUser() user: User, @Query() bookingQuery: BookingQueryDtoForAdmin) {
-    const result = await this.bookingsService.find(bookingQuery, user);
+    const result = await this.bookingsService.find(
+      {
+        queryDto: bookingQuery,
+      },
+      user,
+    );
 
     return {
       data: this.transformToDto(result.data),
