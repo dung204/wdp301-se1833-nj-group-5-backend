@@ -222,6 +222,42 @@ export class HotelsService extends BaseService<Hotel> {
     const findOptions = await super.preFind(options, currentUser);
     const hotelQueryDto = findOptions.queryDto as HotelQueryDtoForAdmin;
 
+    // If the query is made by an admin and includes ownerId, filter by ownerId
+    // only admin can query by ownerId
+    if (hotelQueryDto.ownerId && currentUser?.role === Role.ADMIN) {
+      // If admin is querying by ownerId, apply that filter
+      findOptions.filter = {
+        ...findOptions.filter,
+        owner: hotelQueryDto.ownerId,
+      };
+    }
+
+    // If the query is made by an admin and includes isActive, filter by deleteTimestamp
+    if (hotelQueryDto.isActive) {
+      switch (hotelQueryDto.isActive) {
+        case 'true':
+          findOptions.filter = {
+            ...findOptions.filter,
+            deleteTimestamp: null,
+          };
+          break;
+        case 'false':
+          findOptions.filter = {
+            ...findOptions.filter,
+            deleteTimestamp: { $ne: null },
+          };
+          break;
+      }
+    }
+
+    // if role is hotel owner,filter hotel by owner
+    if (currentUser?.role === Role.HOTEL_OWNER) {
+      findOptions.filter = {
+        ...findOptions.filter,
+        owner: currentUser._id,
+      };
+    }
+
     // logic and filter for fields base on HotelQueryDtoForAdmin
     findOptions.filter = {
       ...findOptions.filter,
@@ -266,42 +302,6 @@ export class HotelsService extends BaseService<Hotel> {
         ...findOptions.filter,
         priceHotel: priceFilter,
       };
-    }
-
-    // if role is hotel owner,filter hotel by owner
-    if (currentUser?.role === Role.HOTEL_OWNER) {
-      findOptions.filter = {
-        ...findOptions.filter,
-        owner: currentUser._id,
-      };
-    }
-
-    // If the query is made by an admin and includes ownerId, filter by ownerId
-    // only admin can query by ownerId
-    if (hotelQueryDto.ownerId && currentUser?.role === Role.ADMIN) {
-      // If admin is querying by ownerId, apply that filter
-      findOptions.filter = {
-        ...findOptions.filter,
-        owner: hotelQueryDto.ownerId,
-      };
-    }
-
-    // If the query is made by an admin and includes isActive, filter by deleteTimestamp
-    if (hotelQueryDto.isActive) {
-      switch (hotelQueryDto.isActive) {
-        case 'true':
-          findOptions.filter = {
-            ...findOptions.filter,
-            deleteTimestamp: null,
-          };
-          break;
-        case 'false':
-          findOptions.filter = {
-            ...findOptions.filter,
-            deleteTimestamp: { $ne: null },
-          };
-          break;
-      }
     }
 
     return findOptions;
