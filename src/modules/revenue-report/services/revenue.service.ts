@@ -24,13 +24,13 @@ export class RevenueService extends BaseService<DailyRevenueReport> {
     super(model, logger);
   }
 
-  async getRevenueDaily(revenueQueryDto: RevenueQueryDto) {
+  async getRevenueDaily(revenueQueryDto: RevenueQueryDto, currentUser: User) {
     const findOptions: FindManyOptions<DailyRevenueReport> = {
       queryDto: revenueQueryDto,
       filter: { deleteTimestamp: null },
     } as FindManyOptions<DailyRevenueReport>;
     // list rooms with pagination, sorting and filtering options
-    const response = await this.find(findOptions);
+    const response = await this.find(findOptions, currentUser);
 
     return response.data;
   }
@@ -345,7 +345,7 @@ export class RevenueService extends BaseService<DailyRevenueReport> {
     options: FindManyOptions<DailyRevenueReport>,
     _currentUser?: User,
   ): Promise<FindManyOptions<DailyRevenueReport>> {
-    const findOptions = options;
+    const findOptions = await super.preFind(options, _currentUser);
 
     if (findOptions.queryDto) {
       const revenueQueryDto = findOptions.queryDto as RevenueQueryDto;
@@ -387,22 +387,7 @@ export class RevenueService extends BaseService<DailyRevenueReport> {
         }),
       };
 
-      // compare user.role
-      if (_currentUser?.role === Role.HOTEL_OWNER) {
-        // get hotelId from current user
-        const hotels = await this.hotelService.getHotelsByOwnerId(_currentUser._id);
-
-        findOptions.filter = {
-          ...findOptions.filter,
-          hotel: { $in: hotels.map((hotel) => hotel._id) },
-        };
-        // findOptions.filter = {
-        //   ...findOptions.filter,
-        //   ...({
-        //     hotelId: revenueQueryDto.hotelId,
-        //   }),
-        // };
-      } else if (_currentUser?.role === Role.ADMIN) {
+      if (_currentUser?.role === Role.ADMIN) {
         findOptions.filter = {
           ...findOptions.filter,
           ...(revenueQueryDto.hotelId && {
@@ -410,6 +395,18 @@ export class RevenueService extends BaseService<DailyRevenueReport> {
           }),
         };
       }
+    }
+
+    // compare user.role
+    if (_currentUser?.role === Role.HOTEL_OWNER) {
+      this.logger.debug(`Filtering by hotel for user: ${_currentUser._id}`);
+      // get hotelId from current user
+      const hotels = await this.hotelService.getHotelsByOwnerId(_currentUser._id);
+
+      findOptions.filter = {
+        ...findOptions.filter,
+        hotel: { $in: hotels.map((hotel) => hotel._id) },
+      };
     }
 
     return findOptions;

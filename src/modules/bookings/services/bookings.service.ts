@@ -270,6 +270,8 @@ export class BookingsService extends BaseService<Booking> {
   ): Promise<FindManyOptions<Booking>> {
     const findOptions = await super.preFind(options, currentUser);
 
+    this.logger.debug(`Pre-find options:`, findOptions.queryDto);
+
     if (findOptions.queryDto) {
       const bookingQueryDto = findOptions.queryDto as BookingQueryDtoForAdmin;
 
@@ -342,7 +344,6 @@ export class BookingsService extends BaseService<Booking> {
       this.logger.debug(`Hotel owner ${currentUser._id} is trying to access bookings`);
       // Fetch hotels owned
       const ownerHotels = await this.hotelsService.getHotelsByOwnerId(currentUser._id);
-      this.logger.debug(`Hotel owner ${currentUser._id} has hotels:`, ownerHotels);
       findOptions.filter = {
         ...findOptions.filter,
         hotel: { $in: ownerHotels.map((hotel) => hotel._id) },

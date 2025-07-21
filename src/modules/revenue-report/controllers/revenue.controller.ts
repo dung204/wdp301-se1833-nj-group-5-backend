@@ -40,7 +40,7 @@ export class RevenueController {
   })
   @AllowRoles([Role.ADMIN, Role.HOTEL_OWNER])
   @Get('/')
-  async getAll(@CurrentUser() user: User, @Query() revenueQueryDto: RevenueQueryDto) {
+  async getAll(@CurrentUser() currentUser: User, @Query() revenueQueryDto: RevenueQueryDto) {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate());
     const startOfYesterday = new Date(yesterday.setHours(0, 0, 0, 0));
@@ -48,7 +48,7 @@ export class RevenueController {
     // Set the day revenue report if not already set
     await this.revenueService.setDayRevenueReport(startOfYesterday, endOfYesterday);
     //
-    const result = await this.revenueService.getRevenueDaily(revenueQueryDto);
+    const result = await this.revenueService.getRevenueDaily(revenueQueryDto, currentUser);
     return this.transformToDto(result);
   }
 
