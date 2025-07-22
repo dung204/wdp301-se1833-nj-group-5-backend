@@ -195,16 +195,6 @@ export class RevenueQueryDto {
   hotelOwnerId?: string;
 }
 
-export class YearlyRevenueQueryDto {
-  @ApiProperty({
-    description: 'Filter by hotel ID',
-    required: false,
-  })
-  @IsOptional()
-  @IsString()
-  hotelId?: string;
-}
-
 export class MonthlyRevenueQueryDto {
   @ApiProperty({
     description: 'Year to get monthly revenue for',
@@ -225,7 +215,22 @@ export class MonthlyRevenueQueryDto {
   hotelId?: string;
 }
 
-export class YearlyRevenueResponseDto {
+export class YearlyRevenueQueryDto extends MonthlyRevenueQueryDto {
+  @ApiProperty({
+    description: 'Filter by month (1-12)',
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber({}, { message: 'Month must be a number' })
+  @Type(() => Number)
+  @Transform(({ value }: { value: any }) => {
+    const month = parseFloat(value as string);
+    return !isNaN(month) && month >= 1 && month <= 12 ? month : undefined;
+  })
+  month?: number;
+}
+
+export class YearlyRevenueResponseDto extends SchemaResponseDto {
   @ApiProperty({
     description: 'Hotel ID',
     example: '84d67269-7470-4ef1-bfbb-c66e7cf8c955',
@@ -251,7 +256,7 @@ export class YearlyRevenueResponseDto {
   totalBookings!: number;
 }
 
-export class MonthlyRevenueResponseDto {
+export class MonthlyRevenueResponseDto extends SchemaResponseDto {
   @ApiProperty({
     description: 'Hotel ID',
     example: '84d67269-7470-4ef1-bfbb-c66e7cf8c955',
