@@ -29,6 +29,13 @@ export class RevenueController {
     return plainToInstance(DailyRevenueReportResponseDto, data);
   }
 
+  /**
+   * [GET] /revenue-report/
+   *  Get daily revenue reports
+   * @param currentUser
+   * @param revenueQueryDto
+   * @returns
+   */
   @ApiOperation({
     summary: 'Get daily revenue reports',
     description: 'Get daily revenue reports with pagination, sorting and filtering options',
@@ -49,9 +56,19 @@ export class RevenueController {
     await this.revenueService.setDayRevenueReport(startOfYesterday, endOfYesterday);
     //
     const result = await this.revenueService.getRevenueDaily(revenueQueryDto, currentUser);
-    return this.transformToDto(result);
+    return {
+      data: this.transformToDto(result.data),
+      metadata: result.metadata,
+    };
   }
 
+  /**
+   * [GET] /revenue-report/yearly
+   * Get yearly revenue statistics
+   * @param user
+   * @param queryDto
+   * @returns
+   */
   @ApiOperation({
     summary: 'Get yearly revenue statistics',
     description: 'Get revenue statistics grouped by hotel and year',
@@ -63,10 +80,7 @@ export class RevenueController {
   })
   @AllowRoles([Role.ADMIN, Role.HOTEL_OWNER])
   @Get('/yearly')
-  async getYearlyRevenue(
-    @CurrentUser() user: User,
-    @Query() queryDto: YearlyRevenueQueryDto,
-  ): Promise<YearlyRevenueResponseDto[]> {
+  async getYearlyRevenue(@CurrentUser() user: User, @Query() queryDto: YearlyRevenueQueryDto) {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate());
     const startOfYesterday = new Date(yesterday.setHours(0, 0, 0, 0));
@@ -74,10 +88,55 @@ export class RevenueController {
     // Set the day revenue report if not already set
     await this.revenueService.setDayRevenueReport(startOfYesterday, endOfYesterday);
     //
-    const result = await this.revenueService.getYearlyRevenue(user, queryDto.hotelId);
-    return plainToInstance(YearlyRevenueResponseDto, result);
+    const result = await this.revenueService.getYearlyRevenue(queryDto, user, queryDto.hotelId);
+    return {
+      data: plainToInstance(YearlyRevenueResponseDto, result),
+      metadata: {
+        total: result.length,
+      },
+    };
   }
 
+  /**
+   * [GET] /revenue-report/monthly
+   * Get monthly revenue statistics
+   * @param user
+   * @param queryDto
+   * @returns
+   */
+  @ApiOperation({
+    summary: 'Get monthly revenue statistics',
+    description: 'Get revenue statistics grouped by hotel and month for a specific year',
+  })
+  @ApiSuccessResponse({
+    schema: MonthlyRevenueResponseDto,
+    isArray: true,
+    description: 'Monthly revenue statistics retrieved successfully',
+  })
+  @AllowRoles([Role.ADMIN, Role.HOTEL_OWNER])
+  @Get('/monthly')
+  async getMonthlyRevenue(@CurrentUser() user: User, @Query() queryDto: MonthlyRevenueQueryDto) {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate());
+    const startOfYesterday = new Date(yesterday.setHours(0, 0, 0, 0));
+    const endOfYesterday = new Date(yesterday.setHours(23, 59, 59, 999));
+    // Set the day revenue report if not already set
+    await this.revenueService.setDayRevenueReport(startOfYesterday, endOfYesterday);
+    //
+    const result = await this.revenueService.getMonthlyRevenue(queryDto, user, queryDto.hotelId);
+    return {
+      data: plainToInstance(MonthlyRevenueResponseDto, result),
+      metadata: {
+        total: result.length,
+      },
+    };
+  }
+
+  /**
+   * [GET] /revenue-report/calculate-all
+   * Recalculate all revenue data from all bookings
+   * @returns
+   */
   @ApiOperation({
     summary: 'Calculate all revenue from all bookings',
     description: 'Recalculate all revenue data from all bookings in database (Admin only)',
@@ -92,35 +151,5 @@ export class RevenueController {
   async calculateAllRevenue() {
     const result = await this.revenueService.calculateAllRevenue();
     return result;
-  }
-
-  @ApiOperation({
-    summary: 'Get monthly revenue statistics',
-    description: 'Get revenue statistics grouped by hotel and month for a specific year',
-  })
-  @ApiSuccessResponse({
-    schema: MonthlyRevenueResponseDto,
-    isArray: true,
-    description: 'Monthly revenue statistics retrieved successfully',
-  })
-  @AllowRoles([Role.ADMIN, Role.HOTEL_OWNER])
-  @Get('/monthly')
-  async getMonthlyRevenue(
-    @CurrentUser() user: User,
-    @Query() queryDto: MonthlyRevenueQueryDto,
-  ): Promise<MonthlyRevenueResponseDto[]> {
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate());
-    const startOfYesterday = new Date(yesterday.setHours(0, 0, 0, 0));
-    const endOfYesterday = new Date(yesterday.setHours(23, 59, 59, 999));
-    // Set the day revenue report if not already set
-    await this.revenueService.setDayRevenueReport(startOfYesterday, endOfYesterday);
-    //
-    const result = await this.revenueService.getMonthlyRevenue(
-      queryDto.year,
-      user,
-      queryDto.hotelId,
-    );
-    return plainToInstance(MonthlyRevenueResponseDto, result);
   }
 }

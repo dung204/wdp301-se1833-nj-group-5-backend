@@ -10,7 +10,11 @@ import { Booking } from '@/modules/bookings/schemas/booking.schema';
 import { HotelsService } from '@/modules/hotels/services/hotels.service';
 import { User } from '@/modules/users/schemas/user.schema';
 
-import { RevenueQueryDto } from '../dtos/revenue.dto';
+import {
+  MonthlyRevenueQueryDto,
+  RevenueQueryDto,
+  YearlyRevenueQueryDto,
+} from '../dtos/revenue.dto';
 import { DailyRevenueReport } from '../schemas/revenue.schema';
 
 @Injectable()
@@ -32,7 +36,7 @@ export class RevenueService extends BaseService<DailyRevenueReport> {
     // list rooms with pagination, sorting and filtering options
     const response = await this.find(findOptions, currentUser);
 
-    return response.data;
+    return response;
   }
 
   /**
@@ -43,36 +47,49 @@ export class RevenueService extends BaseService<DailyRevenueReport> {
    * @returns Mảng chứa các object, mỗi object là doanh thu của một tháng.
    */
   async getMonthlyRevenue(
-    year: number,
+    monthQueryDto: MonthlyRevenueQueryDto,
     _currentUser: User,
     hotelId?: string,
-  ): Promise<{ hotelId: string; month: number; totalRevenue: number; totalBookings: number }[]> {
-    const matchStage = await this.buildAuthMatchStage(_currentUser, hotelId);
+  ): Promise<{ hotel: any; month: number; totalRevenue: number; totalBookings: number }[]> {
+    const matchStage = await this.buildAuthMatchStage(_currentUser, hotelId, monthQueryDto);
+    this.logger.debug(`Match stage for monthly revenue: ${JSON.stringify(matchStage)}`);
 
     const monthlyRevenue = await this.model.aggregate([
       {
         $match: matchStage,
       },
+      // Populate hotel using $lookup
+      {
+        $lookup: {
+          from: 'hotels',
+          localField: 'hotel',
+          foreignField: '_id',
+          as: 'hotel',
+        },
+      },
+      {
+        $unwind: '$hotel',
+      },
       {
         $group: {
           _id: {
-            hotel: '$hotel', // Nhóm theo hotel
-            month: { $month: '$date' }, // Nhóm theo tháng từ date field
+            hotel: '$hotel', // Bây giờ hotel là object đầy đủ
+            month: { $month: '$date' },
           },
-          totalRevenue: { $sum: '$totalRevenue' }, // Tổng revenue đã tính sẵn
-          totalBookings: { $sum: '$totalBookings' }, // Tổng bookings đã tính sẵn
+          totalRevenue: { $sum: '$totalRevenue' },
+          totalBookings: { $sum: '$totalBookings' },
         },
       },
       {
         $sort: {
-          '_id.hotel': 1,
+          '_id.hotel._id': 1,
           '_id.month': 1,
         },
       },
       {
         $project: {
           _id: 0,
-          hotelId: '$_id.hotel',
+          hotel: '$_id.hotel',
           month: '$_id.month',
           totalRevenue: 1,
           totalBookings: 1,
@@ -80,24 +97,39 @@ export class RevenueService extends BaseService<DailyRevenueReport> {
       },
     ]);
 
-    this.logger.debug(`Monthly revenue for year ${year}: ${JSON.stringify(monthlyRevenue)}`);
+    this.logger.debug(
+      `Monthly revenue for year ${monthQueryDto.year}: ${JSON.stringify(monthlyRevenue)}`,
+    );
     return monthlyRevenue;
   }
 
   async getYearlyRevenue(
+    yearlyRevenueQueryDto: YearlyRevenueQueryDto,
     _currentUser: User,
     hotelId?: string,
-  ): Promise<{ hotelId: string; year: number; totalRevenue: number; totalBookings: number }[]> {
-    const matchStage = await this.buildAuthMatchStage(_currentUser, hotelId);
+  ): Promise<{ hotel: any; year: number; totalRevenue: number; totalBookings: number }[]> {
+    const matchStage = await this.buildAuthMatchStage(_currentUser, hotelId, yearlyRevenueQueryDto);
 
     const yearlyRevenue = await this.model.aggregate([
       {
         $match: matchStage,
       },
+      // Populate hotel using $lookup
+      {
+        $lookup: {
+          from: 'hotels',
+          localField: 'hotel',
+          foreignField: '_id',
+          as: 'hotel',
+        },
+      },
+      {
+        $unwind: '$hotel',
+      },
       {
         $group: {
           _id: {
-            hotel: '$hotel',
+            hotel: '$hotel', // Bây giờ hotel là object đầy đủ
             year: { $year: '$date' }, // Lấy năm từ date field
           },
           totalRevenue: { $sum: '$totalRevenue' },
@@ -106,14 +138,14 @@ export class RevenueService extends BaseService<DailyRevenueReport> {
       },
       {
         $sort: {
-          '_id.hotel': 1,
+          '_id.hotel._id': 1,
           '_id.year': 1,
         },
       },
       {
         $project: {
           _id: 0,
-          hotelId: '$_id.hotel',
+          hotel: '$_id.hotel',
           year: '$_id.year',
           totalRevenue: 1,
           totalBookings: 1,
@@ -124,30 +156,56 @@ export class RevenueService extends BaseService<DailyRevenueReport> {
     return yearlyRevenue;
   }
 
-  private async buildAuthMatchStage(currentUser: User, hotelId?: string) {
+  private async buildAuthMatchStage(
+    currentUser: User,
+    hotelId?: string,
+    queryDto?: MonthlyRevenueQueryDto | YearlyRevenueQueryDto,
+  ) {
     const matchStage: any = {};
 
     if (currentUser?.role === Role.ADMIN) {
       if (hotelId) {
         matchStage.hotel = hotelId;
       }
-    } else if (currentUser?.role === Role.HOTEL_OWNER) {
+    }
+
+    if (currentUser?.role === Role.HOTEL_OWNER) {
       const ownedHotels = await this.hotelService.getHotelsByOwnerId(currentUser._id);
       const ownedHotelIds = ownedHotels.map((h) => h._id);
 
       if (hotelId) {
-        // Chủ khách sạn yêu cầu xem 1 hotelId cụ thể
-        // Kiểm tra xem hotelId đó có thuộc sở hữu của họ không
         if (ownedHotelIds.some((id) => id.toString() === hotelId)) {
           matchStage.hotel = hotelId;
         } else {
-          // Ném lỗi hoặc trả về mảng rỗng nếu họ cố gắng xem khách sạn không phải của mình
-          // Ở đây ta sẽ làm cho query không trả về kết quả nào
           matchStage.hotel = { $in: [] };
         }
       } else {
-        // Chủ khách sạn muốn xem tất cả các khách sạn của họ
         matchStage.hotel = { $in: ownedHotelIds };
+      }
+    }
+
+    // Filter theo date thay vì year/month
+    if (queryDto) {
+      if ('year' in queryDto && queryDto.year) {
+        // Tạo range date cho năm
+        const startOfYear = new Date(queryDto.year, 0, 1); // 1 tháng 1
+        const endOfYear = new Date(queryDto.year + 1, 0, 1); // 1 tháng 1 năm sau
+
+        matchStage.date = {
+          $gte: startOfYear,
+          $lt: endOfYear,
+        };
+      }
+
+      if ('month' in queryDto && queryDto.month && 'year' in queryDto && queryDto.year) {
+        // Tạo range date cho tháng cụ thể
+        const startOfMonth = new Date(queryDto.year, queryDto.month - 1, 1);
+        const endOfMonth = new Date(queryDto.year, queryDto.month, 1);
+
+        matchStage.date = {
+          $gte: startOfMonth,
+          $lt: endOfMonth,
+        };
       }
     }
 
@@ -213,7 +271,7 @@ export class RevenueService extends BaseService<DailyRevenueReport> {
    *  This function provides a way to aggregate daily revenue from bookings.
    *  And store the results in the 'daily_revenue_reports' collection.
    */
-  @Cron(CronExpression.EVERY_10_MINUTES)
+  @Cron(CronExpression.EVERY_DAY_AT_1AM)
   async handleCron() {
     this.logger.log('Starting daily revenue aggregation job...');
 
@@ -347,6 +405,18 @@ export class RevenueService extends BaseService<DailyRevenueReport> {
   ): Promise<FindManyOptions<DailyRevenueReport>> {
     const findOptions = await super.preFind(options, _currentUser);
 
+    // compare user.role
+    if (_currentUser?.role === Role.HOTEL_OWNER) {
+      this.logger.debug(`Filtering by hotel for user: ${_currentUser._id}`);
+      // get hotelId from current user
+      const hotels = await this.hotelService.getHotelsByOwnerId(_currentUser._id);
+
+      findOptions.filter = {
+        ...findOptions.filter,
+        hotel: { $in: hotels.map((hotel) => hotel._id) },
+      };
+    }
+
     if (findOptions.queryDto) {
       const revenueQueryDto = findOptions.queryDto as RevenueQueryDto;
 
@@ -395,18 +465,6 @@ export class RevenueService extends BaseService<DailyRevenueReport> {
           }),
         };
       }
-    }
-
-    // compare user.role
-    if (_currentUser?.role === Role.HOTEL_OWNER) {
-      this.logger.debug(`Filtering by hotel for user: ${_currentUser._id}`);
-      // get hotelId from current user
-      const hotels = await this.hotelService.getHotelsByOwnerId(_currentUser._id);
-
-      findOptions.filter = {
-        ...findOptions.filter,
-        hotel: { $in: hotels.map((hotel) => hotel._id) },
-      };
     }
 
     return findOptions;
