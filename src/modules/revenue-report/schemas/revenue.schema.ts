@@ -25,7 +25,7 @@ DailyRevenueReportSchema.index({ hotel: 1, date: 1 }, { unique: true });
 
 // populate
 DailyRevenueReportSchema.pre(['find', 'findOne', 'findOneAndUpdate'], function (next) {
-  this.populate(['hotel']);
+  this.populate('hotel');
   next();
 });
 

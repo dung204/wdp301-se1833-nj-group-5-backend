@@ -24,8 +24,6 @@ export class MailService {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
         timeZone: 'UTC', // Ensure that the date is formatted in UTC
       }).format(new Date(date));
     });

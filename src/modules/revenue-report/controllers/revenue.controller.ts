@@ -55,7 +55,12 @@ export class RevenueController {
     // Set the day revenue report if not already set
     await this.revenueService.setDayRevenueReport(startOfYesterday, endOfYesterday);
     //
-    const result = await this.revenueService.getRevenueDaily(revenueQueryDto, currentUser);
+    const result = await this.revenueService.getRevenueDaily(
+      {
+        ...revenueQueryDto,
+      },
+      currentUser,
+    );
     return {
       data: this.transformToDto(result.data),
       metadata: result.metadata,

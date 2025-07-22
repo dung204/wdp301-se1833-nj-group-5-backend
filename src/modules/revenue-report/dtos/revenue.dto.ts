@@ -199,8 +199,9 @@ export class MonthlyRevenueQueryDto {
   @ApiProperty({
     description: 'Year to get monthly revenue for',
     example: 2025,
+    required: false,
   })
-  @IsNotEmpty()
+  @IsOptional()
   @Transform(transformToFloatNumber) // 1. Transform đứng trước
   @IsNumber({}, { message: 'Year must be a number' }) // 2. IsNumber đứng sau
   @Min(2000, { message: 'Year must be at least 2000' })

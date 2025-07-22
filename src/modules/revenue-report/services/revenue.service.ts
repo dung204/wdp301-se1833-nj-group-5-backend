@@ -422,6 +422,9 @@ export class RevenueService extends BaseService<DailyRevenueReport> {
 
       findOptions.filter = {
         ...findOptions.filter,
+        ...(revenueQueryDto.hotelId && {
+          hotel: revenueQueryDto.hotelId,
+        }),
         ...(revenueQueryDto.dateFrom &&
           revenueQueryDto.dateTo && {
             date: {
