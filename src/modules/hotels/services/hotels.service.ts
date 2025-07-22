@@ -283,6 +283,8 @@ export class HotelsService extends BaseService<Hotel> {
       findOptions.filter.$or = [
         { name: { $regex: hotelQueryDto.searchTerm, $options: 'i' } },
         { address: { $regex: hotelQueryDto.searchTerm, $options: 'i' } },
+        { province: { $regex: hotelQueryDto.searchTerm, $options: 'i' } },
+        { commune: { $regex: hotelQueryDto.searchTerm, $options: 'i' } },
       ];
     }
 
