@@ -10,6 +10,7 @@ import { UsersService } from '@/modules/users/services/users.service';
 
 import {
   CreateRoleUpgradeRequestDto,
+  TestRoleUpgradeEmailDto,
   UpdateRoleUpgradeRequestDto,
 } from '../dtos/role-upgrade-request.dto';
 import { RoleUpgradeRequestStatus } from '../enums/role-upgrade-request.enum';
@@ -125,20 +126,14 @@ export class RoleUpgradeRequestsService extends BaseService<RoleUpgradeRequest> 
     // Get the updated request
     const updatedRequest = await this.findOne({ _id: requestId });
 
-    // Send notification email to user
+    // Send notification email to user using HTML templates
     try {
-      const userDoc = await this.usersService.findOne({ _id: request.user });
-      if (userDoc) {
-        await this.sendMail({
-          to: userDoc.email,
-          subject: `Role Upgrade Request ${updateDto.status}`,
-          text: `
-            Your role upgrade request has been ${updateDto.status.toLowerCase()}.
-
-            ${updateDto.adminNotes ? `Admin Notes: ${updateDto.adminNotes}` : ''}
-            ${updateDto.rejectionReason ? `Rejection Reason: ${updateDto.rejectionReason}` : ''}
-          `,
-        });
+      if (updatedRequest) {
+        if (updateDto.status === RoleUpgradeRequestStatus.APPROVED) {
+          await this.mailService.sendRoleUpgradeApprovedEmail(updatedRequest);
+        } else if (updateDto.status === RoleUpgradeRequestStatus.REJECTED) {
+          await this.mailService.sendRoleUpgradeRejectedEmail(updatedRequest);
+        }
       }
     } catch (error) {
       this.logger.warn('Failed to send status update email', error);
@@ -158,6 +153,42 @@ export class RoleUpgradeRequestsService extends BaseService<RoleUpgradeRequest> 
       ])
       .lean()
       .exec()) as RoleUpgradeRequest;
+  }
+
+  async testRoleUpgradeEmail(testEmailDto: TestRoleUpgradeEmailDto) {
+    const request = await this.roleUpgradeRequestModel.findById(testEmailDto.requestId);
+
+    if (!request) {
+      throw new NotFoundException('Role upgrade request not found');
+    }
+
+    // Get the updated request with populated fields
+    const populatedRequest = await this.findOne({ _id: testEmailDto.requestId });
+
+    if (!populatedRequest) {
+      throw new NotFoundException('Role upgrade request not found');
+    }
+
+    try {
+      if (testEmailDto.emailType === 'approved') {
+        await this.mailService.sendRoleUpgradeApprovedEmail(populatedRequest);
+      } else {
+        await this.mailService.sendRoleUpgradeRejectedEmail(populatedRequest);
+      }
+
+      return {
+        message: 'Test email sent successfully',
+        requestId: testEmailDto.requestId,
+        emailType: testEmailDto.emailType,
+        sentTo: populatedRequest.user.email,
+      };
+    } catch (error) {
+      this.logger.error(
+        `Failed to send test email for request ${testEmailDto.requestId}`,
+        error instanceof Error ? error.message : String(error),
+      );
+      throw new BadRequestException('Failed to send test email');
+    }
   }
 
   private async sendMail(options: { to: string; subject: string; text: string }) {

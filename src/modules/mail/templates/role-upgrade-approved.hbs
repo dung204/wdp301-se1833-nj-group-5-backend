@@ -1,0 +1,354 @@
+<html lang='vi'>
+  <head>
+    <meta charset='UTF-8' />
+    <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+    <title>Yêu cầu nâng cấp tài khoản đã được phê duyệt</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f5f5f5;
+        color: #333;
+      }
+      .email-container {
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: #ffffff;
+      }
+
+      /* Header */
+      .header {
+        background: linear-gradient(135deg, #34a853 0%, #4285f4 100%);
+        padding: 30px 20px;
+        text-align: center;
+        color: white;
+      }
+      .header h1 {
+        font-size: 24px;
+        margin-bottom: 8px;
+      }
+      .header p {
+        font-size: 14px;
+        opacity: 0.9;
+      }
+
+      /* Success Badge */
+      .success-badge {
+        background-color: #34a853;
+        color: white;
+        padding: 15px 20px;
+        text-align: center;
+      }
+      .success-badge h2 {
+        font-size: 18px;
+        margin-bottom: 5px;
+      }
+      .success-badge p {
+        font-size: 14px;
+      }
+
+      /* Content */
+      .content {
+        padding: 30px 20px;
+      }
+      .greeting {
+        font-size: 16px;
+        margin-bottom: 20px;
+      }
+      .request-id {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+        text-align: center;
+      }
+      .request-id strong {
+        font-size: 18px;
+        color: #1a73e8;
+      }
+
+      /* Role Info */
+      .role-section {
+        margin-bottom: 30px;
+      }
+      .role-upgrade {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 15px;
+      }
+      .role-old {
+        background-color: #f1f3f4;
+        padding: 10px 15px;
+        border-radius: 6px;
+        color: #666;
+      }
+      .role-arrow {
+        margin: 0 15px;
+        color: #34a853;
+        font-size: 20px;
+        font-weight: bold;
+      }
+      .role-new {
+        background-color: #34a853;
+        padding: 10px 15px;
+        border-radius: 6px;
+        color: white;
+        font-weight: bold;
+      }
+
+      /* Details Table */
+      .details-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 25px;
+      }
+      .details-table th {
+        background-color: #f1f3f4;
+        padding: 12px;
+        text-align: left;
+        font-weight: 600;
+        border-bottom: 1px solid #e0e0e0;
+      }
+      .details-table td {
+        padding: 12px;
+        border-bottom: 1px solid #e0e0e0;
+      }
+      .details-table tr:last-child td {
+        border-bottom: none;
+      }
+
+      /* Features Section */
+      .features-section {
+        background-color: #e8f5e8;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+      }
+      .features-section h3 {
+        margin-bottom: 15px;
+        color: #2e7d32;
+      }
+      .features-list {
+        list-style: none;
+        padding: 0;
+      }
+      .features-list li {
+        margin-bottom: 8px;
+        color: #2e7d32;
+      }
+      .features-list li::before {
+        content: '✓ ';
+        font-weight: bold;
+        margin-right: 8px;
+      }
+
+      /* Contact Section */
+      .contact-section {
+        background-color: #f1f3f4;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+      }
+      .contact-section h3 {
+        margin-bottom: 15px;
+        color: #1a73e8;
+      }
+      .contact-buttons {
+        display: flex;
+        gap: 10px;
+      }
+      .contact-btn {
+        flex: 1;
+        padding: 12px;
+        text-align: center;
+        border: 1px solid #1a73e8;
+        border-radius: 6px;
+        text-decoration: none;
+      }
+      .contact-btn.primary {
+        background-color: #1a73e8;
+        color: white;
+      }
+      .contact-btn.secondary {
+        background-color: white;
+        color: #1a73e8;
+      }
+
+      /* Footer */
+      .footer {
+        background-color: #f1f3f4;
+        padding: 20px;
+        text-align: center;
+        color: #666;
+        font-size: 12px;
+      }
+
+      /* Status Badge */
+      .status-badge {
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: bold;
+      }
+      .status-approved {
+        background-color: #e8f5e8;
+        color: #2e7d32;
+      }
+
+      /* Alert boxes */
+      .alert-info {
+        background-color: #e3f2fd;
+        border: 1px solid #bbdefb;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+      }
+      .alert-success {
+        background-color: #e8f5e8;
+        border: 1px solid #c3e6c3;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+      }
+
+      /* Responsive */
+      @media (max-width: 600px) {
+        .contact-buttons {
+          flex-direction: column;
+        }
+        .role-upgrade {
+          flex-direction: column;
+        }
+        .role-arrow {
+          margin: 10px 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class='email-container'>
+      <!-- Header -->
+      <div class='header'>
+        <h1>🎉 Chúc mừng!</h1>
+        <p>Yêu cầu nâng cấp tài khoản của bạn đã được phê duyệt</p>
+      </div>
+
+      <!-- Success Message -->
+      <div class='success-badge'>
+        <h2>Tài khoản của bạn đã được nâng cấp thành công!</h2>
+        <p>Bạn có thể bắt đầu sử dụng các tính năng mới ngay bây giờ</p>
+      </div>
+
+      <!-- Content -->
+      <div class='content'>
+        <!-- Greeting -->
+        <div class='greeting'>
+          <p>Chào <strong>{{user.fullName}}</strong>,</p>
+          <p>Chúc mừng! Yêu cầu nâng cấp tài khoản của bạn đã được xem xét và phê duyệt thành công.
+            Tài khoản của bạn đã được nâng cấp với các quyền mới.</p>
+        </div>
+
+        <!-- Role Upgrade Information -->
+        <div class='role-section'>
+          <div class='role-upgrade'>
+            <div class='role-old'>{{currentRole}}</div>
+            <div class='role-arrow'>→</div>
+            <div class='role-new'>{{targetRole}}</div>
+          </div>
+          <div style='text-align: center;'>
+            <span class='status-badge status-approved'>✓ Đã phê duyệt</span>
+          </div>
+        </div>
+
+        <!-- Request Details -->
+        <table class='details-table'>
+          <tr>
+            <th>Ngày yêu cầu</th>
+            <td>{{formatDate createTimestamp}}</td>
+          </tr>
+          <tr>
+            <th>Ngày phê duyệt</th>
+            <td>{{formatDate reviewedAt}}</td>
+          </tr>
+          <tr>
+            <th>Người phê duyệt</th>
+            <td>{{reviewedBy.fullName}} ({{reviewedBy.email}})</td>
+          </tr>
+        </table>
+
+        <!-- Success Notice -->
+        <div class='alert-success'>
+          <h4 style='color: #2e7d32; margin-bottom: 10px;'>✅ Phê duyệt thành công:</h4>
+          <p style='color: #2e7d32;'>
+            <strong>Tài khoản của bạn đã được nâng cấp thành công!</strong><br />
+            {{#if adminNotes}}
+              <em>Ghi chú từ quản trị viên: {{adminNotes}}</em>
+            {{/if}}
+          </p>
+        </div>
+
+        <!-- New Features -->
+        <div class='features-section'>
+          <h3>🚀 Tính năng mới bạn có thể sử dụng:</h3>
+          <ul class='features-list'>
+            <li>Quản lý thông tin khách sạn</li>
+            <li>Tạo và chỉnh sửa phòng khách sạn</li>
+            <li>Xem báo cáo doanh thu</li>
+            <li>Quản lý đặt phòng của khách hàng</li>
+            <li>Tạo các chương trình khuyến mãi</li>
+            <li>Xem và phản hồi đánh giá khách hàng</li>
+          </ul>
+        </div>
+
+        <!-- Getting Started Info -->
+        <div class='alert-info'>
+          <h4 style='color: #0277bd; margin-bottom: 10px;'>🎯 Bắt đầu ngay:</h4>
+          <p style='color: #0277bd;'>
+            <strong>Đăng nhập vào hệ thống để bắt đầu sử dụng các tính năng mới.</strong><br />
+            Bạn có thể truy cập vào khu vực quản lý khách sạn trong menu chính sau khi đăng nhập.
+          </p>
+        </div>
+
+        <!-- Contact Section -->
+        <div class='contact-section'>
+          <h3>🤝 Hỗ trợ kỹ thuật</h3>
+          <p style='margin-bottom: 15px;'>Nếu bạn cần hỗ trợ sử dụng các tính năng mới, vui lòng
+            liên hệ:</p>
+          <div class='contact-buttons'>
+            <a href='tel:+840987654321' class='contact-btn primary'>📞 Gọi hotline</a>
+            <a href='mailto:travelbooking.wdp@gmail.com' class='contact-btn secondary'>✉️ Gửi email</a>
+          </div>
+        </div>
+
+        <!-- Important Notes -->
+        <div
+          style='background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 8px; margin-bottom: 25px;'
+        >
+          <h4 style='color: #856404; margin-bottom: 10px;'>📋 Lưu ý quan trọng:</h4>
+          <ul style='color: #856404; padding-left: 20px;'>
+            <li>Tuân thủ các quy định của nền tảng khi quản lý khách sạn</li>
+            <li>Liên hệ hỗ trợ nếu gặp khó khăn trong quá trình sử dụng</li>
+          </ul>
+        </div>
+
+        <div style='text-align: center; margin-top: 30px;'>
+          <p style='font-size: 16px; color: #1a73e8; font-weight: 600;'>
+            🌟 Chúc bạn thành công với vai trò mới! 🌟
+          </p>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class='footer'>
+        <p>&copy; {{currentYear}} Your Booking App. All rights reserved.</p>
+        <p>Nếu cần giúp đỡ, vui lòng phản hồi thông qua gmail này.</p>
+      </div>
+    </div>
+  </body>
+</html>

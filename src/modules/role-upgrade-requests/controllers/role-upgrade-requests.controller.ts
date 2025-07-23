@@ -11,6 +11,7 @@ import { User } from '@/modules/users/schemas/user.schema';
 import {
   CreateRoleUpgradeRequestDto,
   RoleUpgradeRequestResponseDto,
+  TestRoleUpgradeEmailDto,
   UpdateRoleUpgradeRequestDto,
 } from '../dtos/role-upgrade-request.dto';
 import { RoleUpgradeRequestsService } from '../services/role-upgrade-requests.service';
@@ -114,5 +115,15 @@ export class RoleUpgradeRequestsController {
       return null;
     }
     return transformDataToDto(RoleUpgradeRequestResponseDto, request);
+  }
+
+  @ApiOperation({
+    summary: 'Test role upgrade email (Admin only)',
+    description: 'Send a test email for role upgrade approval/rejection to verify email templates',
+  })
+  @AllowRoles([Role.ADMIN])
+  @Post('test-email')
+  async testRoleUpgradeEmail(@Body() testEmailDto: TestRoleUpgradeEmailDto) {
+    return await this.roleUpgradeRequestsService.testRoleUpgradeEmail(testEmailDto);
   }
 }

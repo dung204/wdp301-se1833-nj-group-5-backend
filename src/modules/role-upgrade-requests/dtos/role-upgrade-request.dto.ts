@@ -177,3 +177,22 @@ export class RoleUpgradeRequestResponseDto extends SchemaResponseDto {
   })
   rejectionReason?: string;
 }
+
+export class TestRoleUpgradeEmailDto {
+  @ApiProperty({
+    description: 'Role upgrade request ID to send test email for',
+    example: '507f1f77bcf86cd799439011',
+  })
+  @IsString()
+  requestId!: string;
+
+  @ApiProperty({
+    description: 'Type of email to send',
+    enum: ['approved', 'rejected'],
+    example: 'approved',
+  })
+  @IsEnum(['approved', 'rejected'], {
+    message: 'Email type must be either approved or rejected',
+  })
+  emailType!: 'approved' | 'rejected';
+}

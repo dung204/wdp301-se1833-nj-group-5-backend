@@ -72,6 +72,24 @@ export class MailService {
     handlebars.registerHelper('isPaymentGateway', (paymentMethod: string) => {
       return paymentMethod === 'PAYMENT_GATEWAY';
     });
+
+    // Helper để format role name
+    handlebars.registerHelper('formatRole', (role: string) => {
+      const roles: Record<string, string> = {
+        CUSTOMER: 'Khách hàng',
+        HOTEL_OWNER: 'Chủ khách sạn',
+        ADMIN: 'Quản trị viên',
+      };
+      return roles[role] || role;
+    });
+
+    // Helper để format request type
+    handlebars.registerHelper('formatRequestType', (requestType: string) => {
+      const types: Record<string, string> = {
+        CUSTOMER_TO_HOTEL_OWNER: 'Nâng cấp từ Khách hàng lên Chủ khách sạn',
+      };
+      return types[requestType] || requestType;
+    });
   }
 
   async sendBookingConfirmationEmail(booking: BookingByPaymentLinkDto): Promise<void> {
@@ -119,6 +137,78 @@ export class MailService {
     } catch (error) {
       this.logger.error(
         `Failed to send booking confirmation email for order ${booking.orderCode} ${error instanceof Error ? error.message : String(error)}`,
+        error instanceof Error ? error.message : String(error),
+      );
+    }
+  }
+
+  async sendRoleUpgradeApprovedEmail(roleUpgradeRequest: any): Promise<void> {
+    try {
+      const templatePath = join(
+        process.cwd(),
+        'src',
+        'modules',
+        'mail',
+        'templates',
+        'role-upgrade-approved.hbs',
+      );
+      const templateHtml = await fs.readFile(templatePath, 'utf-8');
+      const template = handlebars.compile(templateHtml);
+
+      const html = template({
+        ...roleUpgradeRequest,
+        requestId: roleUpgradeRequest._id,
+        currentYear: new Date().getFullYear(),
+      });
+
+      await this.mailerService.sendMail({
+        to: roleUpgradeRequest.user.email,
+        subject: `[Chúc mừng] Yêu cầu nâng cấp tài khoản đã được phê duyệt - ${roleUpgradeRequest.user.fullName}`,
+        html: html,
+      });
+
+      this.logger.log(
+        `Sent role upgrade approval email to ${roleUpgradeRequest.user.email} for request ${roleUpgradeRequest._id}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to send role upgrade approval email for request ${roleUpgradeRequest._id}`,
+        error instanceof Error ? error.message : String(error),
+      );
+    }
+  }
+
+  async sendRoleUpgradeRejectedEmail(roleUpgradeRequest: any): Promise<void> {
+    try {
+      const templatePath = join(
+        process.cwd(),
+        'src',
+        'modules',
+        'mail',
+        'templates',
+        'role-upgrade-rejected.hbs',
+      );
+      const templateHtml = await fs.readFile(templatePath, 'utf-8');
+      const template = handlebars.compile(templateHtml);
+
+      const html = template({
+        ...roleUpgradeRequest,
+        requestId: roleUpgradeRequest._id,
+        currentYear: new Date().getFullYear(),
+      });
+
+      await this.mailerService.sendMail({
+        to: roleUpgradeRequest.user.email,
+        subject: `[Thông báo] Yêu cầu nâng cấp tài khoản - ${roleUpgradeRequest.user.fullName}`,
+        html: html,
+      });
+
+      this.logger.log(
+        `Sent role upgrade rejection email to ${roleUpgradeRequest.user.email} for request ${roleUpgradeRequest._id}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to send role upgrade rejection email for request ${roleUpgradeRequest._id}`,
         error instanceof Error ? error.message : String(error),
       );
     }
