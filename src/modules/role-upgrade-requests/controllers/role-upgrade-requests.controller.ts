@@ -57,12 +57,13 @@ export class RoleUpgradeRequestsController {
   }
 
   @ApiOperation({
-    summary: 'Get current user role upgrade request',
-    description: 'Get the current user role upgrade request (any status)',
+    summary: 'Get current user pending role upgrade request',
+    description:
+      'Get the current user pending role upgrade request (allows resubmission after rejection)',
   })
   @ApiSuccessResponse({
     schema: RoleUpgradeRequestResponseDto,
-    description: 'User role upgrade request retrieved successfully',
+    description: 'User pending role upgrade request retrieved successfully',
   })
   @AllowRoles([Role.CUSTOMER, Role.HOTEL_OWNER])
   @Get('my-request')
@@ -72,6 +73,22 @@ export class RoleUpgradeRequestsController {
       return null;
     }
     return transformDataToDto(RoleUpgradeRequestResponseDto, request);
+  }
+
+  @ApiOperation({
+    summary: 'Get current user role upgrade request history',
+    description: 'Get all role upgrade requests for the current user (including approved/rejected)',
+  })
+  @ApiSuccessResponse({
+    schema: RoleUpgradeRequestResponseDto,
+    description: 'User role upgrade request history retrieved successfully',
+    isArray: true,
+  })
+  @AllowRoles([Role.CUSTOMER, Role.HOTEL_OWNER])
+  @Get('my-history')
+  async getCurrentUserRequestHistory(@CurrentUser() user: User) {
+    const requests = await this.roleUpgradeRequestsService.getUserRequestHistory(user._id);
+    return transformDataToDto(RoleUpgradeRequestResponseDto, requests);
   }
 
   @ApiOperation({

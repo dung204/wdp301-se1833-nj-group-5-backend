@@ -64,26 +64,6 @@ export class RoleUpgradeRequestsService extends BaseService<RoleUpgradeRequest> 
 
     const request = await this.createOne(requestData);
 
-    // Send notification email to admin
-    try {
-      await this.sendMail({
-        to: 'tamnguyenvd36@gmail.com',
-        subject: `New Role Upgrade Request - ${user.fullName || user.email}`,
-        text: `
-          New role upgrade request received:
-
-          User: ${user.fullName || user.email} (${user.email})
-          Current Role: ${user.role}
-          Target Role: ${createDto.targetRole}
-          Contact Info: ${createDto.contactInfo}
-          Reason: ${createDto.reason}
-          Request ID: ${request._id}
-        `,
-      });
-    } catch (error) {
-      this.logger.warn('Failed to send admin notification email', error);
-    }
-
     return request;
   }
 
@@ -143,9 +123,12 @@ export class RoleUpgradeRequestsService extends BaseService<RoleUpgradeRequest> 
   }
 
   async getUserRequest(userId: string) {
-    // Find the most recent request for this user, regardless of status
+    // Find only pending requests for this user to allow resubmission after rejection/approval
     return (await this.roleUpgradeRequestModel
-      .findOne({ user: userId })
+      .findOne({
+        user: userId,
+        status: RoleUpgradeRequestStatus.PENDING,
+      })
       .sort({ createTimestamp: -1 })
       .populate([
         { path: 'user', select: '_id email role fullName gender' },
@@ -153,6 +136,19 @@ export class RoleUpgradeRequestsService extends BaseService<RoleUpgradeRequest> 
       ])
       .lean()
       .exec()) as RoleUpgradeRequest;
+  }
+
+  async getUserRequestHistory(userId: string) {
+    // Get all requests for this user, sorted by most recent first
+    return (await this.roleUpgradeRequestModel
+      .find({ user: userId })
+      .sort({ createTimestamp: -1 })
+      .populate([
+        { path: 'user', select: '_id email role fullName gender' },
+        { path: 'reviewedBy', select: '_id email role fullName gender' },
+      ])
+      .lean()
+      .exec()) as RoleUpgradeRequest[];
   }
 
   async testRoleUpgradeEmail(testEmailDto: TestRoleUpgradeEmailDto) {
