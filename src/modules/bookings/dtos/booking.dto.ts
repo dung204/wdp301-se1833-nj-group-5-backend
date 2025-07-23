@@ -401,6 +401,16 @@ export class BookingQueryDto extends QueryDto {
   @IsNumber({}, { message: 'minOccupancy must be a number' })
   @Transform(({ value }) => parseFloat(value as string))
   minOccupancy?: number;
+
+  @ApiProperty({
+    description: 'Filter booking in the future: status ("all", true" | "false")',
+    required: false,
+    example: 'all',
+    enum: ['all', 'true', 'false'],
+  })
+  @IsOptional()
+  @IsString()
+  inFuture?: string;
 }
 
 export class BookingQueryDtoForAdmin extends BookingQueryDto {
