@@ -148,10 +148,16 @@ export class RoleUpgradeRequestsService extends BaseService<RoleUpgradeRequest> 
   }
 
   async getUserRequest(userId: string) {
-    return this.findOne({
-      user: userId,
-      status: RoleUpgradeRequestStatus.PENDING,
-    });
+    // Find the most recent request for this user, regardless of status
+    return (await this.roleUpgradeRequestModel
+      .findOne({ user: userId })
+      .sort({ createTimestamp: -1 })
+      .populate([
+        { path: 'user', select: '_id email role fullName gender' },
+        { path: 'reviewedBy', select: '_id email role fullName gender' },
+      ])
+      .lean()
+      .exec()) as RoleUpgradeRequest;
   }
 
   private async sendMail(options: { to: string; subject: string; text: string }) {

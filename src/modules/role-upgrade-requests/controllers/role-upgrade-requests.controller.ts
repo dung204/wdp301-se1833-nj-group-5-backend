@@ -57,13 +57,13 @@ export class RoleUpgradeRequestsController {
 
   @ApiOperation({
     summary: 'Get current user role upgrade request',
-    description: 'Get the current user pending role upgrade request',
+    description: 'Get the current user role upgrade request (any status)',
   })
   @ApiSuccessResponse({
     schema: RoleUpgradeRequestResponseDto,
     description: 'User role upgrade request retrieved successfully',
   })
-  @AllowRoles([Role.CUSTOMER])
+  @AllowRoles([Role.CUSTOMER, Role.HOTEL_OWNER])
   @Get('my-request')
   async getCurrentUserRequest(@CurrentUser() user: User) {
     const request = await this.roleUpgradeRequestsService.getUserRequest(user._id);
