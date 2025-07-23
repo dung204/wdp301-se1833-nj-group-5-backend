@@ -10,6 +10,7 @@ import {
   Min,
 } from 'class-validator';
 
+import { SwaggerExamples } from '@/base/constants';
 import { SchemaResponseDto } from '@/base/dtos';
 import { transformToFloatNumber } from '@/base/utils/transform.utils';
 import { HotelResponseDto } from '@/modules/hotels/dtos/hotel.dto';
@@ -26,21 +27,21 @@ export class DailyRevenueReportResponseDto extends SchemaResponseDto {
 
   @ApiProperty({
     description: 'Date of the revenue report',
-    example: '2024-01-15T00:00:00.000Z',
+    example: SwaggerExamples.REVENUE_DATE,
   })
   @Expose()
   date!: Date;
 
   @ApiProperty({
     description: 'Total revenue for the day',
-    example: 2500000,
+    example: SwaggerExamples.TOTAL_REVENUE,
   })
   @Expose()
   totalRevenue!: number;
 
   @ApiProperty({
     description: 'Total number of bookings for the day',
-    example: 8,
+    example: SwaggerExamples.TOTAL_BOOKINGS,
   })
   @Expose()
   totalBookings!: number;
@@ -49,7 +50,7 @@ export class DailyRevenueReportResponseDto extends SchemaResponseDto {
 export class CreateDailyRevenueReportDto {
   @ApiProperty({
     description: 'Hotel ID',
-    example: '84d67269-7470-4ef1-bfbb-c66e7cf8c955',
+    example: SwaggerExamples.HOTEL_ID,
   })
   @IsNotEmpty()
   @IsString()
@@ -57,7 +58,7 @@ export class CreateDailyRevenueReportDto {
 
   @ApiProperty({
     description: 'Date of the revenue report',
-    example: '2024-01-15T00:00:00.000Z',
+    example: SwaggerExamples.REVENUE_DATE,
   })
   @IsNotEmpty()
   @Type(() => Date)
@@ -66,7 +67,7 @@ export class CreateDailyRevenueReportDto {
 
   @ApiProperty({
     description: 'Total revenue for the day',
-    example: 2500000,
+    example: SwaggerExamples.TOTAL_REVENUE,
   })
   @IsNotEmpty()
   @Transform(transformToFloatNumber) // 1. Transform đứng trước
@@ -76,7 +77,7 @@ export class CreateDailyRevenueReportDto {
 
   @ApiProperty({
     description: 'Total number of bookings for the day',
-    example: 8,
+    example: SwaggerExamples.TOTAL_BOOKINGS,
   })
   @IsNotEmpty()
   @Transform(transformToFloatNumber) // 1. Transform đứng trước
@@ -88,7 +89,7 @@ export class CreateDailyRevenueReportDto {
 export class UpdateDailyRevenueReportDto {
   @ApiProperty({
     description: 'Date of the revenue report',
-    example: '2024-01-15T00:00:00.000Z',
+    example: SwaggerExamples.REVENUE_DATE,
     required: false,
   })
   @IsOptional()
@@ -98,7 +99,7 @@ export class UpdateDailyRevenueReportDto {
 
   @ApiProperty({
     description: 'Total revenue for the day',
-    example: 2500000,
+    example: SwaggerExamples.TOTAL_REVENUE,
     required: false,
   })
   @IsOptional()
@@ -109,7 +110,7 @@ export class UpdateDailyRevenueReportDto {
 
   @ApiProperty({
     description: 'Total number of bookings for the day',
-    example: 8,
+    example: SwaggerExamples.TOTAL_BOOKINGS,
     required: false,
   })
   @IsOptional()
@@ -198,7 +199,7 @@ export class RevenueQueryDto {
 export class MonthlyRevenueQueryDto {
   @ApiProperty({
     description: 'Year to get monthly revenue for',
-    example: 2025,
+    example: SwaggerExamples.YEAR,
     required: false,
   })
   @IsOptional()
@@ -234,25 +235,25 @@ export class YearlyRevenueQueryDto extends MonthlyRevenueQueryDto {
 export class YearlyRevenueResponseDto extends SchemaResponseDto {
   @ApiProperty({
     description: 'Hotel ID',
-    example: '84d67269-7470-4ef1-bfbb-c66e7cf8c955',
+    example: SwaggerExamples.HOTEL_ID,
   })
   hotelId!: string;
 
   @ApiProperty({
     description: 'Year',
-    example: 2024,
+    example: SwaggerExamples.YEAR,
   })
   year!: number;
 
   @ApiProperty({
     description: 'Total revenue for the year',
-    example: 50000000,
+    example: SwaggerExamples.YEARLY_REVENUE,
   })
   totalRevenue!: number;
 
   @ApiProperty({
     description: 'Total bookings for the year',
-    example: 150,
+    example: SwaggerExamples.YEARLY_BOOKINGS,
   })
   totalBookings!: number;
 }
@@ -260,25 +261,25 @@ export class YearlyRevenueResponseDto extends SchemaResponseDto {
 export class MonthlyRevenueResponseDto extends SchemaResponseDto {
   @ApiProperty({
     description: 'Hotel ID',
-    example: '84d67269-7470-4ef1-bfbb-c66e7cf8c955',
+    example: SwaggerExamples.HOTEL_ID,
   })
   hotelId!: string;
 
   @ApiProperty({
     description: 'Month (1-12)',
-    example: 6,
+    example: SwaggerExamples.MONTH,
   })
   month!: number;
 
   @ApiProperty({
     description: 'Total revenue for the month',
-    example: 5000000,
+    example: SwaggerExamples.MONTHLY_REVENUE,
   })
   totalRevenue!: number;
 
   @ApiProperty({
     description: 'Total bookings for the month',
-    example: 15,
+    example: SwaggerExamples.MONTHLY_BOOKINGS,
   })
   totalBookings!: number;
 }
