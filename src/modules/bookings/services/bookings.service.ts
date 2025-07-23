@@ -226,7 +226,7 @@ export class BookingsService extends BaseService<Booking> {
       {
         $group: {
           _id: '$room', // Nhóm tất cả các booking lại theo trường 'room' (room ID)
-          bookedCount: { $sum: 1 }, // Với mỗi booking trong nhóm, đếm +1
+          bookedCount: { $sum: '$quantity' }, // Với mỗi booking trong nhóm, đếm +1
         },
       },
       // Giai đoạn 3 (Tùy chọn): Đổi tên trường _id cho dễ hiểu
