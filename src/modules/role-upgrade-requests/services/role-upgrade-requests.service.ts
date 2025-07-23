@@ -31,7 +31,7 @@ export class RoleUpgradeRequestsService extends BaseService<RoleUpgradeRequest> 
     // Check if user already has a pending request
     const existingRequest = await this.roleUpgradeRequestModel.findOne({
       user: user._id,
-      status: { $in: [RoleUpgradeRequestStatus.PENDING, RoleUpgradeRequestStatus.UNDER_REVIEW] },
+      status: RoleUpgradeRequestStatus.PENDING,
     });
 
     if (existingRequest) {
@@ -111,7 +111,7 @@ export class RoleUpgradeRequestsService extends BaseService<RoleUpgradeRequest> 
       }
     }
 
-    const updatedRequest = await this.update(
+    await this.update(
       {
         status: updateDto.status,
         reviewedBy: adminUser._id as any,
@@ -121,6 +121,9 @@ export class RoleUpgradeRequestsService extends BaseService<RoleUpgradeRequest> 
       },
       { _id: requestId },
     );
+
+    // Get the updated request
+    const updatedRequest = await this.findOne({ _id: requestId });
 
     // Send notification email to user
     try {
@@ -141,13 +144,13 @@ export class RoleUpgradeRequestsService extends BaseService<RoleUpgradeRequest> 
       this.logger.warn('Failed to send status update email', error);
     }
 
-    return updatedRequest[0];
+    return updatedRequest;
   }
 
   async getUserRequest(userId: string) {
-    return this.roleUpgradeRequestModel.findOne({
+    return this.findOne({
       user: userId,
-      status: { $in: [RoleUpgradeRequestStatus.PENDING, RoleUpgradeRequestStatus.UNDER_REVIEW] },
+      status: RoleUpgradeRequestStatus.PENDING,
     });
   }
 

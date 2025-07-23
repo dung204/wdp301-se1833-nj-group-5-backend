@@ -90,7 +90,10 @@ export class RoleUpgradeRequest extends BaseSchema {
 export const RoleUpgradeRequestSchema = SchemaFactory.createForClass(RoleUpgradeRequest);
 
 RoleUpgradeRequestSchema.pre(['find', 'findOne', 'findOneAndUpdate'], function (next) {
-  this.populate(['user', 'reviewedBy']);
+  this.populate([
+    { path: 'user', select: '_id email role fullName gender' },
+    { path: 'reviewedBy', select: '_id email role fullName gender' },
+  ]);
   next();
 });
 
