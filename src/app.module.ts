@@ -18,6 +18,7 @@ import { PaymentMethodsModule } from './modules/payment-methods/payment-methods.
 import { PaymentsModule } from './modules/payment/payment.module';
 import { RevenueModule } from './modules/revenue-report/revenue.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
+import { RoleUpgradeRequestsModule } from './modules/role-upgrade-requests/role-upgrade-requests.module';
 import { RoomsModule } from './modules/rooms/rooms.module';
 import { TransactionsModule } from './modules/transactions/transactions.module';
 import { UsersModule } from './modules/users/users.module';
@@ -38,6 +39,7 @@ import { UsersModule } from './modules/users/users.module';
     PaymentMethodsModule,
     DiscountsModule,
     ReviewsModule,
+    RoleUpgradeRequestsModule,
     RevenueModule,
     PaymentsModule,
     MinioStorageModule,

@@ -1,0 +1,374 @@
+<html lang='vi'>
+  <head>
+    <meta charset='UTF-8' />
+    <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+    <title>Yêu cầu nâng cấp tài khoản không được phê duyệt</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f5f5f5;
+        color: #333;
+      }
+      .email-container {
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: #ffffff;
+      }
+
+      /* Header */
+      .header {
+        background: linear-gradient(135deg, #ea4335 0%, #fbbc04 100%);
+        padding: 30px 20px;
+        text-align: center;
+        color: white;
+      }
+      .header h1 {
+        font-size: 24px;
+        margin-bottom: 8px;
+      }
+      .header p {
+        font-size: 14px;
+        opacity: 0.9;
+      }
+
+      /* Rejection Badge */
+      .rejection-badge {
+        background-color: #ea4335;
+        color: white;
+        padding: 15px 20px;
+        text-align: center;
+      }
+      .rejection-badge h2 {
+        font-size: 18px;
+        margin-bottom: 5px;
+      }
+      .rejection-badge p {
+        font-size: 14px;
+      }
+
+      /* Content */
+      .content {
+        padding: 30px 20px;
+      }
+      .greeting {
+        font-size: 16px;
+        margin-bottom: 20px;
+      }
+      .request-id {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+        text-align: center;
+      }
+      .request-id strong {
+        font-size: 18px;
+        color: #1a73e8;
+      }
+
+      /* Role Info */
+      .role-section {
+        margin-bottom: 30px;
+      }
+      .role-upgrade {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 15px;
+      }
+      .role-old {
+        background-color: #f1f3f4;
+        padding: 10px 15px;
+        border-radius: 6px;
+        color: #666;
+      }
+      .role-arrow {
+        margin: 0 15px;
+        color: #ea4335;
+        font-size: 20px;
+        font-weight: bold;
+      }
+      .role-new {
+        background-color: #f1f3f4;
+        padding: 10px 15px;
+        border-radius: 6px;
+        color: #999;
+        text-decoration: line-through;
+      }
+
+      /* Details Table */
+      .details-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 25px;
+      }
+      .details-table th {
+        background-color: #f1f3f4;
+        padding: 12px;
+        text-align: left;
+        font-weight: 600;
+        border-bottom: 1px solid #e0e0e0;
+      }
+      .details-table td {
+        padding: 12px;
+        border-bottom: 1px solid #e0e0e0;
+      }
+      .details-table tr:last-child td {
+        border-bottom: none;
+      }
+
+      /* Rejection Reason Section */
+      .rejection-section {
+        background-color: #ffeaea;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+        border-left: 4px solid #ea4335;
+      }
+      .rejection-section h3 {
+        margin-bottom: 15px;
+        color: #c5221f;
+      }
+      .rejection-section p {
+        color: #c5221f;
+        line-height: 1.6;
+      }
+
+      /* Next Steps Section */
+      .next-steps-section {
+        background-color: #e3f2fd;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+      }
+      .next-steps-section h3 {
+        margin-bottom: 15px;
+        color: #1565c0;
+      }
+      .next-steps-list {
+        list-style: none;
+        padding: 0;
+      }
+      .next-steps-list li {
+        margin-bottom: 12px;
+        color: #1565c0;
+        padding-left: 25px;
+        position: relative;
+      }
+      .next-steps-list li::before {
+        content: '👉 ';
+        position: absolute;
+        left: 0;
+      }
+
+      /* Contact Section */
+      .contact-section {
+        background-color: #f1f3f4;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+      }
+      .contact-section h3 {
+        margin-bottom: 15px;
+        color: #1a73e8;
+      }
+      .contact-buttons {
+        display: flex;
+        gap: 10px;
+      }
+      .contact-btn {
+        flex: 1;
+        padding: 12px;
+        text-align: center;
+        border: 1px solid #1a73e8;
+        border-radius: 6px;
+        text-decoration: none;
+      }
+      .contact-btn.primary {
+        background-color: #1a73e8;
+        color: white;
+      }
+      .contact-btn.secondary {
+        background-color: white;
+        color: #1a73e8;
+      }
+
+      /* Footer */
+      .footer {
+        background-color: #f1f3f4;
+        padding: 20px;
+        text-align: center;
+        color: #666;
+        font-size: 12px;
+      }
+
+      /* Status Badge */
+      .status-badge {
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: bold;
+      }
+      .status-rejected {
+        background-color: #ffeaea;
+        color: #c5221f;
+      }
+
+      /* Alert boxes */
+      .alert-warning {
+        background-color: #fff3cd;
+        border: 1px solid #ffeaa7;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+      }
+      .alert-info {
+        background-color: #e3f2fd;
+        border: 1px solid #bbdefb;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+      }
+
+      /* Responsive */
+      @media (max-width: 600px) {
+        .contact-buttons {
+          flex-direction: column;
+        }
+        .role-upgrade {
+          flex-direction: column;
+        }
+        .role-arrow {
+          margin: 10px 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class='email-container'>
+      <!-- Header -->
+      <div class='header'>
+        <h1>📋 Thông báo yêu cầu</h1>
+        <p>Kết quả xem xét yêu cầu nâng cấp tài khoản của bạn</p>
+      </div>
+
+      <!-- Rejection Message -->
+      <div class='rejection-badge'>
+        <h2>Yêu cầu nâng cấp tài khoản chưa được phê duyệt</h2>
+        <p>Chúng tôi đã xem xét yêu cầu của bạn một cách cẩn thận</p>
+      </div>
+
+      <!-- Content -->
+      <div class='content'>
+        <!-- Greeting -->
+        <div class='greeting'>
+          <p>Chào <strong>{{user.fullName}}</strong>,</p>
+          <p>Cảm ơn bạn đã gửi yêu cầu nâng cấp tài khoản. Sau khi xem xét kỹ lưỡng, chúng tôi rất
+            tiếc phải thông báo rằng yêu cầu của bạn chưa thể được phê duyệt vào thời điểm này.</p>
+        </div>
+
+        <!-- Role Upgrade Information -->
+        <div class='role-section'>
+          <div class='role-upgrade'>
+            <div class='role-old'>{{currentRole}}</div>
+            <div class='role-arrow'>✗</div>
+            <div class='role-new'>{{targetRole}}</div>
+          </div>
+          <div style='text-align: center;'>
+            <span class='status-badge status-rejected'>✗ Không được phê duyệt</span>
+          </div>
+        </div>
+
+        <!-- Request Details -->
+        <table class='details-table'>
+          <tr>
+            <th>Ngày yêu cầu</th>
+            <td>{{formatDate createTimestamp}}</td>
+          </tr>
+          <tr>
+            <th>Ngày xem xét</th>
+            <td>{{formatDate reviewedAt}}</td>
+          </tr>
+          <tr>
+            <th>Người xem xét</th>
+            <td>{{reviewedBy.fullName}} ({{reviewedBy.email}})</td>
+          </tr>
+        </table>
+
+        <!-- Rejection Reason -->
+        {{#if rejectionReason}}
+          <div class='rejection-section'>
+            <h3>❌ Lý do không phê duyệt:</h3>
+            <p><strong>{{rejectionReason}}</strong></p>
+            {{#if adminNotes}}
+              <p style='margin-top: 10px;'><em>Ghi chú từ quản trị viên: {{adminNotes}}</em></p>
+            {{/if}}
+          </div>
+        {{/if}}
+
+        <!-- Next Steps -->
+        <div class='next-steps-section'>
+          <h3>🔄 Bước tiếp theo:</h3>
+          <ul class='next-steps-list'>
+            <li>Xem xét lại lý do không phê duyệt ở trên</li>
+            <li>Chuẩn bị đầy đủ tài liệu/thông tin cần thiết</li>
+            <li>Khắc phục những vấn đề đã được chỉ ra</li>
+            <li>Gửi lại yêu cầu sau khi đã hoàn thiện</li>
+            <li>Liên hệ bộ phận hỗ trợ nếu cần tư vấn thêm</li>
+          </ul>
+        </div>
+
+        <!-- Reapplication Info -->
+        <div class='alert-info'>
+          <h4 style='color: #1565c0; margin-bottom: 10px;'>🔄 Gửi lại yêu cầu:</h4>
+          <p style='color: #1565c0;'>
+            <strong>Bạn có thể gửi lại yêu cầu nâng cấp tài khoản sau khi đã khắc phục các vấn đề.</strong><br
+            />
+            Vui lòng đảm bảo cung cấp đầy đủ thông tin và tài liệu cần thiết cho lần đăng ký tiếp
+            theo.
+          </p>
+        </div>
+
+        <!-- Contact Section -->
+        <div class='contact-section'>
+          <h3>🤝 Liên hệ hỗ trợ</h3>
+          <p style='margin-bottom: 15px;'>Nếu bạn có thắc mắc về quyết định này hoặc cần hỗ trợ
+            thêm:</p>
+          <div class='contact-buttons'>
+            <a href='tel:+840987654321' class='contact-btn primary'>📞 Gọi hotline</a>
+            <a href='mailto:travelbooking.wdp@gmail.com' class='contact-btn secondary'>✉️ Gửi email</a>
+          </div>
+        </div>
+
+        <!-- Important Notes -->
+        <div class='alert-warning'>
+          <h4 style='color: #856404; margin-bottom: 10px;'>⚠️ Lưu ý quan trọng:</h4>
+          <ul style='color: #856404; padding-left: 20px;'>
+            <li>Quyết định này không ảnh hưởng đến tài khoản hiện tại của bạn</li>
+            <li>Bạn vẫn có thể sử dụng đầy đủ các tính năng của vai trò hiện tại</li>
+            <li>Có thể gửi lại yêu cầu sau khi khắc phục các vấn đề</li>
+            <li>Liên hệ hỗ trợ để được tư vấn chi tiết hơn</li>
+          </ul>
+        </div>
+
+        <div style='text-align: center; margin-top: 30px;'>
+          <p style='font-size: 16px; color: #1a73e8; font-weight: 600;'>
+            💪 Đừng nản chí! Hãy thử lại sau khi chuẩn bị kỹ hơn!
+          </p>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class='footer'>
+        <p>&copy; {{currentYear}} Your Booking App. All rights reserved.</p>
+        <p>Nếu cần giúp đỡ, vui lòng phản hồi thông qua gmail này.</p>
+      </div>
+    </div>
+  </body>
+</html>
