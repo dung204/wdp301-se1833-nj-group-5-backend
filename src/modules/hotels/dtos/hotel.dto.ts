@@ -24,7 +24,7 @@ import { CancelEnum } from '../enums';
 class CheckinTimeRangeDto {
   @ApiProperty({
     description: 'The start time for check-in',
-    example: '2023-01-01T14:00:00Z',
+    example: SwaggerExamples.HOTEL_CHECKIN_TIME.from,
   })
   @Type(() => Date)
   @IsDate()
@@ -33,7 +33,7 @@ class CheckinTimeRangeDto {
 
   @ApiProperty({
     description: 'The end time for check-in',
-    example: '2023-01-01T22:00:00Z',
+    example: SwaggerExamples.HOTEL_CHECKIN_TIME.to,
   })
   @Type(() => Date)
   @IsDate()
@@ -45,35 +45,35 @@ class CheckinTimeRangeDto {
 export class HotelResponseDto extends SchemaResponseDto {
   @ApiProperty({
     description: 'The name of the hotel',
-    example: 'Grand Hotel',
+    example: SwaggerExamples.HOTEL_NAME,
   })
   @Expose() // được đánh dấu để được bao gồm trong phản hồi
   name!: string;
 
   @ApiProperty({
     description: 'Province name',
-    example: 'Hà Nội',
+    example: SwaggerExamples.HOTEL_PROVINCE,
   })
   @Expose()
   province!: string;
 
   @ApiProperty({
     description: 'Commune name',
-    example: 'Phường Hoàn Kiếm',
+    example: SwaggerExamples.HOTEL_COMMUNE,
   })
   @Expose()
   commune!: string;
 
   @ApiProperty({
     description: 'The detailed address of the hotel',
-    example: '123 Main Street',
+    example: SwaggerExamples.HOTEL_ADDRESS,
   })
   @Expose()
   address!: string;
 
   @ApiProperty({
     description: 'Description of the hotel',
-    example: 'A luxurious hotel with amazing views',
+    example: SwaggerExamples.HOTEL_DESCRIPTION,
   })
   @Expose()
   description!: string;
@@ -88,7 +88,7 @@ export class HotelResponseDto extends SchemaResponseDto {
 
   @ApiProperty({
     description: 'Phone number of the hotel',
-    example: '+84123456789',
+    example: SwaggerExamples.HOTEL_PHONE,
   })
   @Expose()
   phoneNumber!: string;
@@ -102,7 +102,7 @@ export class HotelResponseDto extends SchemaResponseDto {
 
   @ApiProperty({
     description: 'Check-out time',
-    example: '2023-01-01T12:00:00Z',
+    example: SwaggerExamples.HOTEL_CHECKOUT_TIME,
   })
   @Expose()
   checkoutTime!: Date;
@@ -117,14 +117,14 @@ export class HotelResponseDto extends SchemaResponseDto {
 
   @ApiProperty({
     description: 'Rating of the hotel (0-5)',
-    example: 4.5,
+    example: SwaggerExamples.HOTEL_RATING,
   })
   @Expose()
   rating!: number;
 
   @ApiProperty({
     description: 'Average price per night for the hotel',
-    example: 150.0,
+    example: SwaggerExamples.HOTEL_PRICE,
   })
   @Expose()
   priceHotel!: number;
@@ -138,7 +138,7 @@ export class HotelResponseDto extends SchemaResponseDto {
 
   @ApiProperty({
     description: 'Services offered by the hotel',
-    example: ['wifi', 'pool', 'parking', 'breakfast'],
+    example: SwaggerExamples.HOTEL_SERVICES,
     type: [String],
   })
   @Expose()
@@ -165,7 +165,7 @@ export class DeletedHotelResponseDto extends HotelResponseDto {
 export class CreateHotelDto {
   @ApiProperty({
     description: 'The name of the hotel',
-    example: 'Grand Hotel',
+    example: SwaggerExamples.HOTEL_NAME,
   })
   @IsNotEmpty()
   @IsString()
@@ -173,7 +173,7 @@ export class CreateHotelDto {
 
   @ApiProperty({
     description: 'Province name',
-    example: 'Hà Nội',
+    example: SwaggerExamples.HOTEL_PROVINCE,
   })
   @IsNotEmpty()
   @IsString()
@@ -181,7 +181,7 @@ export class CreateHotelDto {
 
   @ApiProperty({
     description: 'Commune name',
-    example: 'Phường Hoàn Kiếm',
+    example: SwaggerExamples.HOTEL_COMMUNE,
   })
   @IsNotEmpty()
   @IsString()
@@ -189,7 +189,7 @@ export class CreateHotelDto {
 
   @ApiProperty({
     description: 'The detailed address of the hotel',
-    example: '123 Main Street',
+    example: SwaggerExamples.HOTEL_ADDRESS,
   })
   @IsNotEmpty()
   @IsString()
@@ -197,7 +197,7 @@ export class CreateHotelDto {
 
   @ApiProperty({
     description: 'Description of the hotel',
-    example: 'A luxurious hotel with amazing views',
+    example: SwaggerExamples.HOTEL_DESCRIPTION,
   })
   @IsNotEmpty()
   @IsString()
@@ -205,7 +205,7 @@ export class CreateHotelDto {
 
   @ApiProperty({
     description: 'Phone number of the hotel',
-    example: '+84123456789',
+    example: SwaggerExamples.HOTEL_PHONE,
   })
   @IsNotEmpty()
   @IsString()
@@ -213,7 +213,7 @@ export class CreateHotelDto {
 
   @ApiProperty({
     description: 'Average price per night for the hotel',
-    example: 150000,
+    example: SwaggerExamples.HOTEL_PRICE,
   })
   @IsNotEmpty()
   @Transform(transformToFloatNumber)
@@ -232,10 +232,7 @@ export class CreateHotelDto {
 
   @ApiProperty({
     description: 'Check-in time range',
-    example: {
-      from: '2023-01-01T14:00:00Z',
-      to: '2023-01-01T22:00:00Z',
-    },
+    example: SwaggerExamples.HOTEL_CHECKIN_TIME,
     type: CheckinTimeRangeDto,
   })
   @ValidateNested()
@@ -245,7 +242,7 @@ export class CreateHotelDto {
 
   @ApiProperty({
     description: 'Check-out time',
-    example: '2023-01-01T12:00:00Z',
+    example: SwaggerExamples.HOTEL_CHECKOUT_TIME,
   })
   @Type(() => Date)
   @IsDate()
@@ -262,7 +259,7 @@ export class CreateHotelDto {
 
   @ApiProperty({
     description: 'Services offered by the hotel',
-    example: ['wifi', 'pool', 'parking', 'breakfast'],
+    example: SwaggerExamples.HOTEL_SERVICES,
     type: [String],
     required: false,
   })
@@ -274,7 +271,7 @@ export class CreateHotelDto {
 
   @ApiProperty({
     description: 'Rating',
-    example: 5,
+    example: SwaggerExamples.HOTEL_RATING,
   })
   @IsNotEmpty()
   @Transform(transformToFloatNumber)
@@ -287,7 +284,7 @@ export class CreateHotelDto {
 export class UpdateHotelDto {
   @ApiProperty({
     description: 'The name of the hotel',
-    example: 'Grand Hotel',
+    example: SwaggerExamples.HOTEL_NAME,
     required: false,
   })
   @IsOptional()
@@ -296,7 +293,7 @@ export class UpdateHotelDto {
 
   @ApiProperty({
     description: 'Province name',
-    example: 'Hà Nội',
+    example: SwaggerExamples.HOTEL_PROVINCE,
     required: false,
   })
   @IsOptional()
@@ -305,7 +302,7 @@ export class UpdateHotelDto {
 
   @ApiProperty({
     description: 'Commune name',
-    example: 'Phường Hoàn Kiếm',
+    example: SwaggerExamples.HOTEL_COMMUNE,
     required: false,
   })
   @IsOptional()
@@ -314,7 +311,7 @@ export class UpdateHotelDto {
 
   @ApiProperty({
     description: 'The detailed address of the hotel',
-    example: '123 Main Street',
+    example: SwaggerExamples.HOTEL_ADDRESS,
     required: false,
   })
   @IsOptional()
@@ -323,7 +320,7 @@ export class UpdateHotelDto {
 
   @ApiProperty({
     description: 'Description of the hotel',
-    example: 'A luxurious hotel with amazing views',
+    example: SwaggerExamples.HOTEL_DESCRIPTION,
     required: false,
   })
   @IsOptional()
@@ -332,7 +329,7 @@ export class UpdateHotelDto {
 
   @ApiProperty({
     description: 'Phone number of the hotel',
-    example: '+84123456789',
+    example: SwaggerExamples.HOTEL_PHONE,
     required: false,
   })
   @IsOptional()
@@ -341,10 +338,7 @@ export class UpdateHotelDto {
 
   @ApiProperty({
     description: 'Check-in time range',
-    example: {
-      from: '2023-01-01T14:00:00Z',
-      to: '2023-01-01T22:00:00Z',
-    },
+    example: SwaggerExamples.HOTEL_CHECKIN_TIME,
     type: CheckinTimeRangeDto,
     required: false,
   })
@@ -356,7 +350,7 @@ export class UpdateHotelDto {
 
   @ApiProperty({
     description: 'Check-out time',
-    example: '2023-01-01T12:00:00Z',
+    example: SwaggerExamples.HOTEL_CHECKOUT_TIME,
     required: false,
   })
   @IsOptional()
@@ -386,7 +380,7 @@ export class UpdateHotelDto {
 
   @ApiProperty({
     description: 'Services offered by the hotel',
-    example: ['wifi', 'pool', 'parking', 'breakfast'],
+    example: SwaggerExamples.HOTEL_SERVICES,
     type: [String],
     required: false,
   })
@@ -398,7 +392,7 @@ export class UpdateHotelDto {
 
   @ApiProperty({
     description: 'Rating',
-    example: 5,
+    example: SwaggerExamples.HOTEL_RATING,
     required: false,
   })
   @IsOptional()
@@ -420,7 +414,7 @@ export class UpdateHotelDto {
 
   @ApiProperty({
     description: 'Average price per night for the hotel',
-    example: 150000,
+    example: SwaggerExamples.HOTEL_PRICE,
     required: false,
   })
   @IsOptional()
@@ -434,7 +428,6 @@ export class HotelQueryDto extends QueryDto {
   @ApiProperty({
     description: 'Filter hotels by id',
     required: false,
-    example: 'eb4ddc1f-e320-4fbb-8bfa-eed8b06d64aa',
   })
   @IsOptional()
   @IsString()
@@ -500,7 +493,6 @@ export class HotelQueryDto extends QueryDto {
 
   @ApiProperty({
     description: 'Filter by cancellation policy',
-    example: CancelEnum.REFUND_BEFORE_1_DAY,
     enum: CancelEnum,
     required: false,
   })
@@ -510,7 +502,6 @@ export class HotelQueryDto extends QueryDto {
 
   @ApiProperty({
     description: 'Number of people to stay',
-    example: 1,
     required: false,
   })
   @IsOptional()
@@ -521,7 +512,6 @@ export class HotelQueryDto extends QueryDto {
 
   @ApiProperty({
     description: 'Check-in date',
-    example: '2025-07-14T14:00:00.000Z',
     required: false,
   })
   @IsOptional()
@@ -529,8 +519,7 @@ export class HotelQueryDto extends QueryDto {
   checkIn!: Date;
 
   @ApiProperty({
-    description: 'Check-in date',
-    example: '2025-07-15T14:00:00.000Z',
+    description: 'Check-out date',
     required: false,
   })
   @IsOptional()
@@ -540,7 +529,6 @@ export class HotelQueryDto extends QueryDto {
   @ApiProperty({
     description: 'Filter hotels by name or address, it will have new name is searchTerm',
     required: false,
-    example: 'Ha Noi',
   })
   @IsOptional()
   @IsString()
@@ -551,7 +539,6 @@ export class HotelQueryDtoForAdmin extends HotelQueryDto {
   @ApiProperty({
     description: 'Filter hotels by owner ID',
     required: false,
-    example: 'eb4ddc1f-e320-4fbb-8bfa-eed8b06d64aa',
   })
   @IsOptional()
   @IsString()
@@ -560,7 +547,6 @@ export class HotelQueryDtoForAdmin extends HotelQueryDto {
   @ApiProperty({
     description: 'Filter hotels by active status ("all" | "true" | "false")',
     required: false,
-    example: 'true',
     enum: ['all', 'true', 'false'],
   })
   @IsOptional()

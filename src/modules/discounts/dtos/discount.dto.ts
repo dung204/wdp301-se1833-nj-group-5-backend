@@ -22,7 +22,7 @@ import { HotelResponseDto } from '@/modules/hotels/dtos/hotel.dto';
 export class DiscountResponseDto extends SchemaResponseDto {
   @ApiProperty({
     description: 'The discount amount ( default: percentage )',
-    example: 10, // 10% discount,
+    example: SwaggerExamples.DISCOUNT_AMOUNT, // 10% discount,
   })
   @Expose()
   amount!: number;
@@ -36,7 +36,7 @@ export class DiscountResponseDto extends SchemaResponseDto {
 
   @ApiProperty({
     description: 'Maximum number of times a user can use this discount',
-    example: 1,
+    example: SwaggerExamples.DISCOUNT_MAX_QUALITY_PER_USER,
   })
   @Expose()
   maxQualityPerUser!: number;
@@ -55,7 +55,7 @@ export class DiscountResponseDto extends SchemaResponseDto {
 
   @ApiProperty({
     description: 'Number of times this discount has been used',
-    example: 0,
+    example: SwaggerExamples.DISCOUNT_USAGE_COUNT,
   })
   @Expose()
   usageCount!: number;
@@ -83,7 +83,7 @@ export class DeletedDiscountResponseDto extends DiscountResponseDto {
 export class CreateDiscountDto {
   @ApiProperty({
     description: 'The discount amount',
-    example: 10,
+    example: SwaggerExamples.DISCOUNT_AMOUNT,
   })
   @IsNotEmpty()
   @Transform(transformToFloatNumber)
@@ -112,7 +112,7 @@ export class CreateDiscountDto {
 
   @ApiProperty({
     description: 'Maximum number of times a user can use this discount',
-    example: 1,
+    example: SwaggerExamples.DISCOUNT_MAX_QUALITY_PER_USER,
   })
   @IsNotEmpty()
   @Transform(transformToFloatNumber)
@@ -134,7 +134,7 @@ export class CreateDiscountDto {
 export class UpdateDiscountDto {
   @ApiProperty({
     description: 'The discount amount',
-    example: 10,
+    example: SwaggerExamples.DISCOUNT_AMOUNT,
     required: false,
   })
   @IsOptional()
@@ -166,7 +166,7 @@ export class UpdateDiscountDto {
 
   @ApiProperty({
     description: 'Maximum number of times a user can use this discount',
-    example: 1,
+    example: SwaggerExamples.DISCOUNT_MAX_QUALITY_PER_USER,
     required: false,
   })
   @IsOptional()
@@ -191,7 +191,6 @@ export class DiscountQueryDto extends QueryDto {
   @ApiProperty({
     description: 'Filter by discount ID',
     required: false,
-    example: '29845802-9abb-474b-96b4-e2c44b6bf089',
   })
   @IsOptional()
   @IsString()
@@ -200,7 +199,6 @@ export class DiscountQueryDto extends QueryDto {
   @ApiProperty({
     description: 'Filter by minimum amount',
     required: false,
-    example: 10,
   })
   @IsOptional()
   @Transform(transformToFloatNumber)
@@ -222,7 +220,6 @@ export class DiscountQueryDto extends QueryDto {
     description: 'Filter by hotel ID',
     required: false,
     isArray: true,
-    example: ['eb4ddc1f-e320-4fbb-8bfa-eed8b06d64aa'],
   })
   @IsOptional()
   @IsArray()

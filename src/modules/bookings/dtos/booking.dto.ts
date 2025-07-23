@@ -13,6 +13,7 @@ import {
   Validate,
 } from 'class-validator';
 
+import { SwaggerExamples } from '@/base/constants/swagger-example.constants';
 import { QueryDto, SchemaResponseDto } from '@/base/dtos';
 import { HotelResponseDto } from '@/modules/hotels/dtos/hotel.dto';
 import { CancelEnum } from '@/modules/hotels/enums';
@@ -51,14 +52,14 @@ export class BookingResponseDto extends SchemaResponseDto {
 
   @ApiProperty({
     description: 'Check-in date',
-    example: '2025-06-25T14:00:00.000Z',
+    example: SwaggerExamples.CHECK_IN_DATE,
   })
   @Expose()
   checkIn!: Date;
 
   @ApiProperty({
     description: 'Check-out date',
-    example: '2025-06-27T14:00:00.000Z',
+    example: SwaggerExamples.CHECK_OUT_DATE,
   })
   @Expose()
   checkOut!: Date;
@@ -73,27 +74,27 @@ export class BookingResponseDto extends SchemaResponseDto {
 
   @ApiProperty({
     description: 'Total price of the booking',
-    example: 450000,
+    example: SwaggerExamples.TOTAL_PRICE,
   })
   @Expose()
   totalPrice!: number;
 
   @ApiProperty({
     description: 'Quantity of rooms booked',
-    example: 2,
+    example: SwaggerExamples.BOOKING_QUANTITY,
   })
   @Expose()
-  @Type(() => Number) // Ensure minOccupancy is a number
+  @Type(() => Number)
   @IsNumber({}, { message: 'quantity must be a number' })
   @Transform(({ value }) => parseFloat(value as string))
   quantity!: number;
 
   @ApiProperty({
     description: 'Minimum occupancy for the booking',
-    example: 1,
+    example: SwaggerExamples.MIN_OCCUPANCY,
   })
   @Expose()
-  @Type(() => Number) // Ensure minOccupancy is a number
+  @Type(() => Number)
   @IsNumber({}, { message: 'minOccupancy must be a number' })
   @Transform(({ value }) => parseFloat(value as string))
   minOccupancy!: number;
@@ -115,7 +116,7 @@ export class BookingResponseDto extends SchemaResponseDto {
 
   @ApiProperty({
     description: 'Cancellation timestamp',
-    example: '2024-01-10T10:00:00.000Z',
+    example: SwaggerExamples.DATE_FROM,
     required: false,
   })
   @Expose()
@@ -123,7 +124,7 @@ export class BookingResponseDto extends SchemaResponseDto {
 
   @ApiProperty({
     description: 'Refund amount',
-    example: 450000,
+    example: SwaggerExamples.TOTAL_PRICE,
     required: false,
   })
   @Expose()
@@ -131,6 +132,7 @@ export class BookingResponseDto extends SchemaResponseDto {
 
   @ApiProperty({
     description: 'Payment Url',
+    example: SwaggerExamples.PAYMENT_URL,
     type: String,
   })
   @Expose()
@@ -147,7 +149,7 @@ export class BookingResponseDto extends SchemaResponseDto {
 export class CreateBookingDto {
   @ApiProperty({
     description: 'Hotel ID',
-    example: '84d67269-7470-4ef1-bfbb-c66e7cf8c955',
+    example: SwaggerExamples.HOTEL_ID,
   })
   @IsNotEmpty()
   @IsString()
@@ -155,7 +157,7 @@ export class CreateBookingDto {
 
   @ApiProperty({
     description: 'Room ID',
-    example: 'cb3703a9-7ef3-4a8d-bf54-5599ce17c107',
+    example: SwaggerExamples.ROOM_ID,
   })
   @IsNotEmpty()
   @IsString()
@@ -163,7 +165,7 @@ export class CreateBookingDto {
 
   @ApiProperty({
     description: 'Check-in date',
-    example: '2025-01-15T14:00:00.000Z',
+    example: SwaggerExamples.CHECK_IN_DATE,
   })
   @IsNotEmpty()
   @Type(() => Date)
@@ -182,7 +184,7 @@ export class CreateBookingDto {
 
   @ApiProperty({
     description: 'Check-out date',
-    example: '2025-01-18T12:00:00.000Z',
+    example: SwaggerExamples.CHECK_OUT_DATE,
   })
   @IsNotEmpty()
   @Type(() => Date)
@@ -222,10 +224,10 @@ export class CreateBookingDto {
 
   @ApiProperty({
     description: 'Quantity of rooms booked',
-    example: 2,
+    example: SwaggerExamples.BOOKING_QUANTITY,
   })
   @Expose()
-  @Type(() => Number) // Ensure minOccupancy is a number
+  @Type(() => Number)
   @IsNotEmpty()
   @IsNumber({}, { message: 'quantity must be a number' })
   @Transform(({ value }) => parseFloat(value as string))
@@ -233,10 +235,10 @@ export class CreateBookingDto {
 
   @ApiProperty({
     description: 'Minimum occupancy for the booking',
-    example: 1,
+    example: SwaggerExamples.MIN_OCCUPANCY,
   })
   @Expose()
-  @Type(() => Number) // Ensure minOccupancy is a number
+  @Type(() => Number)
   @IsNotEmpty()
   @IsNumber({}, { message: 'minOccupancy must be a number' })
   @Transform(({ value }) => parseFloat(value as string))
@@ -246,7 +248,7 @@ export class CreateBookingDto {
 export class UpdateBookingDto {
   @ApiProperty({
     description: 'Check-in date',
-    example: '2024-01-15T14:00:00.000Z',
+    example: SwaggerExamples.CHECK_IN_DATE,
     required: false,
   })
   @IsOptional()
@@ -256,7 +258,7 @@ export class UpdateBookingDto {
 
   @ApiProperty({
     description: 'Check-out date',
-    example: '2024-01-18T12:00:00.000Z',
+    example: SwaggerExamples.CHECK_OUT_DATE,
     required: false,
   })
   @IsOptional()
@@ -276,7 +278,7 @@ export class UpdateBookingDto {
 
   @ApiProperty({
     description: 'Total price of the booking',
-    example: 450000,
+    example: SwaggerExamples.TOTAL_PRICE,
     required: false,
   })
   @IsOptional()
@@ -384,7 +386,6 @@ export class BookingQueryDto extends QueryDto {
 
   @ApiProperty({
     description: 'Quantity of rooms booked',
-    example: 2,
     required: false,
   })
   @IsOptional()
@@ -394,7 +395,6 @@ export class BookingQueryDto extends QueryDto {
 
   @ApiProperty({
     description: 'Minimum occupancy for the booking',
-    example: 1,
     required: false,
   })
   @IsOptional()
@@ -405,7 +405,6 @@ export class BookingQueryDto extends QueryDto {
   @ApiProperty({
     description: 'Filter booking in the future: status ("all", true" | "false")',
     required: false,
-    example: 'all',
     enum: ['all', 'true', 'false'],
   })
   @IsOptional()
@@ -426,8 +425,7 @@ export class BookingQueryDtoForAdmin extends BookingQueryDto {
 export class BookingByPaymentLinkDto extends Booking {
   @ApiProperty({
     description: 'Payment link to find the booking',
-    example: 'https://example.com/payment/booking123',
-    required: false, // This field is optional
+    required: false,
   })
   @IsOptional()
   @IsString()

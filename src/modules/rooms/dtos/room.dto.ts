@@ -11,6 +11,7 @@ import {
   Min,
 } from 'class-validator';
 
+import { SwaggerExamples } from '@/base/constants';
 import { ImageDto, QueryDto, SchemaResponseDto } from '@/base/dtos';
 import { transformToDate, transformToFloatNumber, transformToStringArray } from '@/base/utils';
 import { HotelResponseDto } from '@/modules/hotels/dtos/hotel.dto';
@@ -18,20 +19,20 @@ import { HotelResponseDto } from '@/modules/hotels/dtos/hotel.dto';
 export class RoomAvailabilityDto {
   @ApiProperty({
     description: 'Total rooms of this type (same as maxQuantity)',
-    example: 10,
+    example: SwaggerExamples.ROOM_TOTAL_AVAILABLE,
   })
   total!: number;
 
   @ApiProperty({
     description: 'Number of booked rooms',
-    example: 7,
+    example: SwaggerExamples.ROOM_BOOKED,
     default: 0,
   })
   booked!: number;
 
   @ApiProperty({
     description: 'Number of available rooms (total - booked)',
-    example: 3,
+    example: SwaggerExamples.ROOM_AVAILABLE,
   })
   available!: number;
 }
@@ -40,7 +41,7 @@ export class RoomAvailabilityDto {
 export class RoomResponseDto extends SchemaResponseDto {
   @ApiProperty({
     description: 'The name of the room',
-    example: 'Deluxe Ocean View Suite',
+    example: SwaggerExamples.ROOM_NAME,
   })
   @Expose()
   name!: string;
@@ -55,28 +56,28 @@ export class RoomResponseDto extends SchemaResponseDto {
 
   @ApiProperty({
     description: 'The rate (price) of the room per night',
-    example: 150,
+    example: SwaggerExamples.ROOM_RATE,
   })
   @Expose()
   rate!: number;
 
   @ApiProperty({
     description: 'The size of the room in square meters',
-    example: 35,
+    example: SwaggerExamples.ROOM_SIZE,
   })
   @Expose()
   size!: number;
 
   @ApiProperty({
     description: 'Maximum number of people that can stay in the room',
-    example: 2,
+    example: SwaggerExamples.ROOM_OCCUPANCY,
   })
   @Expose()
   occupancy!: number;
 
   @ApiProperty({
     description: 'Services offered in the room',
-    example: ['free wifi', 'minibar', 'air conditioning', 'TV'],
+    example: SwaggerExamples.ROOM_SERVICES,
     type: [String],
   })
   @Expose()
@@ -92,7 +93,7 @@ export class RoomResponseDto extends SchemaResponseDto {
 
   @ApiProperty({
     description: 'Maximum quantity of this room type available',
-    example: 5,
+    example: SwaggerExamples.ROOM_MAX_QUANTITY,
   })
   @Expose()
   maxQuantity!: number;
@@ -138,7 +139,7 @@ export class RoomResponseDto extends SchemaResponseDto {
 export class DeletedRoomResponseDto extends RoomResponseDto {
   @ApiProperty({
     description: 'The timestamp when the room was deleted',
-    example: '2023-01-01T00:00:00.000Z',
+    example: SwaggerExamples.DATE_FROM,
   })
   @Expose()
   deleteTimestamp!: Date;
@@ -147,7 +148,7 @@ export class DeletedRoomResponseDto extends RoomResponseDto {
 export class CreateRoomDto {
   @ApiProperty({
     description: 'The name of the room',
-    example: 'Deluxe Ocean View Suite',
+    example: SwaggerExamples.ROOM_NAME,
   })
   @IsNotEmpty()
   @IsString()
@@ -155,7 +156,7 @@ export class CreateRoomDto {
 
   @ApiProperty({
     description: 'The ID of the hotel this room belongs to',
-    example: 'eb4ddc1f-e320-4fbb-8bfa-eed8b06d64aa',
+    example: SwaggerExamples.HOTEL_ID,
   })
   @IsNotEmpty()
   @IsString()
@@ -163,7 +164,7 @@ export class CreateRoomDto {
 
   @ApiProperty({
     description: 'The rate (price) of the room per night',
-    example: 150,
+    example: SwaggerExamples.ROOM_RATE,
   })
   @IsNotEmpty()
   @Transform(transformToFloatNumber)
@@ -173,7 +174,7 @@ export class CreateRoomDto {
 
   @ApiProperty({
     description: 'The size of the room in square meters',
-    example: 35,
+    example: SwaggerExamples.ROOM_SIZE,
   })
   @IsNotEmpty()
   @Transform(transformToFloatNumber)
@@ -183,7 +184,7 @@ export class CreateRoomDto {
 
   @ApiProperty({
     description: 'Maximum number of people that can stay in the room',
-    example: 2,
+    example: SwaggerExamples.ROOM_OCCUPANCY,
   })
   @IsNotEmpty()
   @Transform(transformToFloatNumber)
@@ -193,7 +194,7 @@ export class CreateRoomDto {
 
   @ApiProperty({
     description: 'Services offered in the room',
-    example: ['free wifi', 'minibar', 'air conditioning', 'TV'],
+    example: SwaggerExamples.ROOM_SERVICES,
     type: [String],
     required: false,
   })
@@ -214,7 +215,7 @@ export class CreateRoomDto {
 
   @ApiProperty({
     description: 'Maximum quantity of this room type available',
-    example: 5,
+    example: SwaggerExamples.ROOM_MAX_QUANTITY,
   })
   @IsNotEmpty()
   @Transform(transformToFloatNumber)
@@ -226,7 +227,7 @@ export class CreateRoomDto {
 export class UpdateRoomDto {
   @ApiProperty({
     description: 'The name of the room',
-    example: 'Deluxe Ocean View Suite',
+    example: SwaggerExamples.ROOM_NAME,
     required: false,
   })
   @IsOptional()
@@ -235,7 +236,7 @@ export class UpdateRoomDto {
 
   @ApiProperty({
     description: 'The rate (price) of the room per night',
-    example: 150,
+    example: SwaggerExamples.ROOM_RATE,
     required: false,
   })
   @IsOptional()
@@ -246,7 +247,7 @@ export class UpdateRoomDto {
 
   @ApiProperty({
     description: 'The size of the room in square meters',
-    example: 35,
+    example: SwaggerExamples.ROOM_SIZE,
     required: false,
   })
   @IsOptional()
@@ -257,7 +258,7 @@ export class UpdateRoomDto {
 
   @ApiProperty({
     description: 'Maximum number of people that can stay in the room',
-    example: 2,
+    example: SwaggerExamples.ROOM_OCCUPANCY,
     required: false,
   })
   @IsOptional()
@@ -268,7 +269,7 @@ export class UpdateRoomDto {
 
   @ApiProperty({
     description: 'Services offered in the room',
-    example: ['free wifi', 'minibar', 'air conditioning', 'TV'],
+    example: SwaggerExamples.ROOM_SERVICES,
     type: [String],
     required: false,
   })
@@ -300,7 +301,7 @@ export class UpdateRoomDto {
 
   @ApiProperty({
     description: 'Maximum quantity of this room type available',
-    example: 5,
+    example: SwaggerExamples.ROOM_MAX_QUANTITY,
     required: false,
   })
   @IsOptional()
@@ -313,7 +314,6 @@ export class UpdateRoomDto {
 export class RoomQueryDto extends QueryDto {
   @ApiProperty({
     description: 'Filter rooms by room ID',
-    example: '0516a80a-2c32-4606-b606-7e5af878079f',
     required: false,
   })
   @IsOptional()
@@ -322,7 +322,6 @@ export class RoomQueryDto extends QueryDto {
 
   @ApiProperty({
     description: 'Filter rooms by hotel ID',
-    example: '60d21b4667d0d8992e610c85',
     required: false,
   })
   @IsOptional()
@@ -331,7 +330,6 @@ export class RoomQueryDto extends QueryDto {
 
   @ApiProperty({
     description: 'Filter rooms by check-in date (start date)',
-    example: '2025-06-23T14:00:00.000Z',
     required: false,
   })
   @IsOptional()
@@ -342,7 +340,6 @@ export class RoomQueryDto extends QueryDto {
 
   @ApiProperty({
     description: 'Filter rooms by check-out date (end date)',
-    example: '2025-06-24T12:00:00.000Z',
     required: false,
   })
   @IsOptional()
@@ -402,7 +399,6 @@ export class RoomQueryAdminDto extends RoomQueryDto {
   @ApiProperty({
     description: 'Filter rooms by active status',
     required: false,
-    example: 'true',
     enum: ['all', 'true', 'false'],
   })
   @IsOptional()
