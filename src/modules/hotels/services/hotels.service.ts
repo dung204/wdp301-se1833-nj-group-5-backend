@@ -85,11 +85,11 @@ export class HotelsService extends BaseService<Hotel> {
                 checkOut: { $gt: startDate },
               },
             },
-            // Nhóm theo room để đếm số booking per room
+            // Nhóm theo room và tính tổng số phòng đã đặt (sum quantity)
             {
               $group: {
                 _id: '$room',
-                bookingCount: { $sum: 1 },
+                totalBookedQuantity: { $sum: '$quantity' }, // Thay đổi: sum quantity thay vì count booking
               },
             },
           ],
@@ -98,10 +98,13 @@ export class HotelsService extends BaseService<Hotel> {
       },
       {
         $addFields: {
-          // Tính tổng số phòng đã được đặt
-          totalBookedRooms: { $sum: '$bookedRoomsInfo.bookingCount' },
+          // Tính tổng số phòng đã được đặt (sum tất cả quantity)
+          totalBookedRooms: { $sum: '$bookedRoomsInfo.totalBookedQuantity' },
           availableRooms: {
-            $subtract: ['$totalRooms', { $ifNull: [{ $sum: '$bookedRoomsInfo.bookingCount' }, 0] }],
+            $subtract: [
+              '$totalRooms',
+              { $ifNull: [{ $sum: '$bookedRoomsInfo.totalBookedQuantity' }, 0] },
+            ],
           },
         },
       },
@@ -283,6 +286,8 @@ export class HotelsService extends BaseService<Hotel> {
       findOptions.filter.$or = [
         { name: { $regex: hotelQueryDto.searchTerm, $options: 'i' } },
         { address: { $regex: hotelQueryDto.searchTerm, $options: 'i' } },
+        { province: { $regex: hotelQueryDto.searchTerm, $options: 'i' } },
+        { commune: { $regex: hotelQueryDto.searchTerm, $options: 'i' } },
       ];
     }
 

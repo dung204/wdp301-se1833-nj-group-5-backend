@@ -151,32 +151,6 @@ export class BookingsService extends BaseService<Booking> {
     });
   }
 
-  // async cancelBooking(
-  //   user: User,
-  //   bookingId: string,
-  // ): Promise<Booking> {
-  //   const booking = await this.getBookingById(bookingId);
-
-  //   // Check permissions
-  //   if (booking.user.toString() !== user._id.toString() && user.role !== Role.ADMIN) {
-  //     throw new ForbiddenException('You do not have permission to cancel this booking');
-  //   }
-
-  //   // check date and base on hotel cancel policy to calculate refund amount
-
-  //   // check refund amount
-
-  //   return await this.update(
-  //     {
-  //       status: BookingStatus.CANCELLED,
-  //       cancelledAt: new Date(),
-  //       refundAmount,
-  //     },
-  //     { _id: bookingId },
-  //     user,
-  //   );
-  // }
-
   /**
    *  @description
    * This function checks if a room is busy during the specified check-in and check-out dates.
@@ -226,7 +200,7 @@ export class BookingsService extends BaseService<Booking> {
       {
         $group: {
           _id: '$room', // Nhóm tất cả các booking lại theo trường 'room' (room ID)
-          bookedCount: { $sum: 1 }, // Với mỗi booking trong nhóm, đếm +1
+          bookedCount: { $sum: '$quantity' }, // Với mỗi booking trong nhóm, đếm +1
         },
       },
       // Giai đoạn 3 (Tùy chọn): Đổi tên trường _id cho dễ hiểu
@@ -301,6 +275,9 @@ export class BookingsService extends BaseService<Booking> {
       // Apply filters based on query parameters
       findOptions.filter = {
         ...findOptions.filter,
+        // filter booking in the future
+        ...(bookingQueryDto.inFuture === 'true' && { checkIn: { $gte: new Date() } }),
+        //
         ...(bookingQueryDto.id && { _id: bookingQueryDto.id }),
         ...(bookingQueryDto.userId && { user: bookingQueryDto.userId }),
         ...(bookingQueryDto.hotelId && { hotel: bookingQueryDto.hotelId }),
