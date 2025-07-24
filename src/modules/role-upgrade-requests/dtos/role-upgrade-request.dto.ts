@@ -39,7 +39,7 @@ export class CreateRoleUpgradeRequestDto {
   })
   @IsString()
   @MinLength(10, {
-    message: 'Contact information must be at least 10 characters long',
+    message: 'Thông tin liên lạc phải dài ít nhất 10 ký tự. ',
   })
   contactInfo!: string;
 
@@ -50,7 +50,7 @@ export class CreateRoleUpgradeRequestDto {
   })
   @IsString()
   @MinLength(20, {
-    message: 'Reason must be at least 20 characters long',
+    message: 'Lý do phải dài ít nhất 20 ký tự.',
   })
   reason!: string;
 }
