@@ -126,7 +126,11 @@ export class BookingsService extends BaseService<Booking> {
     }
 
     // count total price
-    const totalPrice = room?.rate;
+    const totalPrice =
+      (room?.rate *
+        createBookingDto.quantity *
+        Math.ceil(createBookingDto.checkOut.getTime() - createBookingDto.checkIn.getTime())) /
+      (1000 * 60 * 60 * 24);
     let discountAmount = 0;
     let totalPriceAfterDiscounts = totalPrice;
     // if discounts are applied, calculate the total price after applying discounts
@@ -276,7 +280,11 @@ export class BookingsService extends BaseService<Booking> {
       findOptions.filter = {
         ...findOptions.filter,
         // filter booking in the future
-        ...(bookingQueryDto.inFuture === 'true' && { checkIn: { $gte: new Date() } }),
+        ...(bookingQueryDto.inFuture === 'true' && {
+          checkIn: {
+            $gte: new Date(new Date().setHours(0, 0, 0, 0)), // đầu ngày hôm nay
+          },
+        }),
         //
         ...(bookingQueryDto.id && { _id: bookingQueryDto.id }),
         ...(bookingQueryDto.userId && { user: bookingQueryDto.userId }),
