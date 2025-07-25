@@ -10,6 +10,7 @@ import { User } from '@/modules/users/schemas/user.schema';
 
 import {
   CreateRoleUpgradeRequestDto,
+  RoleUpgradeRequestQueryDto,
   RoleUpgradeRequestResponseDto,
   TestRoleUpgradeEmailDto,
   UpdateRoleUpgradeRequestDto,
@@ -46,7 +47,7 @@ export class RoleUpgradeRequestsController {
   })
   @AllowRoles([Role.ADMIN])
   @Get()
-  async getAllRequests(@Query() queryDto: any) {
+  async getAllRequests(@Query() queryDto: RoleUpgradeRequestQueryDto) {
     const result = await this.roleUpgradeRequestsService.find({
       queryDto,
     });

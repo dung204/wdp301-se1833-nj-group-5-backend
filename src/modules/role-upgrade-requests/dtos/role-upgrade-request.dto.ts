@@ -3,7 +3,7 @@ import { Exclude, Expose } from 'class-transformer';
 import { IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
 
 import { SwaggerExamples } from '@/base/constants';
-import { SchemaResponseDto } from '@/base/dtos';
+import { QueryDto, SchemaResponseDto } from '@/base/dtos';
 import { Role } from '@/modules/auth/enums/role.enum';
 import { UserProfileDto } from '@/modules/users/dtos/user.dtos';
 
@@ -39,7 +39,7 @@ export class CreateRoleUpgradeRequestDto {
   })
   @IsString()
   @MinLength(10, {
-    message: 'Contact information must be at least 10 characters long',
+    message: 'Thông tin liên lạc phải dài ít nhất 10 ký tự. ',
   })
   contactInfo!: string;
 
@@ -50,7 +50,7 @@ export class CreateRoleUpgradeRequestDto {
   })
   @IsString()
   @MinLength(20, {
-    message: 'Reason must be at least 20 characters long',
+    message: 'Lý do phải dài ít nhất 20 ký tự.',
   })
   reason!: string;
 }
@@ -176,6 +176,26 @@ export class RoleUpgradeRequestResponseDto extends SchemaResponseDto {
     required: false,
   })
   rejectionReason?: string;
+}
+
+export class RoleUpgradeRequestQueryDto extends QueryDto {
+  @ApiProperty({
+    description: 'Filter by request status',
+    enum: RoleUpgradeRequestStatus,
+    enumName: 'RoleUpgradeRequestStatus',
+    required: false,
+  })
+  @IsOptional()
+  @IsEnum(RoleUpgradeRequestStatus)
+  status?: RoleUpgradeRequestStatus;
+
+  @ApiProperty({
+    description: 'Filter by user ID',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  userId?: string;
 }
 
 export class TestRoleUpgradeEmailDto {
