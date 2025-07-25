@@ -1,10 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Exclude, Expose } from 'class-transformer';
-import { IsEnum, IsOptional, IsString } from 'class-validator';
+import { Exclude, Expose, Transform, Type } from 'class-transformer';
+import { IsArray, IsEnum, IsOptional, IsString } from 'class-validator';
 
 import { SwaggerExamples } from '@/base/constants';
 import { SchemaResponseDto } from '@/base/dtos';
+import { transformToStringArray } from '@/base/utils';
 import { Role } from '@/modules/auth/enums/role.enum';
+import { HotelResponseDto } from '@/modules/hotels/dtos/hotel.dto';
 
 import { Gender } from '../enums/gender.enum';
 
@@ -39,6 +41,15 @@ export class UserProfileDto extends SchemaResponseDto {
   })
   @Expose()
   gender!: Gender | null;
+
+  @ApiProperty({
+    description: 'The favorite hotels of the user',
+    type: [HotelResponseDto],
+    required: false,
+  })
+  @Expose()
+  @Type(() => HotelResponseDto)
+  favoriteHotels?: HotelResponseDto[];
 }
 
 @Exclude()
@@ -71,6 +82,17 @@ export class UpdateUserDto {
   @IsOptional()
   @IsEnum(Gender)
   gender?: Gender;
+
+  @ApiProperty({
+    description: 'The list of favorite hotels',
+    example: SwaggerExamples.ACCEPT_HOTEL,
+    required: false,
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @Transform(transformToStringArray)
+  favoriteHotels?: string[];
 }
 
 export class UpgradeRoleDto {
