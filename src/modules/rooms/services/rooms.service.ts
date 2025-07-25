@@ -77,6 +77,65 @@ export class RoomsService extends BaseService<Room> {
     return response;
   }
 
+  async getRoomsByFilterAndSearchByAdmin(roomQueryDto: RoomQueryAdminDto, currentUser: User) {
+    const findOptions: FindManyOptions<Room> = {
+      queryDto: roomQueryDto,
+      filter: { deleteTimestamp: null }, // Only active rooms
+    };
+
+    // Get rooms with pagination, sorting and filtering options
+    const response = await this.find(findOptions, currentUser);
+
+    const checkIn = roomQueryDto.checkIn || new Date(new Date().setHours(0, 0, 0, 0));
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const checkOut = roomQueryDto.checkOut || new Date(tomorrow.setHours(23, 59, 59, 999));
+
+    // Group rooms by hotel to minimize database calls
+    const hotelIds = [...new Set(response.data.map((room) => room.hotel._id.toString()))];
+
+    // Get booked counts for all hotels at once
+    const allBookedRooms = await Promise.all(
+      hotelIds.map(async (hotelId) => {
+        const bookedRooms = await this.bookingService.bookedCountByHotel(
+          hotelId,
+          checkIn,
+          checkOut,
+        );
+        return { hotelId, bookedRooms };
+      }),
+    );
+
+    // Create a comprehensive map of booked rooms across all hotels
+    const bookedMap = new Map<string, number>();
+    allBookedRooms.forEach(({ bookedRooms }) => {
+      bookedRooms.forEach((item) => {
+        bookedMap.set(item.roomId.toString(), item.bookedCount);
+      });
+    });
+
+    // Add availability information to each room
+    const resultsWithAvailability = response.data.map((room) => {
+      const booked = bookedMap.get(room._id.toString()) || 0;
+      const available = Math.max(0, room.maxQuantity - booked); // Ensure non-negative
+
+      return {
+        ...room,
+        availability: {
+          total: room.maxQuantity,
+          booked: booked,
+          available: available,
+        },
+        isSoldOut: available <= 0,
+      };
+    });
+
+    return {
+      ...response,
+      data: resultsWithAvailability,
+    };
+  }
+
   async getRoomById(id: string): Promise<Room> {
     const room = await this.findOne({ _id: id, isActive: true });
     if (!room) {
