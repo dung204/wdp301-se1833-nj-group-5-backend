@@ -74,9 +74,10 @@ export const SwaggerExamples = {
   MONTHLY_BOOKINGS: 15,
 
   // Discount related examples
+  DISCOUNT_TITLE: '10% discount when traveling',
   DISCOUNT_ID: '29845802-9abb-474b-96b4-e2c44b6bf089',
   DISCOUNT_AMOUNT: 10,
-  DISCOUNT_USAGE_COUNT: 0,
+  DISCOUNT_USAGE_COUNT: 100,
   DISCOUNT_MAX_QUALITY_PER_USER: 1,
   DISCOUNT_MIN_AMOUNT: 5,
 };

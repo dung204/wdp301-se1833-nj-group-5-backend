@@ -8,6 +8,12 @@ import { Hotel } from '@/modules/hotels/schemas/hotel.schema';
 @Schema()
 export class Discount extends BaseSchema {
   @Prop({
+    type: String,
+    required: true,
+  })
+  title!: string;
+
+  @Prop({
     type: Number,
     min: 0,
     required: true,
@@ -31,11 +37,11 @@ export class Discount extends BaseSchema {
     type: Number,
     required: true,
   })
-  maxQualityPerUser!: number;
+  maxQuantityPerUser!: number;
 
   @Prop({
     type: Number,
-    default: 0,
+    required: true,
   })
   usageCount!: number; // số lần discount được sử dụng
 

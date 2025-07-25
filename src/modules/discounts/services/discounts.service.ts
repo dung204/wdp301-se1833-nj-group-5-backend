@@ -65,7 +65,6 @@ export class DiscountsService extends BaseService<Discount> {
 
     return this.createOne({
       ...createDiscountDto,
-      usageCount: 0, // Initialize usage count
       applicableHotels: hotels,
     });
   }
@@ -127,40 +126,6 @@ export class DiscountsService extends BaseService<Discount> {
       { _id: discountId },
     );
   }
-
-  // async findDiscounts(options: {
-  //   queryDto: QueryDto;
-  //   discountQueryDto?: DiscountQueryDto;
-  //   filter?: Record<string, unknown>;
-  // }) {
-  //   const { queryDto, discountQueryDto = {}, filter = {} } = options;
-  //   const filters: Record<string, any> = { ...filter };
-
-  //   // Process filters from DiscountQueryDto
-  //   if (discountQueryDto.minAmount) {
-  //     filters.amount = { $gte: discountQueryDto.minAmount };
-  //   }
-
-  //   if (discountQueryDto.id) {
-  //     filters._id = discountQueryDto.id;
-  //   }
-
-  //   if (discountQueryDto.state) {
-  //     filters.state = discountQueryDto.state;
-  //   }
-
-  //   if (discountQueryDto.hotelId) {
-  //     filters.applicableHotels = discountQueryDto.hotelId;
-  //   }
-
-  //   // // Add filter for non-expired discounts
-  //   // filters.expiredTimestamp = { $gt: new Date() };
-
-  //   return this.find({
-  //     queryDto,
-  //     filter: filters,
-  //   });
-  // }
 
   async deleteDiscount(user: User, discountId: string): Promise<void> {
     // Only admin can delete discounts

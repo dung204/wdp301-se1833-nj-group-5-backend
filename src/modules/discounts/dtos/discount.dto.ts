@@ -21,8 +21,15 @@ import { HotelResponseDto } from '@/modules/hotels/dtos/hotel.dto';
 @Exclude()
 export class DiscountResponseDto extends SchemaResponseDto {
   @ApiProperty({
-    description: 'The discount amount ( default: percentage )',
-    example: SwaggerExamples.DISCOUNT_AMOUNT, // 10% discount,
+    description: 'The discount title of discount',
+    example: SwaggerExamples.DISCOUNT_TITLE,
+  })
+  @Expose()
+  title!: string;
+
+  @ApiProperty({
+    description: 'The discount amount in percentage',
+    example: SwaggerExamples.DISCOUNT_AMOUNT,
   })
   @Expose()
   amount!: number;
@@ -39,7 +46,7 @@ export class DiscountResponseDto extends SchemaResponseDto {
     example: SwaggerExamples.DISCOUNT_MAX_QUALITY_PER_USER,
   })
   @Expose()
-  maxQualityPerUser!: number;
+  maxQuantityPerUser!: number;
 
   @ApiProperty({
     description: 'List of applicable hotels',
@@ -82,6 +89,13 @@ export class DeletedDiscountResponseDto extends DiscountResponseDto {
 
 export class CreateDiscountDto {
   @ApiProperty({
+    description: 'The title of discount',
+    example: SwaggerExamples.DISCOUNT_TITLE,
+  })
+  @IsNotEmpty()
+  title!: string;
+
+  @ApiProperty({
     description: 'The discount amount',
     example: SwaggerExamples.DISCOUNT_AMOUNT,
   })
@@ -117,8 +131,17 @@ export class CreateDiscountDto {
   @IsNotEmpty()
   @Transform(transformToFloatNumber)
   @IsNumber({}, { message: 'Max quality per user must be a number' })
-  @Min(1, { message: 'Max quality per user must be at least 1' })
-  maxQualityPerUser!: number;
+  @Min(1, { message: 'Max quantity per user must be at least 1' })
+  maxQuantityPerUser!: number;
+
+  @ApiProperty({
+    description: 'Number of times this discount has been used',
+    example: SwaggerExamples.DISCOUNT_USAGE_COUNT,
+  })
+  @IsNotEmpty()
+  @Transform(({ value }) => parseInt(value as string))
+  @Min(1, { message: 'Usage count must be at least 1' })
+  usageCount!: number;
 
   @ApiProperty({
     description: 'Current state of the discount',
@@ -173,7 +196,7 @@ export class UpdateDiscountDto {
   @Transform(transformToFloatNumber)
   @IsNumber({}, { message: 'Max quality per user must be a number' })
   @Min(1, { message: 'Max quality per user must be at least 1' })
-  maxQualityPerUser?: number;
+  maxQuantityPerUser?: number;
 
   @ApiProperty({
     description: 'Current state of the discount',
