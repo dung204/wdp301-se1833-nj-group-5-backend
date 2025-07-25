@@ -3,7 +3,7 @@ import { Exclude, Expose } from 'class-transformer';
 import { IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
 
 import { SwaggerExamples } from '@/base/constants';
-import { SchemaResponseDto } from '@/base/dtos';
+import { QueryDto, SchemaResponseDto } from '@/base/dtos';
 import { Role } from '@/modules/auth/enums/role.enum';
 import { UserProfileDto } from '@/modules/users/dtos/user.dtos';
 
@@ -176,6 +176,26 @@ export class RoleUpgradeRequestResponseDto extends SchemaResponseDto {
     required: false,
   })
   rejectionReason?: string;
+}
+
+export class RoleUpgradeRequestQueryDto extends QueryDto {
+  @ApiProperty({
+    description: 'Filter by request status',
+    enum: RoleUpgradeRequestStatus,
+    enumName: 'RoleUpgradeRequestStatus',
+    required: false,
+  })
+  @IsOptional()
+  @IsEnum(RoleUpgradeRequestStatus)
+  status?: RoleUpgradeRequestStatus;
+
+  @ApiProperty({
+    description: 'Filter by user ID',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  userId?: string;
 }
 
 export class TestRoleUpgradeEmailDto {

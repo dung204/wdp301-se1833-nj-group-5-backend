@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, Logger, NotFoundException } from '@nes
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 
-import { BaseService } from '@/base/services';
+import { BaseService, FindManyOptions } from '@/base/services';
 import { Role } from '@/modules/auth/enums/role.enum';
 import { MailService } from '@/modules/mail/services/mail.service';
 import { User } from '@/modules/users/schemas/user.schema';
@@ -10,6 +10,7 @@ import { UsersService } from '@/modules/users/services/users.service';
 
 import {
   CreateRoleUpgradeRequestDto,
+  RoleUpgradeRequestQueryDto,
   TestRoleUpgradeEmailDto,
   UpdateRoleUpgradeRequestDto,
 } from '../dtos/role-upgrade-request.dto';
@@ -191,5 +192,25 @@ export class RoleUpgradeRequestsService extends BaseService<RoleUpgradeRequest> 
     // Use the mailerService directly through dependency injection
     const mailerService = (this.mailService as any).mailerService;
     return mailerService.sendMail(options);
+  }
+
+  protected async preFind(
+    options: FindManyOptions<RoleUpgradeRequest>,
+    currentUser?: User,
+  ): Promise<FindManyOptions<RoleUpgradeRequest>> {
+    const findOptions = await super.preFind(options, currentUser);
+
+    if (findOptions.queryDto) {
+      const queryDto = findOptions.queryDto as RoleUpgradeRequestQueryDto;
+
+      // Apply status filter if provided
+      findOptions.filter = {
+        ...findOptions.filter,
+        ...(queryDto.status && { status: queryDto.status }),
+        ...(queryDto.userId && { user: queryDto.userId }),
+      };
+    }
+
+    return findOptions;
   }
 }
