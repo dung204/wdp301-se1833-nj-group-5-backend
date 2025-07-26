@@ -125,16 +125,16 @@ export class MailService {
       // Send email using MailerService
       await this.mailerService.sendMail({
         to: booking.user.email, // Lấy email từ user được populate
-        subject: `[Xác nhận] Đặt phòng thành công - Mã đơn hàng ${booking.orderCode}`,
+        subject: `[Xác nhận] Đặt phòng thành công - Mã đơn hàng ${booking._id}`,
         html: html,
       });
 
       this.logger.log(
-        `Sent booking confirmation email to ${booking.user.email} for order ${booking.orderCode}`,
+        `Sent booking confirmation email to ${booking.user.email} for order ${booking._id}`,
       );
     } catch (error) {
       this.logger.error(
-        `Failed to send booking confirmation email for order ${booking.orderCode} ${error instanceof Error ? error.message : String(error)}`,
+        `Failed to send booking confirmation email for order ${booking._id} ${error instanceof Error ? error.message : String(error)}`,
         error instanceof Error ? error.message : String(error),
       );
     }
