@@ -108,21 +108,10 @@ export class BookingsService extends BaseService<Booking> {
       });
     }
 
-    // discounts will be associated with the Bill ( not be associated for each Room )
-    let discounts = [] as Discount[];
-    // get all discounts for the booking
-    if (createBookingDto.discounts && createBookingDto.discounts.length > 0) {
-      discounts = await this.discountService.getDiscountsByIds(createBookingDto.discounts);
-
-      // decrease the discount amount if the discount is not applicable for the hotel
-      for (const discountId of discounts) {
-        await this.discountService.decreaseDiscountUsage(discountId._id);
-      }
-
-      // KHÔNG BẮT ĐƯỢC THROW NEW :))))))
-      // createBookingDto.discounts.forEach(async (discountId) => {
-      //   await this.discountService.decreaseDiscountUsage(discountId);
-      // });
+    let discount: Discount | undefined;
+    if (createBookingDto.discount) {
+      discount = await this.discountService.getDiscountById(createBookingDto.discount);
+      await this.discountService.decreaseDiscountUsage(createBookingDto.discount);
     }
 
     // count total price
@@ -131,13 +120,9 @@ export class BookingsService extends BaseService<Booking> {
         createBookingDto.quantity *
         Math.ceil(createBookingDto.checkOut.getTime() - createBookingDto.checkIn.getTime())) /
       (1000 * 60 * 60 * 24);
-    let discountAmount = 0;
-    let totalPriceAfterDiscounts = totalPrice;
-    // if discounts are applied, calculate the total price after applying discounts
-    if (discounts.length > 0) {
-      discountAmount = discounts.reduce((acc, discount) => acc + (discount.amount || 0), 0);
-      totalPriceAfterDiscounts = totalPrice - (discountAmount * totalPrice) / 100;
-    }
+    const totalPriceAfterDiscounts = discount
+      ? (1 - discount.amount / 100) * totalPrice
+      : totalPrice;
 
     // get orderCode = timeStamp
     const orderCode = Date.now();
@@ -148,7 +133,7 @@ export class BookingsService extends BaseService<Booking> {
       hotel: hotel,
       room: room,
       totalPrice: totalPriceAfterDiscounts,
-      discounts: discounts,
+      discount,
       orderCode: orderCode, // unique order code for the booking
       status: BookingStatus.CONFIRMED, // default status
       cancelPolicy: hotel.cancelPolicy,

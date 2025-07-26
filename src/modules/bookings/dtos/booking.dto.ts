@@ -109,10 +109,10 @@ export class BookingResponseDto extends SchemaResponseDto {
 
   @ApiProperty({
     description: 'Applied discounts',
-    type: [String],
+    type: String,
   })
   @Expose()
-  discounts!: string[];
+  discount!: string;
 
   @ApiProperty({
     description: 'Cancellation timestamp',
@@ -202,15 +202,13 @@ export class CreateBookingDto {
   checkOut!: Date;
 
   @ApiProperty({
-    description: 'Discount IDs to apply',
-    type: [String],
+    description: 'Discount ID to apply',
+    type: String,
     required: false,
   })
   @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  @Transform(({ value }) => (typeof value === 'string' ? value.split(',') : value))
-  discounts?: string[];
+  @IsString()
+  discount?: string;
 
   @ApiProperty({
     description: 'Payment method',

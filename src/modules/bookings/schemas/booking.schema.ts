@@ -73,7 +73,7 @@ export class Booking extends BaseSchema {
     ref: 'Discount',
     required: true,
   })
-  discounts: Discount[] = []; // list of discounts applied to the booking
+  discount!: Discount; // list of discounts applied to the booking
 
   @Prop({
     type: String,
