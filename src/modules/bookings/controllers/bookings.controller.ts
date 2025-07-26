@@ -71,7 +71,13 @@ export class BookingsController {
   @AllowRoles([Role.ADMIN, Role.HOTEL_OWNER, Role.CUSTOMER])
   @Get('/:id')
   async getById(@Param('id') id: string, @CurrentUser() user: User) {
-    return this.bookingsService.findBookingById(id, user);
+    const booking = await this.bookingsService.findBookingById(id, user);
+
+    if (!booking) {
+      return [];
+    }
+
+    return [this.transformToDto(booking)];
   }
 
   @ApiOperation({

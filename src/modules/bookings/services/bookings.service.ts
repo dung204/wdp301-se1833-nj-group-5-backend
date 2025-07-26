@@ -47,10 +47,10 @@ export class BookingsService extends BaseService<Booking> {
     const booking = await this.findOne({ _id: id });
 
     if (!booking || booking.user._id !== user._id) {
-      return [];
+      return null;
     }
 
-    return [booking];
+    return booking;
   }
 
   /**
