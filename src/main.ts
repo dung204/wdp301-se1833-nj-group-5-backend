@@ -1,11 +1,15 @@
-import { Logger, ValidationPipe, VersioningType } from '@nestjs/common';
+import { HttpService } from '@nestjs/axios';
+import { HttpException, Logger, ValidationPipe, VersioningType } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { AxiosError } from 'axios';
 import * as fs from 'fs';
 
 import { configSwagger, configs } from '@/base/configs';
 import { StripUndefinedPipe } from '@/base/pipes';
 
 import { AppModule } from './app.module';
+
+declare const module: any;
 
 async function bootstrap() {
   const logger = new Logger(bootstrap.name);
@@ -17,6 +21,13 @@ async function bootstrap() {
       },
     }),
   });
+  const httpService = new HttpService();
+
+  // Webpack HMR
+  if (module.hot) {
+    module.hot.accept();
+    module.hot.dispose(() => app.close());
+  }
 
   // URL prefix: /api/v1
   app.setGlobalPrefix('/api');
@@ -36,14 +47,20 @@ async function bootstrap() {
     new StripUndefinedPipe(),
   );
 
+  httpService.axiosRef.interceptors.response.use(
+    (response) => response,
+    (error: AxiosError) => {
+      const response = error.response;
+      throw new HttpException(response!.data as Record<string, unknown>, response!.status);
+    },
+  );
+
   await app.listen(configs.APP_PORT, () => {
     logger.log(`Current environment: ${configs.NODE_ENV}`);
     logger.log(`Server is running on port ${configs.APP_PORT}`);
-    if (configs.NODE_ENV === 'development') {
-      const protocol = configs.USE_HTTPS ? 'https' : 'http';
-      logger.log(`API: ${protocol}://localhost:${configs.APP_PORT}/api/v1`);
-      logger.log(`Swagger Docs: ${protocol}://localhost:${configs.APP_PORT}/api/v1/docs`);
-    }
+    const protocol = configs.USE_HTTPS ? 'https' : 'http';
+    logger.log(`API: ${protocol}://localhost:${configs.APP_PORT}/api/v1`);
+    logger.log(`Swagger Docs: ${protocol}://localhost:${configs.APP_PORT}/api/v1/docs`);
   });
 }
 void bootstrap();

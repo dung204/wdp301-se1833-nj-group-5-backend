@@ -1,16 +1,54 @@
+import { MailerModule } from '@nestjs-modules/mailer';
 import { Module } from '@nestjs/common';
 import { APP_GUARD, APP_INTERCEPTOR, DiscoveryModule } from '@nestjs/core';
+import { ScheduleModule } from '@nestjs/schedule';
 
+import { mailConfig } from './base/configs';
 import { ConfigModule } from './base/configs/config.module';
 import { DatabaseModule } from './base/database/database.module';
+import { ImageTransformInterceptor } from './base/interceptors/image-transform.interceptor';
 import { ResponseTransformInterceptor } from './base/interceptors/response-transform.interceptor';
 import { AuthModule } from './modules/auth/auth.module';
 import { JwtGuard } from './modules/auth/guards/jwt.guard';
+import { BookingsModule } from './modules/bookings/bookings.module';
+import { DiscountsModule } from './modules/discounts/discounts.module';
+import { HotelsModule } from './modules/hotels/hotels.module';
+import { MinioStorageModule } from './modules/minio-storage/minio-storage.module';
+import { PaymentMethodsModule } from './modules/payment-methods/payment-methods.module';
+import { PaymentsModule } from './modules/payment/payment.module';
+import { RevenueModule } from './modules/revenue-report/revenue.module';
+import { ReviewsModule } from './modules/reviews/reviews.module';
+import { RoleUpgradeRequestsModule } from './modules/role-upgrade-requests/role-upgrade-requests.module';
+import { RoomsModule } from './modules/rooms/rooms.module';
+import { TransactionsModule } from './modules/transactions/transactions.module';
 import { UsersModule } from './modules/users/users.module';
 
 @Module({
-  imports: [ConfigModule, DiscoveryModule, AuthModule, DatabaseModule, UsersModule],
+  imports: [
+    ScheduleModule.forRoot(),
+    MailerModule.forRootAsync(mailConfig),
+    ConfigModule,
+    DiscoveryModule,
+    AuthModule,
+    DatabaseModule,
+    UsersModule,
+    HotelsModule,
+    RoomsModule,
+    BookingsModule,
+    TransactionsModule,
+    PaymentMethodsModule,
+    DiscountsModule,
+    ReviewsModule,
+    RoleUpgradeRequestsModule,
+    RevenueModule,
+    PaymentsModule,
+    MinioStorageModule,
+  ],
   providers: [
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ImageTransformInterceptor,
+    },
     {
       provide: APP_INTERCEPTOR,
       useClass: ResponseTransformInterceptor,

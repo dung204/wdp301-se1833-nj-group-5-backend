@@ -1,0 +1,216 @@
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+
+import { BaseService, FindManyOptions } from '@/base/services';
+import { Role } from '@/modules/auth/enums/role.enum';
+import { MailService } from '@/modules/mail/services/mail.service';
+import { User } from '@/modules/users/schemas/user.schema';
+import { UsersService } from '@/modules/users/services/users.service';
+
+import {
+  CreateRoleUpgradeRequestDto,
+  RoleUpgradeRequestQueryDto,
+  TestRoleUpgradeEmailDto,
+  UpdateRoleUpgradeRequestDto,
+} from '../dtos/role-upgrade-request.dto';
+import { RoleUpgradeRequestStatus } from '../enums/role-upgrade-request.enum';
+import { RoleUpgradeRequest } from '../schemas/role-upgrade-request.schema';
+
+@Injectable()
+export class RoleUpgradeRequestsService extends BaseService<RoleUpgradeRequest> {
+  constructor(
+    @InjectModel(RoleUpgradeRequest.name)
+    private readonly roleUpgradeRequestModel: Model<RoleUpgradeRequest>,
+    private readonly usersService: UsersService,
+    private readonly mailService: MailService,
+  ) {
+    const logger = new Logger(RoleUpgradeRequestsService.name);
+    super(roleUpgradeRequestModel, logger);
+  }
+
+  async createRequest(user: User, createDto: CreateRoleUpgradeRequestDto) {
+    // Check if user already has a pending request
+    const existingRequest = await this.roleUpgradeRequestModel.findOne({
+      user: user._id,
+      status: RoleUpgradeRequestStatus.PENDING,
+    });
+
+    if (existingRequest) {
+      throw new BadRequestException(
+        'You already have a pending role upgrade request. Please wait for admin review.',
+      );
+    }
+
+    // Check if user is eligible for the requested upgrade
+    if (user.role !== Role.CUSTOMER) {
+      throw new BadRequestException(
+        `Cannot upgrade role from ${user.role}. Only CUSTOMER role can request upgrade to HOTEL_OWNER.`,
+      );
+    }
+
+    if (createDto.targetRole !== Role.HOTEL_OWNER) {
+      throw new BadRequestException('Only upgrade to HOTEL_OWNER role is supported.');
+    }
+
+    const requestData = {
+      user: user._id as any,
+      requestType: createDto.requestType,
+      currentRole: user.role,
+      targetRole: createDto.targetRole,
+      contactInfo: createDto.contactInfo,
+      reason: createDto.reason,
+      status: RoleUpgradeRequestStatus.PENDING,
+    };
+
+    const request = await this.createOne(requestData);
+
+    return request;
+  }
+
+  async updateRequestStatus(
+    requestId: string,
+    updateDto: UpdateRoleUpgradeRequestDto,
+    adminUser: User,
+  ) {
+    const request = await this.roleUpgradeRequestModel.findById(requestId);
+
+    if (!request) {
+      throw new NotFoundException('Role upgrade request not found');
+    }
+
+    if (request.status !== RoleUpgradeRequestStatus.PENDING) {
+      throw new BadRequestException(
+        `Cannot update request with status ${request.status}. Only PENDING requests can be updated.`,
+      );
+    }
+
+    // If approving the request, upgrade the user's role
+    if (updateDto.status === RoleUpgradeRequestStatus.APPROVED) {
+      const userToUpgrade = await this.usersService.findOne({ _id: request.user });
+      if (userToUpgrade) {
+        await this.usersService.update({ role: request.targetRole }, { _id: request.user });
+      }
+    }
+
+    await this.update(
+      {
+        status: updateDto.status,
+        reviewedBy: adminUser._id as any,
+        reviewedAt: new Date(),
+        adminNotes: updateDto.adminNotes,
+        rejectionReason: updateDto.rejectionReason,
+      },
+      { _id: requestId },
+    );
+
+    // Get the updated request
+    const updatedRequest = await this.findOne({ _id: requestId });
+
+    // Send notification email to user using HTML templates
+    try {
+      if (updatedRequest) {
+        if (updateDto.status === RoleUpgradeRequestStatus.APPROVED) {
+          await this.mailService.sendRoleUpgradeApprovedEmail(updatedRequest);
+        } else if (updateDto.status === RoleUpgradeRequestStatus.REJECTED) {
+          await this.mailService.sendRoleUpgradeRejectedEmail(updatedRequest);
+        }
+      }
+    } catch (error) {
+      this.logger.warn('Failed to send status update email', error);
+    }
+
+    return updatedRequest;
+  }
+
+  async getUserRequest(userId: string) {
+    // Find only pending requests for this user to allow resubmission after rejection/approval
+    return (await this.roleUpgradeRequestModel
+      .findOne({
+        user: userId,
+        status: RoleUpgradeRequestStatus.PENDING,
+      })
+      .sort({ createTimestamp: -1 })
+      .populate([
+        { path: 'user', select: '_id email role fullName gender' },
+        { path: 'reviewedBy', select: '_id email role fullName gender' },
+      ])
+      .lean()
+      .exec()) as RoleUpgradeRequest;
+  }
+
+  async getUserRequestHistory(userId: string) {
+    // Get all requests for this user, sorted by most recent first
+    return (await this.roleUpgradeRequestModel
+      .find({ user: userId })
+      .sort({ createTimestamp: -1 })
+      .populate([
+        { path: 'user', select: '_id email role fullName gender' },
+        { path: 'reviewedBy', select: '_id email role fullName gender' },
+      ])
+      .lean()
+      .exec()) as RoleUpgradeRequest[];
+  }
+
+  async testRoleUpgradeEmail(testEmailDto: TestRoleUpgradeEmailDto) {
+    const request = await this.roleUpgradeRequestModel.findById(testEmailDto.requestId);
+
+    if (!request) {
+      throw new NotFoundException('Role upgrade request not found');
+    }
+
+    // Get the updated request with populated fields
+    const populatedRequest = await this.findOne({ _id: testEmailDto.requestId });
+
+    if (!populatedRequest) {
+      throw new NotFoundException('Role upgrade request not found');
+    }
+
+    try {
+      if (testEmailDto.emailType === 'approved') {
+        await this.mailService.sendRoleUpgradeApprovedEmail(populatedRequest);
+      } else {
+        await this.mailService.sendRoleUpgradeRejectedEmail(populatedRequest);
+      }
+
+      return {
+        message: 'Test email sent successfully',
+        requestId: testEmailDto.requestId,
+        emailType: testEmailDto.emailType,
+        sentTo: populatedRequest.user.email,
+      };
+    } catch (error) {
+      this.logger.error(
+        `Failed to send test email for request ${testEmailDto.requestId}`,
+        error instanceof Error ? error.message : String(error),
+      );
+      throw new BadRequestException('Failed to send test email');
+    }
+  }
+
+  private async sendMail(options: { to: string; subject: string; text: string }) {
+    // Use the mailerService directly through dependency injection
+    const mailerService = (this.mailService as any).mailerService;
+    return mailerService.sendMail(options);
+  }
+
+  protected async preFind(
+    options: FindManyOptions<RoleUpgradeRequest>,
+    currentUser?: User,
+  ): Promise<FindManyOptions<RoleUpgradeRequest>> {
+    const findOptions = await super.preFind(options, currentUser);
+
+    if (findOptions.queryDto) {
+      const queryDto = findOptions.queryDto as RoleUpgradeRequestQueryDto;
+
+      // Apply status filter if provided
+      findOptions.filter = {
+        ...findOptions.filter,
+        ...(queryDto.status && { status: queryDto.status }),
+        ...(queryDto.userId && { user: queryDto.userId }),
+      };
+    }
+
+    return findOptions;
+  }
+}

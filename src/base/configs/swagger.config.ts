@@ -13,7 +13,8 @@ import {
   SwaggerModule,
 } from '@nestjs/swagger';
 
-import { IS_ADMIN_KEY } from '@/modules/auth/decorators/admin.decorator';
+import { ALLOW_ROLES_KEY } from '@/modules/auth/decorators/allow-roles.decorator';
+import { OPTIONAL_AUTH_KEY } from '@/modules/auth/decorators/optional-auth.decorator';
 import { IS_PUBLIC_KEY } from '@/modules/auth/decorators/public.decorator';
 import { Role } from '@/modules/auth/enums/role.enum';
 
@@ -32,7 +33,11 @@ export function configSwagger(app: INestApplication) {
     for (const controller of controllers) {
       if (controller.metatype) {
         const isControllerPublic = Reflect.getMetadata(IS_PUBLIC_KEY, controller.metatype);
-        const isControllerAdmin = Reflect.getMetadata(IS_ADMIN_KEY, controller.metatype);
+        const controllerOptionalAuthRoles = Reflect.getMetadata(
+          OPTIONAL_AUTH_KEY,
+          controller.metatype,
+        );
+        const controllerAllowRoles = Reflect.getMetadata(ALLOW_ROLES_KEY, controller.metatype);
         const controllerPath = Reflect.getMetadata(PATH_KEY, controller.metatype);
         const controllerResponses = Reflect.getMetadata(
           SWAGGER_API_RESPONSE_KEY,
@@ -55,7 +60,11 @@ export function configSwagger(app: INestApplication) {
 
         for (const method of methods) {
           const isRoutePublic = Reflect.getMetadata(IS_PUBLIC_KEY, controllerClass[method]);
-          const isRouteAdmin = Reflect.getMetadata(IS_ADMIN_KEY, controllerClass[method]);
+          const routeOptionalAuthRoles = Reflect.getMetadata(
+            OPTIONAL_AUTH_KEY,
+            controllerClass[method],
+          );
+          const routeAllowRoles = Reflect.getMetadata(ALLOW_ROLES_KEY, controllerClass[method]);
           const apiOperation = Reflect.getMetadata(
             SWAGGER_API_OPERATION_KEY,
             controllerClass[method],
@@ -86,16 +95,36 @@ export function configSwagger(app: INestApplication) {
           if (isRoutePublic || isControllerPublic) continue;
 
           // Require authentication for routes that are not marked as @Public()
-          if (isRouteAdmin || isControllerAdmin) {
+          const allowRoles = controllerAllowRoles || routeAllowRoles;
+          const optionalAuthRoles = controllerOptionalAuthRoles || routeOptionalAuthRoles;
+          if (Array.isArray(allowRoles) && allowRoles?.length !== Object.values(Role).length) {
             if (apiOperation) {
               const { summary, ...apiOperationMetadata } = apiOperation;
               ApiOperation({
-                summary: (summary?.trim() ?? '') + ` (for ${Role.ADMIN} only)`,
+                summary: (summary?.trim() ?? '') + ` (for ${allowRoles.join(', ')} only)`,
                 ...apiOperationMetadata,
               })(...methodDecoratorParams);
             }
             ApiForbiddenResponse({
-              description: `User is not an \`${Role.ADMIN}\``,
+              description: `User's role is one of the following: \`${allowRoles.map((role) => `\`${role}\``).join(', ')}\``,
+              ...controllerResponses?.['403'],
+              ...routeResponses?.['403'],
+            })(...methodDecoratorParams);
+          }
+
+          if (
+            Array.isArray(optionalAuthRoles) &&
+            optionalAuthRoles?.length !== Object.values(Role).length
+          ) {
+            if (apiOperation) {
+              const { summary, ...apiOperationMetadata } = apiOperation;
+              ApiOperation({
+                summary: (summary?.trim() ?? '') + ` (for ${optionalAuthRoles.join(', ')} only)`,
+                ...apiOperationMetadata,
+              })(...methodDecoratorParams);
+            }
+            ApiForbiddenResponse({
+              description: `User's role is one of the following: \`${optionalAuthRoles.map((role) => `\`${role}\``).join(', ')}\``,
               ...controllerResponses?.['403'],
               ...routeResponses?.['403'],
             })(...methodDecoratorParams);

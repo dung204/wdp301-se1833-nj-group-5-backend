@@ -1,23 +1,17 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Exclude, Expose, Transform, plainToInstance } from 'class-transformer';
-import { IsEnum, IsOptional, IsString } from 'class-validator';
+import { Exclude, Expose, Transform, Type } from 'class-transformer';
+import { IsArray, IsEnum, IsOptional, IsString } from 'class-validator';
 
 import { SwaggerExamples } from '@/base/constants';
+import { SchemaResponseDto } from '@/base/dtos';
+import { transformToStringArray } from '@/base/utils';
 import { Role } from '@/modules/auth/enums/role.enum';
+import { HotelResponseDto } from '@/modules/hotels/dtos/hotel.dto';
 
 import { Gender } from '../enums/gender.enum';
-import { User } from '../schemas/user.schema';
 
 @Exclude()
-export class UserProfileDto {
-  @ApiProperty({
-    description: 'The UUID of the user',
-    example: SwaggerExamples.UUID,
-  })
-  @Transform(({ obj: user }) => user._id)
-  @Expose()
-  id!: string;
-
+export class UserProfileDto extends SchemaResponseDto {
   @ApiProperty({
     description: 'The email of the user',
     example: SwaggerExamples.EMAIL,
@@ -49,36 +43,23 @@ export class UserProfileDto {
   gender!: Gender | null;
 
   @ApiProperty({
-    description: 'The timestamp indicating when the user is created',
-    example: SwaggerExamples.DATE_FROM,
+    description: 'The favorite hotels of the user',
+    type: [HotelResponseDto],
+    required: false,
   })
   @Expose()
-  createTimestamp!: Date;
-
-  @ApiProperty({
-    description: 'The timestamp indicating when the user is last updated',
-    example: SwaggerExamples.DATE_FROM,
-  })
-  @Expose()
-  updateTimestamp!: Date;
-
-  public static fromUser(user: User) {
-    return plainToInstance(UserProfileDto, user);
-  }
+  @Type(() => HotelResponseDto)
+  favoriteHotels?: HotelResponseDto[];
 }
 
 @Exclude()
 export class DeletedUserProfileDto extends UserProfileDto {
   @ApiProperty({
-    description: 'The timestamp indicating when the user is deleted',
+    description: 'The timestamp indicating when the item is deleted',
     example: SwaggerExamples.DATE_FROM,
   })
   @Expose()
   deleteTimestamp!: Date;
-
-  public static fromUser(user: User) {
-    return plainToInstance(DeletedUserProfileDto, user);
-  }
 }
 
 export class UpdateUserDto {
@@ -101,4 +82,38 @@ export class UpdateUserDto {
   @IsOptional()
   @IsEnum(Gender)
   gender?: Gender;
+
+  @ApiProperty({
+    description: 'The list of favorite hotels',
+    example: SwaggerExamples.ACCEPT_HOTEL,
+    required: false,
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @Transform(transformToStringArray)
+  favoriteHotels?: string[];
+}
+
+export class UpgradeRoleDto {
+  @ApiProperty({
+    description: 'The target role to upgrade to',
+    enum: [Role.HOTEL_OWNER],
+    enumName: 'UpgradeRole',
+    example: Role.HOTEL_OWNER,
+    required: true,
+  })
+  @IsEnum([Role.HOTEL_OWNER], {
+    message: 'Only upgrade to HOTEL_OWNER role is supported',
+  })
+  targetRole!: Role.HOTEL_OWNER;
+
+  @ApiProperty({
+    description: 'Optional justification for the role upgrade',
+    example: 'I want to add my hotel to the system',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  reason?: string;
 }

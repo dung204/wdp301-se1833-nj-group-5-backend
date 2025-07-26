@@ -1,0 +1,187 @@
+import {
+  Body,
+  Controller,
+  Delete,
+  FileTypeValidator,
+  Get,
+  HttpCode,
+  HttpStatus,
+  MaxFileSizeValidator,
+  Param,
+  ParseFilePipe,
+  Patch,
+  Post,
+  Query,
+  UploadedFiles,
+  UseInterceptors,
+} from '@nestjs/common';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { ApiConsumes, ApiNoContentResponse, ApiOperation, ApiParam } from '@nestjs/swagger';
+
+import { ApiSuccessResponse } from '@/base/decorators';
+import { transformDataToDto } from '@/base/utils';
+import { AllowRoles } from '@/modules/auth/decorators/allow-roles.decorator';
+import { CurrentUser } from '@/modules/auth/decorators/current-user.decorator';
+import { Public } from '@/modules/auth/decorators/public.decorator';
+import { Role } from '@/modules/auth/enums/role.enum';
+import {
+  CreateRoomDto,
+  RoomQueryAdminDto,
+  RoomQueryDto,
+  RoomResponseDto,
+  UpdateRoomDto,
+} from '@/modules/rooms/dtos/room.dto';
+import { RoomsService } from '@/modules/rooms/services/rooms.service';
+import { User } from '@/modules/users/schemas/user.schema';
+
+import { Room } from '../schemas/room.schema';
+import { DeletedRoomResponseDto } from './../dtos/room.dto';
+
+@Controller('rooms')
+export class RoomsController {
+  constructor(private readonly roomsService: RoomsService) {}
+
+  @ApiOperation({
+    summary: 'Search filter rooms, get all rooms',
+    description: 'Search rooms with pagination, sorting and filtering options',
+  })
+  @ApiSuccessResponse({
+    schema: RoomResponseDto,
+    isArray: true,
+    description: 'Rooms retrieved successfully',
+  })
+  @Public()
+  @Get('/')
+  async searchRooms(@Query() roomQueryDto: RoomQueryDto) {
+    const result = await this.roomsService.getRoomsByFilterAndSearch(roomQueryDto);
+    return {
+      data: transformDataToDto(RoomResponseDto, result.data),
+      metadata: result.metadata,
+    };
+  }
+
+  @ApiOperation({
+    summary: 'Search filter rooms, get all rooms',
+    description: 'Search rooms with pagination, sorting and filtering options',
+  })
+  @ApiSuccessResponse({
+    schema: RoomResponseDto,
+    isArray: true,
+    description: 'Rooms retrieved successfully',
+  })
+  @AllowRoles([Role.ADMIN, Role.HOTEL_OWNER])
+  @Get('/admin')
+  async searchRoomAdmin(@CurrentUser() user: User, @Query() roomQueryDto: RoomQueryAdminDto) {
+    const result = await this.roomsService.getRoomsByFilterAndSearchByAdmin(roomQueryDto, user);
+
+    return {
+      data: transformDataToDto(DeletedRoomResponseDto, result.data),
+      metadata: result.metadata,
+    };
+  }
+
+  @ApiOperation({
+    summary: 'Create a new room',
+    description: 'Create a new room in a hotel (only for hotel owner or admin)',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiSuccessResponse({
+    schema: RoomResponseDto,
+    description: 'Room created successfully',
+  })
+  @UseInterceptors(FilesInterceptor('images', 10))
+  @AllowRoles([Role.ADMIN, Role.HOTEL_OWNER])
+  @Post()
+  async createRoom(
+    @UploadedFiles(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 5 * 1024 ** 2 }), // 5 MB
+          new FileTypeValidator({ fileType: 'image/*' }),
+        ],
+        fileIsRequired: false,
+      }),
+    )
+    images: Express.Multer.File[],
+    @CurrentUser() user: User,
+    @Body() createRoomDto: CreateRoomDto,
+  ) {
+    const result = await this.roomsService.createRoom(user, createRoomDto, images);
+    return transformDataToDto(DeletedRoomResponseDto, result);
+  }
+
+  @ApiOperation({
+    summary: 'Update a room',
+    description: 'Update a room (only for hotel owner or admin)',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiParam({ name: 'id', description: 'Room ID' })
+  @ApiSuccessResponse({
+    schema: RoomResponseDto,
+    description: 'Room updated successfully',
+  })
+  @Patch(':id')
+  @UseInterceptors(FilesInterceptor('newImages', 10))
+  @AllowRoles([Role.ADMIN, Role.HOTEL_OWNER])
+  async updateRoom(
+    @UploadedFiles(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 5 * 1024 ** 2 }), // 5 MB
+          new FileTypeValidator({ fileType: 'image/*' }),
+        ],
+        fileIsRequired: false,
+      }),
+    )
+    newImages: Express.Multer.File[],
+    @CurrentUser() user: User,
+    @Param('id') id: string,
+    @Body() updateRoomDto: UpdateRoomDto,
+  ) {
+    return transformDataToDto(
+      DeletedRoomResponseDto,
+      await this.roomsService.update(
+        { ...updateRoomDto, newImages } as Partial<Room>,
+        { _id: id },
+        user,
+      ),
+    );
+  }
+
+  @ApiOperation({
+    summary: 'Delete a room',
+    description: 'Soft delete a room (only for hotel owner or admin)',
+  })
+  @ApiParam({ name: 'id', description: 'Room ID' })
+  @ApiNoContentResponse({
+    description: 'Room deleted successfully',
+  })
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @AllowRoles([Role.ADMIN, Role.HOTEL_OWNER])
+  async deleteRoom(@CurrentUser() user: User, @Param('id') id: string) {
+    return this.roomsService.deleteRoom(user, id);
+  }
+
+  @ApiOperation({
+    summary: 'Restore a room',
+    description: 'Restore a room (only for hotel owner or admin)',
+  })
+  @ApiParam({ name: 'id', description: 'Room ID' })
+  @ApiSuccessResponse({
+    schema: RoomResponseDto,
+    description: 'Room restore successfully',
+  })
+  @Patch('restore/:id')
+  @HttpCode(HttpStatus.OK)
+  @AllowRoles([Role.ADMIN, Role.HOTEL_OWNER])
+  async restoreRoom(@Param('id') id: string, @CurrentUser() user: User) {
+    const result = await this.roomsService.restore(
+      {
+        _id: id,
+      },
+      user,
+    );
+    return transformDataToDto(DeletedRoomResponseDto, result);
+  }
+}
