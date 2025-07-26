@@ -68,6 +68,12 @@ export class BookingsController {
     };
   }
 
+  @AllowRoles([Role.ADMIN, Role.HOTEL_OWNER, Role.CUSTOMER])
+  @Get('/:id')
+  async getById(@Param('id') id: string, @CurrentUser() user: User) {
+    return this.bookingsService.findBookingById(id, user);
+  }
+
   @ApiOperation({
     summary: 'Create a new booking',
     description: 'Create a new booking for a hotel room',

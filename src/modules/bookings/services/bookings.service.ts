@@ -43,6 +43,16 @@ export class BookingsService extends BaseService<Booking> {
     return booking;
   }
 
+  async findBookingById(id: string, user: User) {
+    const booking = await this.findOne({ _id: id });
+
+    if (!booking || booking.user._id !== user._id) {
+      return [];
+    }
+
+    return [booking];
+  }
+
   /**
    * Logic to create a new booking
    * 1. Validate check-in and check-out dates
